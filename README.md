@@ -1,6 +1,6 @@
 # Riverline Poker Coach — Product Demo
 
-当前版本：T1 教学升级已连通，整轮验收收尾中；原第一版本地 stub/mock Demo 已完成 D01–D08。研究、连续节点、Agent、训练、复盘、备份恢复已连通；扑克数值和推理均为明确标记的合成示例。
+当前版本：T1 教学升级已完成本地 Demo 验收；原第一版本地 stub/mock Demo 已完成 D01–D08。研究、连续节点、Agent、训练、复盘、备份恢复已连通；扑克数值和推理均为明确标记的合成示例。
 
 实际范围、演示路线、截图、验证和限制见 [第一版交付记录](docs/demo-v1-delivery.md)。这是独立的新 Demo 工作区，旧项目与参考产品仅用于研究。
 
@@ -42,11 +42,13 @@ npx playwright install chromium
 npm run e2e
 ```
 
-浏览器依赖只需首次安装。`npm run e2e` 可自动启动本地服务，已运行的 5173 服务须属于本仓库。`npm run preview` 在 4173 查看生产构建。第一版历史验证为 57 项状态测试/20 条旅程；T1 的实际验证以本轮交付记录为准，不沿用历史数字。
+浏览器依赖只需首次安装。`npm run e2e` 可自动启动本地服务，已运行的 5173 服务须属于本仓库。`npm run preview` 在 4173 查看生产构建。T1 本轮实测：类型检查、构建、90 项状态测试与 35 条 Chromium 旅程通过，含旧版回归；具体边界见交付记录。
 
 ## Git 与恢复
 
 当前分支 `demo/development`。原设计、D01、Hero、D02 和 v0.2 计划标签保持不变。`baseline/demo-v1-m2`、`baseline/demo-v1-m3`、`baseline/demo-v1.0` 在整版验收后共同记录最终提交，分别标记相应条件已达成。
+
+T1 应用提交 `3503f07`；`baseline/teaching-t1-m1` 保存首个已验证教学闭环，`baseline/teaching-t1.0` 保存整轮交付。旧设计标签与第一版标签保持不动。
 
 无远程、无推送、无部署；本地 Git 不代替独立备份。回看与无损恢复见 [Git 工作流](docs/git-workflow.md)。
 

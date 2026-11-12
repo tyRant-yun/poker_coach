@@ -10,6 +10,7 @@
 - 后续 `baseline/demo-v1-m1`、`baseline/demo-v1-m2`、`baseline/demo-v1-m3`、`baseline/demo-v1.0`：依次对应 D01、D02/D03、D04–D07、D08 的实际完成与验证，未完成时不提前创建。
 - `baseline/demo-v1-hero-v0.1`：Hero 与全范围反馈改进；`baseline/demo-v1-d02`：D02 范围编辑与版本能力。后者是任务检查点，不能替代需 D03 完成的 M2。
 - `baseline/demo-v1-plan-v0.2`：单次连续推进 D03–D08 的执行安排，记录牌面显示与研究体验反馈；只表示文档计划已更新，不表示功能完成，也不新设审批门。
+- `baseline/teaching-t1-design-v0.1/v0.2` 保存教学设计；`baseline/teaching-t1-m1` 与 `baseline/teaching-t1.0` 在 2026-11-12 实际验收后保存教学闭环与整轮交付，旧标签不移动。新工作区使用 `riverline-demo-t1`，旧 `riverline-demo` 仅只读迁移，回滚代码不自动倒写或合并浏览器数据。
 - 标签创建后不移动；修订使用新标签，例如 `baseline/design-v0.2`。
 - `main` 保存已记录的基线；`demo/development` 用于后续开发。设计基线不等于用户已验收产品。
 
