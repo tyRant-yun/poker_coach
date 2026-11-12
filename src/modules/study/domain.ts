@@ -1,8 +1,10 @@
-export type Action = 'check' | 'bet33' | 'bet75';
+export type Action = string;
+export type ActionDefinition = { id: string; name: string; short: string; color: string };
+export type ScenarioId = 'S01' | 'S02' | 'S03' | 'S04' | 'S05' | 'S06' | 'S07' | 'S08' | 'S09' | 'S10';
 export type Allocation = Record<Action, number>;
 export type Choices = Record<string, Allocation>;
 export type RangeWeights = Record<string, number>;
-export type RangeInputs = { BTN: RangeWeights; BB: RangeWeights };
+export type RangeInputs = { BTN: RangeWeights; BB: RangeWeights } & Record<string, RangeWeights>;
 export type EditableSnapshot = {
   name?: string;
   spot: Spot; spotRevisionId: string; ranges?: RangeInputs;
@@ -37,7 +39,12 @@ export type Spot = {
   potMinor: number;
   stackMinor: number;
   unitsPerBb: number;
-  actor: 'BTN';
+  actor: string;
+  nodeId?: string;
+  actionSet?: ActionDefinition[];
+  unit?: string;
+  assumption?: string;
+  upstream?: string;
   rangeVersion: string;
   treeVersion: string;
 };
@@ -51,7 +58,7 @@ export type HeroPlanInput = {
   reason: string;
 };
 export type HeroPlan = HeroPlanInput & { id: string; spotRevisionId: string; createdAt: string };
-export type SolveInput = { spot: Spot; spotRevisionId: string; choices?: Choices; ranges?: RangeInputs };
+export type SolveInput = { spot: Spot; spotRevisionId: string; choices?: Choices; ranges?: RangeInputs; settings?: import('../product/domain').DemoSettings; executionAttempt?: number };
 export type PolicyRevision = {
   id: string;
   number: number;
@@ -62,12 +69,16 @@ export type PolicyRevision = {
   createdAt: string;
   assistance?: 'reference' | 'example';
 };
-export type JobStatus = 'queued' | 'running' | 'completed' | 'cancelled' | 'failed' | 'interrupted';
+export type JobStatus = 'preflight' | 'postprocessing' | 'queued' | 'running' | 'completed' | 'cancelled' | 'failed' | 'interrupted';
 export type SolveResult = {
   dataKind: 'synthetic';
   fixtureVersion: string;
   inputFingerprint: string;
-  availability: 'available' | 'uncovered';
+  availability: 'available' | 'uncovered' | 'unsupported';
+  nodeId?: string;
+  quality?: 'demo-target-met' | 'demo-incomplete' | 'not-evaluated';
+  metrics?: Record<string, { equity: number; ev: Record<string, number>; category: string }>;
+  unit?: string;
   reference: Choices | null;
   reason: string;
 };
@@ -78,7 +89,10 @@ export type SolveJob = {
   status: JobStatus;
   stage: string;
   createdAt: string;
+  input?: SolveInput;
   result?: SolveResult;
+  settings?: import('../product/domain').DemoSettings;
+  events?: { status: JobStatus; stage: string; at: string }[];
 };
 export type AssessmentReport = {
   id: string;
@@ -95,7 +109,12 @@ export type AssessmentReport = {
 export type StudyCase = {
   id: string;
   name: string;
-  scenarioId: 'S01';
+  scenarioId: ScenarioId;
+  nodeDrafts?: Record<string, EditableSnapshot>;
+  staleNodes?: string[];
+  origin?: { handId: string; decisionId: string };
+  experiment?: { baselineCaseId: string; baselineVersionId: string; variant: string; lock: import('../product/domain').NodeLock };
+  favorite?: boolean;
   createdAt: string;
   updatedAt: string;
   spotRevisionId: string;
@@ -110,31 +129,33 @@ export type StudyCase = {
   heroPlans: HeroPlan[];
   note: string;
 };
-export type WorkspaceSnapshot = { schemaVersion: 1; fixtureVersion: string; cases: Record<string, StudyCase> };
+export type WorkspaceSnapshot = { schemaVersion: 1; fixtureVersion: string; cases: Record<string, StudyCase>; product?: import('../product/domain').ProductState };
 
 export function activeCombos(spot: Spot, weights: RangeWeights): string[] {
   return allCombos.filter(c => weights[c] > 0 && !spot.board.some(card => c.slice(0, 2) === card || c.slice(2) === card));
 }
-export function validAllocation(value: Allocation): boolean {
-  return actions.every(a => Number.isInteger(value[a.id]) && value[a.id] >= 0 && value[a.id] <= 10000)
-    && actions.reduce((sum, a) => sum + value[a.id], 0) === 10000;
+export const actionsFor = (spot: Spot): ActionDefinition[] => spot.actionSet ?? actions;
+export function validAllocation(value: Allocation, available = actions): boolean {
+  return available.every(a => Number.isInteger(value[a.id]) && value[a.id] >= 0 && value[a.id] <= 10000)
+    && available.reduce((sum, a) => sum + value[a.id], 0) === 10000 && Object.keys(value).every(key => available.some(a => a.id === key) || value[key] === 0);
 }
 export function policyStats(spot: Spot, weights: RangeWeights, choices: Choices) {
   const combos = activeCombos(spot, weights);
   const mass = combos.reduce((s, c) => s + weights[c], 0);
-  const totals: Allocation = { check: 0, bet33: 0, bet75: 0 };
+  const available = actionsFor(spot);
+  const totals: Allocation = Object.fromEntries(available.map(a => [a.id, 0]));
   let filled = 0;
   let invalid = 0;
   for (const c of combos) {
     const value = choices[c];
     if (!value) continue;
-    if (!validAllocation(value)) { invalid++; continue; }
+    if (!validAllocation(value, available)) { invalid++; continue; }
     filled++;
-    for (const a of actions) totals[a.id] += value[a.id] / 10000 * weights[c];
+    for (const a of available) totals[a.id] += value[a.id] / 10000 * weights[c];
   }
   return { combos, mass, filled, invalid, missing: combos.length - filled - invalid,
     coverage: combos.length ? filled / combos.length : 0,
-    totals: Object.fromEntries(actions.map(a => [a.id, mass ? totals[a.id] / mass : 0])) as Allocation };
+    totals: Object.fromEntries(available.map(a => [a.id, mass ? totals[a.id] / mass : 0])) as Allocation };
 }
 export function validateSubmission(spot: Spot, weights: RangeWeights, choices: Choices): string | null {
   const s = policyStats(spot, weights, choices);
@@ -146,19 +167,19 @@ export function validateSubmission(spot: Spot, weights: RangeWeights, choices: C
 export function spotSignature(spot: Spot): string {
   return JSON.stringify({ ...spot, board: [...spot.board].sort() });
 }
-export function canonicalPolicy(choices: Choices, combos: string[]): string {
-  return JSON.stringify([...combos].sort().map(c => [c, ...actions.map(a => choices[c]?.[a.id] ?? null)]));
+export function canonicalPolicy(choices: Choices, combos: string[], available = actions): string {
+  return JSON.stringify([...combos].sort().map(c => [c, ...available.map(a => choices[c]?.[a.id] ?? null)]));
 }
 export function frequencyDifference(spot: Spot, weights: RangeWeights, user: Choices, reference: Choices): number {
   const combos = activeCombos(spot, weights);
   const mass = combos.reduce((s, c) => s + weights[c], 0);
   if (!mass) return 0;
-  return combos.reduce((sum, c) => sum + weights[c] * actions.reduce((d, a) =>
+  return combos.reduce((sum, c) => sum + weights[c] * actionsFor(spot).reduce((d, a) =>
     d + Math.abs(user[c][a.id] - reference[c][a.id]) / 20000, 0), 0) / mass;
 }
 export function validateSpot(spot: Spot): string | null {
-  if (spot.board.length !== 3 || spot.board.some(c => !/^[AKQJT2-9][shdc]$/.test(c)) || new Set(spot.board).size !== 3)
-    return '请输入三张不同的翻牌，例如 As 7d 2c。';
+  if (![0, 3, 4, 5].includes(spot.board.length) || spot.board.some(c => !/^[AKQJT2-9][shdc]$/.test(c)) || new Set(spot.board).size !== spot.board.length)
+    return '公共牌应为 0、3、4 或 5 张不同的有效牌。';
   if (![spot.potMinor, spot.stackMinor].every(v => Number.isInteger(v) && v > 0)) return '底池与剩余筹码必须为正数。';
   return null;
 }

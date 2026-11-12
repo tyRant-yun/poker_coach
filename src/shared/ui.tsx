@@ -27,7 +27,10 @@ export function Icon({ name, size = 18 }: { name: string; size?: number }) {
 export function Card({ card, small = false }: { card: string; small?: boolean }) {
   const suit = { s: '♠', h: '♥', d: '♦', c: '♣' }[card[1]];
   const color = card[1] === 'h' || card[1] === 'd' ? s.redCard : '';
-  return <span className={`${s.playingCard} ${small ? s.smallCard : ''} ${color}`} aria-label={card}><b>{card[0]}</b><span>{suit}</span></span>;
+  return <span className={`${s.playingCard} ${small ? s.smallCard : ''} ${color}`} data-suit={card[1]} aria-label={card}><b>{card[0]}</b><span>{suit}</span></span>;
+}
+export function ComboCards({ combo }: { combo: string }) {
+  return <span className={s.comboCards}><Card card={combo.slice(0,2)} small /><Card card={combo.slice(2)} small /></span>;
 }
 export function Board({ cards, small = false }: { cards: string[]; small?: boolean }) {
   return <span className={s.board}>{cards.map(card => <Card key={card} card={card} small={small} />)}</span>;

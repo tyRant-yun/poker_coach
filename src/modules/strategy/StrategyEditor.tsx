@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { commands, queries } from '../../app/workspace';
-import { actions, activeCombos, allCombos, handClasses, handByCombo, validAllocation } from '../study/domain';
+import { actionsFor, activeCombos, allCombos, handClasses, handByCombo, validAllocation } from '../study/domain';
 import type { Allocation, StudyCase } from '../study/domain';
-import { Icon } from '../../shared/ui';
+import { ComboCards, Icon } from '../../shared/ui';
 import { average, cellBackground, FrequencyBar } from './RangeVisuals';
 import s from '../../styles/App.module.css';
 
 export function StrategyEditor({ c, initialHand, onSelectHand }: { c: StudyCase; initialHand: string; onSelectHand: (label: string) => void }) {
   const [mode, setMode] = useState<'policy' | 'range'>('policy');
-  const [player, setPlayer] = useState<'BTN' | 'BB'>('BTN');
+  const [player, setPlayer] = useState(c.spot.actor);
   const [view, setView] = useState<'matrix' | 'combos'>('matrix');
   const [category, setCategory] = useState('all');
   const [suit, setSuit] = useState('all');
@@ -18,6 +18,7 @@ export function StrategyEditor({ c, initialHand, onSelectHand }: { c: StudyCase;
   const [selection, setSelection] = useState(handClasses.find(h => h.label === initialHand)!.combos);
   const [dirty, setDirty] = useState(false);
   const dragging = useRef(false);
+  const actions = actionsFor(c.spot);
   const weights = queries.weights(player, c);
   const live = new Set(activeCombos(c.spot, weights));
   const dead = (combo: string) => c.spot.board.some(card => combo.slice(0, 2) === card || combo.slice(2) === card);
@@ -29,7 +30,7 @@ export function StrategyEditor({ c, initialHand, onSelectHand }: { c: StudyCase;
     if (category === 'offsuit' && !label.endsWith('o')) return false;
     if (suit !== 'all' && combo[1] !== suit && combo[3] !== suit) return false;
     if (status === 'missing' && (!live.has(combo) || !!c.draft.choices[combo])) return false;
-    if (status === 'invalid' && (!live.has(combo) || !c.draft.choices[combo] || validAllocation(c.draft.choices[combo]))) return false;
+    if (status === 'invalid' && (!live.has(combo) || !c.draft.choices[combo] || validAllocation(c.draft.choices[combo],actions))) return false;
     if (status === 'locked' && !locks.has(combo)) return false;
     if (status === 'excluded' && (dead(combo) || live.has(combo))) return false;
     if (status === 'dead' && !dead(combo)) return false;
@@ -66,13 +67,13 @@ export function StrategyEditor({ c, initialHand, onSelectHand }: { c: StudyCase;
   }, [c.id, dirty]);
   useEffect(() => { commands.setPendingInput(dirty); return () => commands.setPendingInput(false); }, [dirty]);
   useEffect(() => { setPage(0); }, [category, suit, status, mode, player]);
-  const stateLabel = (combo: string) => dead(combo) ? '死牌' : !live.has(combo) ? '权重 0 · 排除' : mode === 'range' ? `权重 ${(weights[combo] ?? 0) / 100}%` : !c.draft.choices[combo] ? '未填写' : !validAllocation(c.draft.choices[combo]) ? '待修正' : locks.has(combo) ? '已锁定' : '已分配';
+  const stateLabel = (combo: string) => dead(combo) ? '死牌' : !live.has(combo) ? '权重 0 · 排除' : mode === 'range' ? `权重 ${(weights[combo] ?? 0) / 100}%` : !c.draft.choices[combo] ? '未填写' : !validAllocation(c.draft.choices[combo],actions) ? '待修正' : locks.has(combo) ? '已锁定' : '已分配';
   return <div className={`${s.editorLayout} ${focus ? s.editorFocus : ''}`}>
     <div className={s.editorMain}>
       <section className={s.matrixPanel}>
         <div className={s.panelHeader}><div><h2>{mode === 'policy' ? '你的策略范围' : `${player} 输入范围`}</h2><p>{mode === 'policy' ? '拖选牌类，或按住 Ctrl / ⌘ 多选；批量应用形成一次编辑' : '权重决定组合在输入范围中的占比，0 表示排除'}</p></div><button className={s.textButton} aria-pressed={focus} onClick={() => setFocus(!focus)}>{focus ? '退出焦点模式' : '焦点模式'}</button></div>
         <div className={s.editorToolbar}>
-          <div className={s.segmented}><button className={mode === 'policy' ? s.segmentActive : ''} onClick={() => change(() => { setMode('policy'); setPlayer('BTN'); })}>行动频率</button><button className={mode === 'range' ? s.segmentActive : ''} onClick={() => change(() => setMode('range'))}>输入权重</button></div>
+          <div className={s.segmented}><button className={mode === 'policy' ? s.segmentActive : ''} onClick={() => change(() => { setMode('policy'); setPlayer(c.spot.actor); })}>行动频率</button><button className={mode === 'range' ? s.segmentActive : ''} onClick={() => change(() => setMode('range'))}>输入权重</button></div>
           {mode === 'range' && <div className={s.segmented} aria-label="编辑玩家范围">{(['BTN', 'BB'] as const).map(p => <button key={p} className={player === p ? s.segmentActive : ''} onClick={() => change(() => setPlayer(p))}>{p}</button>)}</div>}
           <div className={s.segmented}><button className={view === 'matrix' ? s.segmentActive : ''} onClick={() => setView('matrix')}>矩阵</button><button className={view === 'combos' ? s.segmentActive : ''} onClick={() => setView('combos')}>具体组合</button></div>
         </div>
@@ -89,16 +90,16 @@ export function StrategyEditor({ c, initialHand, onSelectHand }: { c: StudyCase;
             const selected = ids.length > 0 && ids.every(combo => target.includes(combo));
             const nLocked = liveIds.filter(combo => locks.has(combo)).length;
             const filled = liveIds.filter(combo => c.draft.choices[combo]).length;
-            const background = mode === 'policy' ? cellBackground(average(liveIds, c.draft.choices, weights)) : `rgba(91,154,139,${ids.length ? .12 + ids.reduce((sum, combo) => sum + (weights[combo] ?? 0), 0) / ids.length / 16000 : 0})`;
+            const background = mode === 'policy' ? cellBackground(average(liveIds, c.draft.choices, weights,actions),actions) : `rgba(91,154,139,${ids.length ? .12 + ids.reduce((sum, combo) => sum + (weights[combo] ?? 0), 0) / ids.length / 16000 : 0})`;
             return <button key={h.label} data-testid={`cell-${h.label}`} aria-label={`${h.label}，${ids.length} 个可选组合${nLocked ? `，${nLocked} 个锁定` : ''}`} aria-pressed={selected} disabled={!ids.length} className={`${s.matrixCell} ${selected ? s.cellSelected : ''}`} style={ids.length ? { background } : undefined}
               onPointerDown={e => { if (e.button !== 0) return; dragging.current = true; choose(ids, e.ctrlKey || e.metaKey || e.shiftKey); }}
               onPointerEnter={e => { if (dragging.current && e.buttons === 1) choose(ids, true); }}
               onClick={e => { if (e.detail === 0) choose(ids, e.ctrlKey || e.metaKey || e.shiftKey); }}><b>{h.label}</b><span>{mode === 'range' ? ids.length ? `${Math.round(ids.reduce((sum, combo) => sum + (weights[combo] ?? 0), 0) / ids.length / 100)}%` : '' : nLocked ? `L${nLocked}` : filled === liveIds.length && filled ? '●' : filled ? '◐' : '·'}</span></button>;
           })}
-        </div> : <><div className={s.comboGrid} role="group" aria-label={`${player} 具体组合列表`}>{visible.slice(Math.min(page, Math.max(0, Math.ceil(visible.length / 96) - 1)) * 96, (Math.min(page, Math.max(0, Math.ceil(visible.length / 96) - 1)) + 1) * 96).map(combo => <button key={combo} aria-label={`选择组合 ${combo}，${stateLabel(combo)}`} aria-pressed={target.includes(combo)} className={target.includes(combo) ? s.comboSelected : ''} disabled={!selectable.includes(combo)} onClick={e => choose([combo], e.ctrlKey || e.metaKey || e.shiftKey)}><b>{combo}</b><small>{stateLabel(combo)}</small></button>)}</div><div className={s.pagination}><button disabled={page === 0} onClick={() => setPage(page - 1)}>上一页</button><span>{Math.min(page + 1, Math.max(1, Math.ceil(visible.length / 96)))} / {Math.max(1, Math.ceil(visible.length / 96))}</span><button disabled={(page + 1) * 96 >= visible.length} onClick={() => setPage(page + 1)}>下一页</button></div></>}
+        </div> : <><div className={s.comboGrid} role="group" aria-label={`${player} 具体组合列表`}>{visible.slice(Math.min(page, Math.max(0, Math.ceil(visible.length / 96) - 1)) * 96, (Math.min(page, Math.max(0, Math.ceil(visible.length / 96) - 1)) + 1) * 96).map(combo => <button key={combo} aria-label={`选择组合 ${combo}，${stateLabel(combo)}`} aria-pressed={target.includes(combo)} className={target.includes(combo) ? s.comboSelected : ''} disabled={!selectable.includes(combo)} onClick={e => choose([combo], e.ctrlKey || e.metaKey || e.shiftKey)}><ComboCards combo={combo} /><small>{stateLabel(combo)}</small></button>)}</div><div className={s.pagination}><button disabled={page === 0} onClick={() => setPage(page - 1)}>上一页</button><span>{Math.min(page + 1, Math.max(1, Math.ceil(visible.length / 96)))} / {Math.max(1, Math.ceil(visible.length / 96))}</span><button disabled={(page + 1) * 96 >= visible.length} onClick={() => setPage(page + 1)}>下一页</button></div></>}
         <div className={s.selectionTools}><button onClick={() => choose(selectable)}>选择筛选结果（{selectable.length}）</button><button onClick={() => choose([])}>取消选择</button><span>已选 {target.length} · 锁定 {target.filter(combo => locks.has(combo)).length}</span></div>
         <p className={s.fieldHelp}>死牌不可选。权重 0 = 排除；行动 0% = 保留该组合但不采取该行动。未填写独立统计。后续节点尚未建模，未覆盖不视为不可达。</p>
-        {mode === 'policy' && (stats.mass ? <FrequencyBar totals={stats.totals} label="整体行动频率 · 按当前范围权重汇总，未完成组合单独保留" /> : <p className={s.rangeNote}>无可用组合，整体行动频率无数据。请在输入权重中加入组合。</p>)}
+        {mode === 'policy' && (stats.mass ? <FrequencyBar totals={stats.totals} available={actions} label="整体行动频率 · 按当前范围权重汇总，未完成组合单独保留" /> : <p className={s.rangeNote}>无可用组合，整体行动频率无数据。请在输入权重中加入组合。</p>)}
       </section>
       <div className={s.editHistoryBar}><button disabled={dirty || !c.editHistory?.past.length} onClick={() => commands.undo(c.id)}>撤销{c.editHistory?.past.length ? `（${c.editHistory.past.length}）` : ''}</button><button disabled={dirty || !c.editHistory?.future.length} onClick={() => commands.redo(c.id)}>重做</button><span>编辑历史 · 最近 30 步 · Ctrl/⌘ Z</span></div>
       {c.editHistory?.past.length ? <details className={s.editHistoryDetails}><summary>最近编辑：{c.editHistory.past.at(-1)?.label}</summary><ol>{[...c.editHistory.past].reverse().map((entry, i) => <li key={i}>{entry.label}</li>)}</ol><p>这是草稿编辑历史；固定提交在“版本记录”中。</p></details> : null}
@@ -107,15 +108,16 @@ export function StrategyEditor({ c, initialHand, onSelectHand }: { c: StudyCase;
   </div>;
 }
 
-function AllocationInspector({ c, target, heading, mode, player, dirty, setDirty, choose }: { c: StudyCase; target: string[]; heading: string; mode: 'policy' | 'range'; player: 'BTN' | 'BB'; dirty: boolean; setDirty: (value: boolean) => void; choose: (ids: string[]) => void }) {
+function AllocationInspector({ c, target, heading, mode, player, dirty, setDirty, choose }: { c: StudyCase; target: string[]; heading: string; mode: 'policy' | 'range'; player: string; dirty: boolean; setDirty: (value: boolean) => void; choose: (ids: string[]) => void }) {
+  const actions = actionsFor(c.spot);
   const weights = queries.weights(player, c);
   const [values, setValues] = useState(['100', '0', '0']);
   const [weight, setWeight] = useState('100');
   const [revision, setRevision] = useState(c.draft.editRevision);
   const key = target.join(',');
   function load() {
-    const current = average(target, c.draft.choices, weights);
-    setValues(target.some(combo => c.draft.choices[combo]) ? actions.map(a => (Math.round(current[a.id]) / 100).toString()) : ['100', '0', '0']);
+    const current = average(target, c.draft.choices, weights,actions);
+    setValues(target.some(combo => c.draft.choices[combo]) ? actions.map(a => (Math.round(current[a.id]) / 100).toString()) : actions.map((_,i) => i===0 ? '100' : '0'));
     setWeight(target.length ? (target.reduce((sum, combo) => sum + (weights[combo] ?? 0), 0) / target.length / 100).toFixed(2) : '100');
     setRevision(c.draft.editRevision);
   }
@@ -131,8 +133,8 @@ function AllocationInspector({ c, target, heading, mode, player, dirty, setDirty
     if (result.ok) setDirty(false);
   }
   return <aside className={s.inspector}><section className={s.inspectorCard}>
-    <div className={s.inspectorTitle}><span className={s.eyebrow}>{mode === 'policy' ? 'COMBO EDITOR' : 'RANGE INPUT'}</span><span className={s.outlineBadge}>{player}</span></div><div className={s.handHeading}><h2>{label}</h2><span>{target.length} 个可用组合</span></div>
-    {heading !== '批量选择' && <div className={s.comboList}>{handClasses.find(h => h.label === heading)?.combos.map(combo => <button key={combo} disabled={!target.includes(combo) && (c.spot.board.some(card => combo.includes(card)) || (mode === 'policy' && !(weights[combo] > 0)))} aria-label={`选择组合 ${combo}`} onClick={() => choose([combo])}>{combo.slice(0, 2)} / {combo.slice(2)}</button>)}</div>}
+    <div className={s.inspectorTitle}><span className={s.eyebrow}>{mode === 'policy' ? 'COMBO EDITOR' : 'RANGE INPUT'}</span><span className={s.outlineBadge}>{player}</span></div><div className={s.handHeading}><h2>{label}</h2><span>已选 {target.length} 个组合</span></div>
+    {heading !== '批量选择' && <div className={s.comboList}>{handClasses.find(h => h.label === heading)?.combos.map(combo => <button key={combo} disabled={!target.includes(combo) && (c.spot.board.some(card => combo.includes(card)) || (mode === 'policy' && !(weights[combo] > 0)))} aria-label={`选择组合 ${combo}`} onClick={() => choose([combo])}><ComboCards combo={combo} /></button>)}</div>}
     {target.length === 1 && <button className={s.textButton} onClick={() => choose(handClasses.find(h => h.label === heading)!.combos)}>编辑整个 {heading}</button>}
     <div className={s.inspectorDivider} />
     {mode === 'policy' ? <><div className={s.fieldHeading}><b>行动分配</b><span>频率 %</span></div>{actions.map((a, i) => <label className={s.allocationField} key={a.id}><span><i style={{ background: a.color }} />{a.name}</span><div><input type="number" min="0" max="100" step="0.01" value={values[i]} onChange={e => { setDirty(true); setValues(old => old.map((value, j) => i === j ? e.target.value : value)); }} aria-label={`${a.name}频率`} /><span>%</span></div></label>)}<div className={`${s.allocationTotal} ${Math.abs(total - 100) > .001 ? s.invalidTotal : ''}`}><span>合计</span><b>{Number(total.toFixed(2))}%</b></div><p className={s.fieldHelp}>可应用合计未满 100% 的中间草稿；提交时必须合计 100%，不会自动分配剩余概率。混合选择显示加权均值，应用后统一分配给未锁定组合。</p></> : <><label className={s.formField}>输入权重 %<input aria-label="输入权重" type="number" min="0" max="100" step="0.01" value={weight} onChange={e => { setDirty(true); setWeight(e.target.value); }} /></label><p className={s.fieldHelp}>批量选择显示平均权重，应用后统一设置。0 排除、100 完整加入。范围变化会建立输入修订；这不是行动频率。</p></>}

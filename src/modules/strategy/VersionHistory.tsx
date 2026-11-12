@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { commands, queries } from '../../app/workspace';
-import { actions, activeCombos, allCombos, handClasses, handByCombo, policyStats, spotSignature } from '../study/domain';
+import { actionsFor, activeCombos, allCombos, handClasses, handByCombo, policyStats, spotSignature } from '../study/domain';
 import type { PolicyRevision, StudyCase } from '../study/domain';
-import { Board, Dialog, dateTime } from '../../shared/ui';
+import { Board, ComboCards, Dialog, dateTime } from '../../shared/ui';
 import { FrequencyBar } from './RangeVisuals';
 import s from '../../styles/App.module.css';
 
@@ -33,7 +33,7 @@ function VersionComparison({ versions }: { versions: PolicyRevision[] }) {
   const right = versions.find(v => v.id === rightId)!;
   const lw = queries.weights('BTN', left), rw = queries.weights('BTN', right);
   const la = new Set(activeCombos(left.spot, lw)), ra = new Set(activeCombos(right.spot, rw));
-  const changed = (combo: string) => la.has(combo) !== ra.has(combo) || (la.has(combo) && ra.has(combo) && (lw[combo] !== rw[combo] || actions.some(a => left.choices[combo]?.[a.id] !== right.choices[combo]?.[a.id])));
+  const changed = (combo: string) => la.has(combo) !== ra.has(combo) || (la.has(combo) && ra.has(combo) && (lw[combo] !== rw[combo] || [...actionsFor(left.spot),...actionsFor(right.spot)].some(a => left.choices[combo]?.[a.id] !== right.choices[combo]?.[a.id])));
   const union = allCombos.filter(combo => la.has(combo) || ra.has(combo));
   const changedCombos = union.filter(changed);
   const bbChanged = allCombos.some(combo => (queries.weights('BB', left)[combo] ?? 0) !== (queries.weights('BB', right)[combo] ?? 0));
@@ -42,17 +42,17 @@ function VersionComparison({ versions }: { versions: PolicyRevision[] }) {
   const pageIndex = Math.min(page, Math.max(0, Math.ceil(rows.length / 24) - 1));
   const detail = (v: PolicyRevision, combo: string, active: Set<string>) => {
     if (!active.has(combo)) return <span className={s.smallMuted}>{v.spot.board.some(card => combo.includes(card)) ? '死牌' : '范围外 · 权重 0'}</span>;
-    return <span className={s.compareComboValues}><b>权重 {queries.weights('BTN', v)[combo] / 100}%</b><span>{actions.map(a => `${a.short} ${(v.choices[combo][a.id] / 100).toFixed(2)}%`).join(' / ')}</span></span>;
+    return <span className={s.compareComboValues}><b>权重 {queries.weights('BTN', v)[combo] / 100}%</b><span>{actionsFor(v.spot).map(a => `${a.short} ${(v.choices[combo][a.id] / 100).toFixed(2)}%`).join(' / ')}</span></span>;
   };
   return <section className={s.versionComparison}>
     <div className={s.panelHeader}><div><h2>版本差异比较</h2><p>各版按自己的输入范围汇总；组合明细保留权重与三个行动的概率。</p></div></div>
     <div className={s.comparisonSelects}>{[[leftId, setLeft, '基准版本'], [rightId, setRight, '比较版本']].map(([id, set, label]) => <label key={label as string}>{label as string}<select aria-label={label as string} value={id as string} onChange={e => { (set as (id: string) => void)(e.target.value); setPage(0); }}>{versions.map(v => <option key={v.id} value={v.id}>V{v.number}</option>)}</select></label>)}</div>
-    <div className={s.versionTotals}>{[left, right].map((v, i) => { const stats = policyStats(v.spot, queries.weights('BTN', v), v.choices); return <div key={i}><h3>V{v.number}</h3><Board cards={v.spot.board} small /><p>{stats.combos.length} 个组合 · 加权组合量 {(stats.mass / 10000).toFixed(2)}</p><p className={s.smallMuted}>底池 {v.spot.potMinor / v.spot.unitsPerBb} bb · 剩余 {v.spot.stackMinor / v.spot.unitsPerBb} bb</p><code>{v.spot.rangeVersion}</code><FrequencyBar totals={stats.totals} label="按该版本的输入范围加权" /></div>; })}</div>
+    <div className={s.versionTotals}>{[left, right].map((v, i) => { const stats = policyStats(v.spot, queries.weights('BTN', v), v.choices); return <div key={i}><h3>V{v.number}</h3><Board cards={v.spot.board} small /><p>{stats.combos.length} 个组合 · 加权组合量 {(stats.mass / 10000).toFixed(2)}</p><p className={s.smallMuted}>底池 {v.spot.potMinor / v.spot.unitsPerBb} bb · 剩余 {v.spot.stackMinor / v.spot.unitsPerBb} bb</p><code>{v.spot.rangeVersion}</code><FrequencyBar totals={stats.totals} available={actionsFor(v.spot)} label="按该版本的输入范围加权" /></div>; })}</div>
     <p className={s.assistanceNote}>{sameConditions ? '两版输入条件相同，可以比较行动分配。' : `输入条件或范围不同${bbChanged ? '（含 BB 输入范围）' : ''}，此处仅作描述性并排比较，不推断收益优劣。`}</p>
     <div className={s.comparisonCounts}><span>变化 {changedCombos.length}</span><span>新增 {union.filter(combo => !la.has(combo) && ra.has(combo)).length}</span><span>移除 {union.filter(combo => la.has(combo) && !ra.has(combo)).length}</span><span>共同 {union.filter(combo => la.has(combo) && ra.has(combo)).length}</span></div>
     <div className={s.matrix} role="group" aria-label="版本差异矩阵">{handClasses.map(h => { const count = h.combos.filter(combo => changedCombos.includes(combo)).length; return <button key={h.label} disabled={!h.combos.some(combo => union.includes(combo))} className={`${s.matrixCell} ${hand === h.label ? s.cellSelected : ''} ${count ? s.diffCell : ''}`} aria-label={`${h.label}，${count} 个组合变化`} onClick={() => { setHand(hand === h.label ? 'all' : h.label); setPage(0); }}><b>{h.label}</b><span>{count || '·'}</span></button>; })}</div>
     <div className={s.selectionTools}><button onClick={() => { setHand('all'); setPage(0); }}>查看全部牌类</button><label><input type="checkbox" checked={changedOnly} onChange={e => { setChangedOnly(e.target.checked); setPage(0); }} />只看变化</label><span>{hand === 'all' ? '全部牌类' : hand} · {rows.length} 个组合</span></div>
-    <div className={s.comparisonTableWrap}><table className={s.comparisonTable}><thead><tr><th>具体组合</th><th>基准 V{left.number}</th><th>比较 V{right.number}</th></tr></thead><tbody>{rows.slice(pageIndex * 24, (pageIndex + 1) * 24).map(combo => <tr key={combo}><th>{combo}</th><td>{detail(left, combo, la)}</td><td>{detail(right, combo, ra)}</td></tr>)}</tbody></table>{!rows.length && <p className={s.empty}>当前筛选没有组合差异。</p>}</div>
+    <div className={s.comparisonTableWrap}><table className={s.comparisonTable}><thead><tr><th>具体组合</th><th>基准 V{left.number}</th><th>比较 V{right.number}</th></tr></thead><tbody>{rows.slice(pageIndex * 24, (pageIndex + 1) * 24).map(combo => <tr key={combo}><th><ComboCards combo={combo} /></th><td>{detail(left, combo, la)}</td><td>{detail(right, combo, ra)}</td></tr>)}</tbody></table>{!rows.length && <p className={s.empty}>当前筛选没有组合差异。</p>}</div>
     <div className={s.pagination}><button disabled={!pageIndex} onClick={() => setPage(pageIndex - 1)}>上一页</button><span>{pageIndex + 1} / {Math.max(1, Math.ceil(rows.length / 24))}</span><button disabled={(pageIndex + 1) * 24 >= rows.length} onClick={() => setPage(pageIndex + 1)}>下一页</button></div>
   </section>;
 }

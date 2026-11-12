@@ -1,0 +1,18 @@
+import type { Allocation, Choices, JobStatus, RangeInputs, ScenarioId, Spot } from '../study/domain';
+
+export type DemoSettings = { outcome: 'ideal' | 'slow' | 'fail-once' | 'resource-limit' | 'incomplete-quality' | 'unsupported'; speed: 'normal' | 'fast'; fourColor: boolean; execution: 'local' | 'cloud-preview'; role: 'learner' | 'coach'; budget: number };
+export const defaultSettings: DemoSettings = { outcome: 'ideal', speed: 'normal', fourColor: false, execution: 'local', role: 'learner', budget: 12 };
+export type NodeLock = { player: string; nodeId: string; combos: string[]; allocation: Allocation; completion: 'reference' };
+export type ScenarioNode = { id: string; label: string; parent?: string; kind: 'decision' | 'chance' | 'terminal'; via: string; spot: Spot; ranges: RangeInputs; coverage: 'covered' | 'uncovered' | 'unreachable'; reference?: Choices };
+export type Scenario = { id: ScenarioId; title: string; subtitle: string; board: string[]; tags: string[]; description: string; nodes: ScenarioNode[]; preview?: boolean; unit: string };
+export type KnowledgeItem = { id: string; title: string; tags: string[]; claim: string; conditions: string; source: string; scenarioIds: ScenarioId[]; experiment?: boolean };
+export type Mission = { id: string; caseId: string; kind: 'improve' | 'experiment' | 'training'; mode: 'suggest' | 'branch'; status: 'planned' | 'running' | 'paused' | 'completed' | 'cancelled' | 'failed' | 'interrupted' | 'conflict'; expectedRevision: number; budget: number; spent: number; cursor: number; trace: { tool: string; status: string; observation: string; refs: { type: 'case' | 'version' | 'report' | 'knowledge' | 'practice' | 'plan'; id: string; caseId?: string }[] }[]; createdAt: string; branchId?: string; planId?: string; message: string };
+export type ExerciseKind = 'range' | 'branch' | 'diagnosis' | 'comparison';
+export type PracticeSession = { id: string; kind: ExerciseKind; scenarioId: ScenarioId; nodeId: string; sourceCaseId?: string; sourceVersionId?: string; mode: 'independent' | 'assisted'; status: 'answering' | 'feedback' | 'completed'; choices: Choices; answer: string; reason: string; hints: number; revealed: boolean; attempts: Attempt[]; createdAt: string; source?: 'research' | 'plan' | 'library' };
+export type Attempt = { id: string; createdAt: string; choices: Choices; answer: string; reason: string; assisted: boolean; revealed: boolean; difference: number | null; correct: boolean | null; feedback: string; fixtureVersion: string; inputFingerprint: string };
+export type TrainingPlan = { id: string; caseId: string; missionId?: string; title: string; reason: string; exerciseKinds: ExerciseKind[]; sessionIds: string[] };
+export type ImportedHand = { id: string; raw: string; kind: 'complete' | 'incomplete' | 'unknown'; confirmed: boolean; missing: string[]; createdAt: string; decisions: HandDecision[] };
+export type HandDecision = { id: string; label: string; board: string[]; actor: string; potMinor: number; stackMinor: number; actionHistory: string[]; hero: string; future?: string; opponent?: string };
+export type ProductState = { settings: DemoSettings; missions: Record<string, Mission>; sessions: Record<string, PracticeSession>; plans: Record<string, TrainingPlan>; hands: Record<string, ImportedHand> };
+export const emptyProduct = (): ProductState => ({ settings: { ...defaultSettings }, missions: {}, sessions: {}, plans: {}, hands: {} });
+export const runningStatuses: JobStatus[] = ['queued', 'preflight', 'running', 'postprocessing'];

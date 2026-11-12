@@ -8,6 +8,7 @@ test('Hero-first: plan one hand, read the entire recommendation, and preserve th
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/library');
   await page.getByRole('button', { name: '创建研究案例' }).click();
+  await page.getByRole('tab', { name: /Hero 推演/ }).click();
   await expect(page.getByRole('tab', { name: /Hero 推演/ })).toHaveAttribute('aria-selected', 'true');
   await page.getByRole('combobox', { name: 'Hero 具体组合' }).selectOption('AdKd');
   await page.getByRole('group', { name: 'Hero 翻牌行动' }).getByRole('button', { name: '下注 33%', exact: true }).click();
@@ -65,6 +66,7 @@ test('Hero-first: plan one hand, read the entire recommendation, and preserve th
 test('Hero checking moves to turn hypotheses; a changed spot cannot reuse the prior reference', async ({ page }) => {
   await page.goto('/library');
   await page.getByRole('button', { name: '创建研究案例' }).click();
+  await page.getByRole('tab', { name: /Hero 推演/ }).click();
   await page.getByRole('group', { name: 'Hero 翻牌行动' }).getByRole('button', { name: '过牌', exact: true }).click();
   const branches = page.getByRole('combobox', { name: '对手后续假设' });
   await expect(branches.locator('option')).toHaveCount(2);

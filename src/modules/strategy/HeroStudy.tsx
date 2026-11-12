@@ -4,6 +4,7 @@ import { actions, activeCombos, handByCombo, handClasses } from '../study/domain
 import type { Action, Allocation, HeroPlanInput, StudyCase } from '../study/domain';
 import { Board, Dialog, Icon, dateTime, percent } from '../../shared/ui';
 import { ReferenceRange } from './ReferenceRange';
+import { runningStatuses } from '../product/domain';
 import { ReferenceFillButton } from './ReferenceFillButton';
 import s from '../../styles/App.module.css';
 
@@ -33,7 +34,7 @@ export function HeroStudy({ c, onRange }: { c: StudyCase; onRange: (label: strin
   const candidates = active.filter(token => handByCombo[token] === label);
   const refJob = queries.latestReference(c);
   const currentJob = c.jobs.filter(j => j.policyRevisionId === null && j.spotRevisionId === c.spotRevisionId).at(-1);
-  const running = !!currentJob && ['queued', 'running'].includes(currentJob.status);
+  const running = !!currentJob && runningStatuses.includes(currentJob.status);
   const reference = refJob?.result?.reference;
   const refAllocation = reference?.[combo];
   const stats = queries.stats(c);

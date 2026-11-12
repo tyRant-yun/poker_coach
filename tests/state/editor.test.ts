@@ -191,7 +191,9 @@ describe('D02 range revisions and immutable versions', () => {
   });
   it('loads pre-D02 records additively without losing previous Hero plans or reports', async () => {
     const app = await setup();
-    const legacy = snapshotSchema.parse(app.store.getState().data);
+    const oldData = structuredClone(app.store.getState().data);
+    delete oldData.cases[app.id].ranges;
+    const legacy = snapshotSchema.parse(oldData);
     expect(legacy.cases[app.id].draft.lockedCombos).toEqual([]);
     expect(legacy.cases[app.id].ranges).toBeUndefined();
     expect(queries.weights('BTN', legacy.cases[app.id])).toEqual(btnRange);

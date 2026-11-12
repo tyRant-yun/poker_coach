@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { actions, activeCombos, handByCombo, handClasses, policyStats } from '../study/domain';
+import { actionsFor, activeCombos, handByCombo, handClasses, policyStats } from '../study/domain';
 import type { Action, Choices, RangeWeights, Spot } from '../study/domain';
-import { Board, Icon, percent } from '../../shared/ui';
+import { Board, ComboCards, Icon, percent } from '../../shared/ui';
 import { average, cellBackground, FrequencyBar } from './RangeVisuals';
 import s from '../../styles/App.module.css';
 
@@ -15,6 +15,7 @@ type Props = {
 };
 
 export function ReferenceRange({ spot, reference, weights, heroCombo, userChoices, userLabel = '你的分配' }: Props) {
+  const actions = actionsFor(spot);
   const available = useMemo(() => new Set(activeCombos(spot, weights)), [spot, weights]);
   const [label, setLabel] = useState(heroCombo ? handByCombo[heroCombo] : 'AKs');
   const [combo, setCombo] = useState(heroCombo ?? 'AhKh');
@@ -35,7 +36,7 @@ export function ReferenceRange({ spot, reference, weights, heroCombo, userChoice
         <p>点击任一牌类查看具体组合；这份预置演示策略未经真实 Solver 验证。</p></div>
       <span className={s.outlineBadge}>{available.size} 个组合</span>
     </div>
-    <FrequencyBar totals={stats.totals} label="整个范围的参考行动分布" />
+    <FrequencyBar totals={stats.totals} available={actions} label="整个范围的参考行动分布" />
     <div className={s.referenceLayout}>
       <div>
         <div className={s.referenceFilters} aria-label="参考矩阵显示方式">
@@ -45,10 +46,10 @@ export function ReferenceRange({ spot, reference, weights, heroCombo, userChoice
         <div className={`${s.matrix} ${s.referenceMatrix}`} role="group" aria-label="全范围推荐策略矩阵">
           {handClasses.map(h => {
             const combos = h.combos.filter(c => available.has(c) && reference[c]);
-            const value = average(combos, reference, weights);
+            const value = average(combos, reference, weights,actions);
             const selectedClass = h.label === label;
             const isHero = heroCombo && h.label === handByCombo[heroCombo];
-            const color = view === 'all' ? cellBackground(value) : actions.find(a => a.id === view)!.color;
+            const color = view === 'all' ? cellBackground(value,actions) : actions.find(a => a.id === view)!.color;
             return <button key={h.label} disabled={!combos.length} aria-pressed={selectedClass}
               aria-label={`参考 ${h.label}，${combos.length} 个组合${isHero ? '，Hero 所在牌类' : ''}`}
               data-testid={`reference-cell-${h.label}`}
@@ -59,12 +60,12 @@ export function ReferenceRange({ spot, reference, weights, heroCombo, userChoice
             </button>;
           })}
         </div>
-        <div className={s.matrixFoot}><span>蓝：过牌 · 橙：小注 · 紫：大注</span><span>H：Hero 所在牌类</span></div>
+        <div className={s.matrixFoot}><span>{actions.map(a => a.short+' '+a.name).join(' · ')}</span><span>H：Hero 所在牌类</span></div>
       </div>
       <div className={s.referenceDetail}>
         <div className={s.fieldHeading}><b>{label} · 组合明细</b><span>{candidates.length} 个可用组合</span></div>
         <div className={s.comboList}>{candidates.map(c => <button key={c} aria-label={`参考组合 ${c}`} aria-pressed={selected === c}
-          className={selected === c ? s.comboSelected : ''} onClick={() => setCombo(c)}>{c.slice(0, 2)} / {c.slice(2)}{c === heroCombo ? ' · Hero' : ''}</button>)}</div>
+          className={selected === c ? s.comboSelected : ''} onClick={() => setCombo(c)}><ComboCards combo={c} />{c === heroCombo ? ' · Hero' : ''}</button>)}</div>
         {selected && allocation ? <>
           <div className={s.referenceHand}><Board cards={[selected.slice(0, 2), selected.slice(2)]} small />{selected === heroCombo && <span className={s.pill}>当前 Hero</span>}</div>
           <table className={s.referenceTable} aria-label="组合行动频率比较"><thead><tr><th>行动</th><th>模拟参考</th>{userChoices && <th>{userLabel}</th>}</tr></thead>
