@@ -8,7 +8,7 @@
 - `baseline/design-v0.1`：参考研究、产品设计、模块和 mock 约定、开发任务及评审脚本。
 - 后续 `baseline/demo-shell-v0.1`、`baseline/demo-journey-v0.1`、`baseline/demo-review-v0.1`：对应实际完成并验证的里程碑，未完成时不提前创建。
 - 标签创建后不移动；修订使用新标签，例如 `baseline/design-v0.2`。
-- `main` 保存已接受的基线；`demo/development` 用于后续开发。
+- `main` 保存已记录的基线；`demo/development` 用于后续开发。设计基线不等于用户已验收产品。
 
 ## 查看状态与历史
 

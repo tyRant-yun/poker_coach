@@ -25,4 +25,19 @@
 
 回看、恢复和回滚方法见 [Git 工作流](docs/git-workflow.md)。
 
-设计资料入口将在本轮研究完成后补齐。
+## 设计与开发资料
+
+| 文件 | 内容 |
+|---|---|
+| [产品设计](docs/product-design.md) | 产品范围、页面、F01–F18 功能和 J01–J09 旅程 |
+| [参考研究](docs/reference-research.md) | 官方产品文档、GitHub 项目比较、取舍及证据边界 |
+| [模块与集成](docs/demo-architecture.md) | 模块决定权、端口、对象、状态、存储和技术方向 |
+| [Mock 合同](docs/mock-contracts.md) | 真实交互/合成结果边界、S01–S10 场景、故障和结果匹配 |
+| [开发计划](docs/development-plan.md) | 当前状态、D01–D08 任务、依赖与验收 |
+| [演示评审](docs/demo-review.md) | 理想流程、异常恢复、视觉和完整性检查 |
+| [设计决策](docs/decisions.md) | 明确需求、工作默认和留待后续验证的事项 |
+| [Git 工作流](docs/git-workflow.md) | 检查点、无损回看、回滚与本地备份边界 |
+
+建议阅读顺序：产品设计 → 参考研究 → 模块与 Mock 合同 → 开发计划。
+
+设计基线不代表用户已经验收，后续交互评审可以修订。当前没有应用启动命令；D01 创建脚手架后补齐真实命令。

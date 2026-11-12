@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "researchDate": "2026-11-12",
+  "timezone": "Asia/Shanghai",
+  "scope": "Primary documentation and selected GitHub files; no reference application execution, no independent correctness/performance verification.",
+  "githubFiles": [
+    {
+      "repository": "b-inary/desktop-postflop",
+      "path": "README.md",
+      "readLines": "1-135",
+      "fileBlobSha": "d7a06f620eec06330f348ef03a45f8d47d9a2d6d",
+      "url": "https://github.com/b-inary/desktop-postflop/blob/main/README.md",
+      "inspection": "documentation-or-selected-source-only",
+      "executed": false
+    },
+    {
+      "repository": "b-inary/wasm-postflop",
+      "path": "README.md",
+      "readLines": "1-135",
+      "fileBlobSha": "267b442a2d71d3faa84b8889bdab80ede5e25865",
+      "url": "https://github.com/b-inary/wasm-postflop/blob/main/README.md",
+      "inspection": "documentation-or-selected-source-only",
+      "executed": false
+    },
+    {
+      "repository": "bupticybee/TexasSolver",
+      "path": "README.md",
+      "readLines": "1-135",
+      "fileBlobSha": "70ed43b8fdece33eb4da233aad787ba7f52873e2",
+      "url": "https://github.com/bupticybee/TexasSolver/blob/master/README.md",
+      "inspection": "documentation-or-selected-source-only",
+      "executed": false
+    },
+    {
+      "repository": "nicholaschan004/gto-trainer",
+      "path": "README.md",
+      "readLines": "1-135",
+      "fileBlobSha": "2553e310fc3a4230b9c8bbb996226fba8a83e439",
+      "url": "https://github.com/nicholaschan004/gto-trainer/blob/main/README.md",
+      "inspection": "documentation-or-selected-source-only",
+      "executed": false
+    },
+    {
+      "repository": "Wei-D-web/poker-gto-trainer",
+      "path": "README.md",
+      "readLines": "1-135",
+      "fileBlobSha": "35a28594f3f8ea856a5e9e989e6728a3f88bb968",
+      "url": "https://github.com/Wei-D-web/poker-gto-trainer/blob/main/README.md",
+      "inspection": "documentation-or-selected-source-only",
+      "executed": false
+    },
+    {
+      "repository": "uoftcprg/pokerkit",
+      "path": "README.rst",
+      "readLines": "1-110",
+      "fileBlobSha": "02cbac232d684320c239e6a20d7dcf1504684105",
+      "url": "https://github.com/uoftcprg/pokerkit/blob/main/README.rst",
+      "inspection": "documentation-or-selected-source-only",
+      "executed": false
+    },
+    {
+      "repository": "poker-apprentice/hand-history-parser",
+      "path": "README.md",
+      "readLines": "1-125",
+      "fileBlobSha": "5a1b2cada7532b968e084a9286a480c7a7480a7a",
+      "url": "https://github.com/poker-apprentice/hand-history-parser/blob/main/README.md",
+      "inspection": "documentation-or-selected-source-only",
+      "executed": false
+    },
+    {
+      "repository": "b-inary/desktop-postflop",
+      "path": "src/invokes.ts",
+      "readLines": "1-140",
+      "fileBlobSha": "9b576b96506ad4a27b647b7004791ee4f99aebe4",
+      "url": "https://github.com/b-inary/desktop-postflop/blob/main/src/invokes.ts",
+      "inspection": "documentation-or-selected-source-only",
+      "executed": false
+    },
+    {
+      "repository": "b-inary/desktop-postflop",
+      "path": "src/result-types.ts",
+      "readLines": "1-150",
+      "fileBlobSha": "db80241c4e090d644d533c4fb1aa23916f534d8d",
+      "url": "https://github.com/b-inary/desktop-postflop/blob/main/src/result-types.ts",
+      "inspection": "documentation-or-selected-source-only",
+      "executed": false
+    },
+    {
+      "repository": "nicholaschan004/gto-trainer",
+      "path": "src/App.tsx",
+      "readLines": "1-150",
+      "fileBlobSha": "94943a22ba0c5423959f838599882da27fa55f7d",
+      "url": "https://github.com/nicholaschan004/gto-trainer/blob/main/src/App.tsx",
+      "inspection": "documentation-or-selected-source-only",
+      "executed": false
+    },
+    {
+      "repository": "Wei-D-web/poker-gto-trainer",
+      "path": "src/renderer/App.tsx",
+      "readLines": "1-125",
+      "fileBlobSha": "12c3f1e3c6cb74acb88dcbee9eba4b1809302486",
+      "url": "https://github.com/Wei-D-web/poker-gto-trainer/blob/main/src/renderer/App.tsx",
+      "inspection": "documentation-or-selected-source-only",
+      "executed": false
+    },
+    {
+      "repository": "tyRant-yun/riverline-poker-coach",
+      "path": "README.md",
+      "readLines": "1-28",
+      "fileBlobSha": "539b8b4ca1f4d772f0e04321b9f7067ea479a6be",
+      "url": "https://github.com/tyRant-yun/riverline-poker-coach/blob/main/README.md",
+      "inspection": "documentation-or-selected-source-only",
+      "executed": false
+    }
+  ],
+  "officialPages": [
+    {
+      "url": "https://help.gtowizard.com/how-to-use-the-range-builder/",
+      "inspection": "web-documentation",
+      "executed": false
+    },
+    {
+      "url": "https://help.gtowizard.com/how-to-build-custom-solutions/",
+      "inspection": "web-documentation",
+      "executed": false
+    },
+    {
+      "url": "https://help.gtowizard.com/how-to-use-nodelocking/",
+      "inspection": "web-documentation",
+      "executed": false
+    },
+    {
+      "url": "https://react.dev/learn/build-a-react-app-from-scratch",
+      "inspection": "web-documentation",
+      "executed": false
+    },
+    {
+      "url": "https://vite.dev/guide/",
+      "inspection": "web-documentation",
+      "executed": false
+    }
+  ],
+  "priorChatSources": [
+    "https://github.com/tyRant-yun/riverline-poker-coach/blob/main/docs/orchestration/riverline-execution-retrospective.md",
+    "https://github.com/tyRant-yun/riverline-poker-coach/blob/main/docs/adr/0001-mvp-architecture-decisions.md",
+    "https://github.com/tyRant-yun/riverline-poker-coach/blob/main/docs/solver-integration-design.md"
+  ]
+}
