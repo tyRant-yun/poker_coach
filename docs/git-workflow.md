@@ -6,7 +6,8 @@
 
 - `baseline/repo-init`：仓库初始化与工作约定。
 - `baseline/design-v0.1`：参考研究、产品设计、模块和 mock 约定、开发任务及评审脚本。
-- 后续 `baseline/demo-shell-v0.1`、`baseline/demo-journey-v0.1`、`baseline/demo-review-v0.1`：对应实际完成并验证的里程碑，未完成时不提前创建。
+- `baseline/demo-v1-plan-v0.1`：已确认技术方向与待用户审阅的第一版详细任务方案；不代表批准开发。
+- 后续 `baseline/demo-v1-m1`、`baseline/demo-v1-m2`、`baseline/demo-v1-m3`、`baseline/demo-v1.0`：依次对应 D01、D02/D03、D04–D07、D08 的实际完成与验证，未完成时不提前创建。
 - 标签创建后不移动；修订使用新标签，例如 `baseline/design-v0.2`。
 - `main` 保存已记录的基线；`demo/development` 用于后续开发。设计基线不等于用户已验收产品。
 

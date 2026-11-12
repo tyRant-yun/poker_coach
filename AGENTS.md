@@ -2,13 +2,22 @@
 
 ## 当前目标
 
-这是本地、独立的产品 Demo 仓库。用 stub/mock 展示完整的理想产品过程；当前阶段为设计基线与开发准备。以用户本次指令为最高项目范围依据。
+这是本地、独立的产品 Demo 仓库。用 stub/mock 展示完整的理想产品过程；当前阶段为第一版开发任务设计，等待用户审阅。以用户本次指令为最高项目范围依据。
+
+## 当前开发门
+
+用户已确认技术栈，并明确要求“设计完成后等我审阅再开始开发”。当前仅允许设计文档、任务安排、文档检查及 Git 提交/基线操作。
+
+在用户明确审阅通过并允许开始开发之前，不得创建应用源码、package.json、应用 fixture、脚手架或测试实现，不得安装依赖、启动应用或执行 Demo 开发任务。技术栈确认不等于开发授权。
+
+任务审阅入口：`docs/demo-v1-task-design.md`。所有 D01–D08 任务当前都未开始。
 
 ## 开发入口
 
-1. 阅读 `README.md` 与 `docs/development-plan.md` 的当前状态。
+1. 阅读 `README.md`、`docs/development-plan.md` 和本文件的开发门；未通过审阅时停留在设计阶段。
 2. 涉及产品流程时读取 `docs/product-design.md`；涉及状态或接口时读取 `docs/demo-architecture.md` 与 `docs/mock-contracts.md`。
 3. 开发以完整用户旅程为单位，按任务依赖推进。不要只做孤立页面、静态按钮或没有后续成果的聊天。
+4. 技术栈以 `docs/technology-selection.md` 为准；任务范围和验收以 `docs/demo-v1-task-design.md` 为准。
 
 ## Demo 边界
 

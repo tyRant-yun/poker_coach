@@ -1,6 +1,10 @@
 # Riverline Poker Coach — Product Demo
 
-当前阶段：产品设计、参考研究和 Demo 开发准备。尚未创建可运行应用。
+当前阶段：技术栈已确认，第一版 Demo 开发任务设计待用户审阅。尚未创建可运行应用。
+
+**开发门：用户明确要求审阅任务设计后再开始开发。当前只交付设计文档与 Git 审阅基线，不创建源码、不安装依赖、不执行 D01–D08。**
+
+本轮审阅入口：[第一版 Demo 开发任务设计](docs/demo-v1-task-design.md)。
 
 本仓库是独立的新 Demo 工作区，旧项目仅作为研究来源，不克隆其业务实现。
 
@@ -21,7 +25,7 @@
 
 ## Git
 
-主分支为 `main`。首次仓库基线为 `baseline/repo-init`；设计完成后建立 `baseline/design-v0.1`，然后准备 `demo/development` 分支。
+主分支为 `main`。已保存 `baseline/repo-init` 和 `baseline/design-v0.1`；当前分支为 `demo/development`。本轮任务审阅稿保存为 `baseline/demo-v1-plan-v0.1`，该标签不代表开发已经获准。
 
 回看、恢复和回滚方法见 [Git 工作流](docs/git-workflow.md)。
 
@@ -31,13 +35,15 @@
 |---|---|
 | [产品设计](docs/product-design.md) | 产品范围、页面、F01–F18 功能和 J01–J09 旅程 |
 | [参考研究](docs/reference-research.md) | 官方产品文档、GitHub 项目比较、取舍及证据边界 |
+| [已确认技术栈](docs/technology-selection.md) | 技术选择、职责、取舍与实施约束 |
 | [模块与集成](docs/demo-architecture.md) | 模块决定权、端口、对象、状态、存储和技术方向 |
 | [Mock 合同](docs/mock-contracts.md) | 真实交互/合成结果边界、S01–S10 场景、故障和结果匹配 |
+| [第一版开发任务设计](docs/demo-v1-task-design.md) | 待审阅的 8 个任务卡、具体交付、依赖、验收、覆盖与检查点 |
 | [开发计划](docs/development-plan.md) | 当前状态、D01–D08 任务、依赖与验收 |
 | [演示评审](docs/demo-review.md) | 理想流程、异常恢复、视觉和完整性检查 |
 | [设计决策](docs/decisions.md) | 明确需求、工作默认和留待后续验证的事项 |
 | [Git 工作流](docs/git-workflow.md) | 检查点、无损回看、回滚与本地备份边界 |
 
-建议阅读顺序：产品设计 → 参考研究 → 模块与 Mock 合同 → 开发计划。
+本轮建议审阅顺序：第一版开发任务设计 → 已确认技术栈 → 模块与 Mock 合同 → 演示评审脚本。产品范围与旅程可回看产品设计。
 
-设计基线不代表用户已经验收，后续交互评审可以修订。当前没有应用启动命令；D01 创建脚手架后补齐真实命令。
+任务审阅通过后才可开始开发。当前没有应用启动命令；获准后由 D01 创建脚手架并补齐实际命令。

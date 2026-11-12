@@ -1,18 +1,19 @@
-# Demo 模块、集成与状态设计 v0.1
+# Demo 模块、集成与状态设计 v0.2
 
-状态：设计合同，未实现。目标是小型模块化前端，不搭建微服务、消息中间件或真实业务后台。
+状态：技术方案已确认，任务设计待审阅，未实现。目标是小型模块化前端，不搭建微服务、消息中间件或真实业务后台。
 
 ## 1. 技术方向
 
 - React + TypeScript + Vite，客户端单页应用。
 - npm，脚手架时固定依赖并提交 `package-lock.json`，不混用锁文件。
 - React Router 处理页面和案例参数；本地浏览器展示。
-- React Context/reducer 或小型状态存储承载规范化数据；先不用服务端缓存库。
-- 原生 CSS/设计变量、语义 HTML 和 SVG 图表；图标按需使用轻量库。
-- 浏览器本地存储保存小型用户覆盖层，fixture 随包发布。
-- Vitest 验证关键状态机制；Playwright 或可用浏览器工具验证完整旅程。框架版本和可用浏览器在脚手架时核实。
+- Zustand 承载规范化工作区状态，React 局部状态处理瞬时交互；业务修改经应用命令执行。
+- CSS Modules/设计变量、语义 HTML 和 SVG 图表；图标按需使用轻量库。
+- IndexedDB + idb 保存用户案例与制品，localStorage 只保存小型偏好；fixture 随包发布。
+- Zod 校验导入、快照和适配器结果；领域语义另行检查。
+- Vitest 验证关键状态机制；Playwright 验证完整旅程。框架版本和可用浏览器在获准开发后核实。
 
-当前不创建源码、安装依赖或启动服务。暂定包结构见第 8 节。
+当前不创建源码、安装依赖或启动服务。已确认的选择与取舍见 [技术栈决策](technology-selection.md)，待审阅任务见 [第一版任务设计](demo-v1-task-design.md)。暂定包结构见第 8 节。
 
 ## 2. 模块与决定权
 
@@ -58,7 +59,7 @@
 | KnowledgePort | 本地关键词、标签、上下文匹配 | 内容库与检索服务 |
 | AgentPort | 支持意图到任务脚本，不接模型 | LLM 规划与领域工具执行 |
 | ImportPort | 内置样本识别 + 自有 Demo JSON 校验 | 特定牌谱解析器 |
-| PersistencePort | 带 schema 的本地覆盖层 | 用户数据库与制品存储 |
+| PersistencePort | 带 schema 的 IndexedDB 覆盖层与小型偏好 | 用户数据库与制品存储 |
 | ExportPort | 浏览器 JSON/Markdown 文件下载 | 云端报告或共享 |
 
 未来替换适配器时仍需重新验证语义、能力与性能；端口只减少耦合，不保证集成零改动。
@@ -125,7 +126,9 @@ tests/
 
 ## 9. 存储与演示可复现
 
-fixture 不可修改；用户修改以覆盖层保存到 `riverline-demo:v1` 命名空间，带 schemaVersion、fixtureVersion、savedAt 和独立用户状态。
+fixture 不可修改；用户修改以覆盖层保存到 IndexedDB 数据库 `riverline-demo`，带 schemaVersion、fixtureVersion、savedAt 和独立用户状态。localStorage 的 `riverline-demo:prefs:v1` 只保存小型偏好。
+
+案例元数据与相应修订应在同一存储事务中提交。显示“已保存”需要等待成功确认；失败时保留内存状态并明确提示。Zustand 不作为唯一持久化机制，定时器、hover 和原始 fixture 不写入持久化覆盖层。
 
 损坏或版本不兼容时保留原始内容并提供下载与重置入口；配额不足时保留内存状态，提示未保存并允许导出。设置页说明本地保存不等于云备份。
 
