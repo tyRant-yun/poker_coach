@@ -1,0 +1,131 @@
+import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { mkdir, readFile } from 'node:fs/promises';
+
+test.beforeAll(async () => { await mkdir('.artifacts/d01', { recursive: true }); });
+
+async function capture(page: Page, name: string) {
+  const dismiss = page.getByRole('button', { name: '关闭提示' });
+  if (await dismiss.count()) await dismiss.click();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: `.artifacts/d01/${name}.png`, fullPage: true, animations: 'disabled' });
+}
+
+test('D01: create, edit, submit, compare, revise, reload, and recover the original report', async ({ page }) => {
+  const errors: string[] = [];
+  const external: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('request', request => { if (!['127.0.0.1', 'localhost'].includes(new URL(request.url()).hostname)) external.push(request.url()); });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: '每一手牌，都有一个更大的范围。' })).toBeVisible();
+  await capture(page, 'home-1440');
+  await page.getByRole('link', { name: /局面库/ }).first().click();
+  await page.getByRole('button', { name: '创建研究案例' }).click();
+  await expect(page).toHaveURL(/\/study\/case-/);
+  await expect(page.getByRole('group', { name: 'BTN 策略矩阵' })).toBeVisible();
+  await page.getByRole('button', { name: '提交策略', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('尚未分配');
+  await page.getByRole('button', { name: '关闭提示' }).click();
+  await page.getByTestId('cell-AA').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'AA', exact: true })).toBeVisible();
+  await page.getByRole('spinbutton', { name: '过牌频率', exact: true }).fill('50');
+  await page.getByRole('spinbutton', { name: '下注 33%频率', exact: true }).fill('50');
+  await page.getByRole('button', { name: '应用到 3 个组合' }).click();
+  await page.getByRole('button', { name: '其余全部过牌' }).click();
+  await expect(page.getByText('已保存到本地')).toBeVisible();
+  await capture(page, 'study-1440');
+  await page.getByRole('button', { name: '提交策略', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /提交版本/ })).toBeVisible();
+  await page.getByRole('button', { name: '运行模拟分析', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '范围结构反馈' })).toBeVisible();
+  await expect(page.getByText('不为任意自定义策略编造收益')).toBeVisible();
+  await capture(page, 'feedback-1440');
+  const metric = page.locator('div').filter({ has: page.getByText('参考频率差异', { exact: true }) }).filter({ has: page.locator('strong') }).last();
+  const originalDifference = await metric.locator('strong').innerText();
+  await page.getByRole('button', { name: '返回当前草稿修改' }).click();
+  await page.getByRole('spinbutton', { name: '过牌频率', exact: true }).fill('100');
+  await page.getByRole('spinbutton', { name: '下注 33%频率', exact: true }).fill('0');
+  await page.getByRole('button', { name: '应用到 3 个组合' }).click();
+  await page.getByRole('button', { name: '提交策略', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: '查看提交版本' })).toHaveValue(/policy-/);
+  await expect(page.getByText('已保存到本地')).toBeVisible();
+  await page.reload();
+  await page.getByRole('tab', { name: /版本记录/ }).click();
+  await expect(page.getByRole('heading', { name: '范围策略提交' })).toHaveCount(2);
+  await page.getByRole('tab', { name: /参考与反馈/ }).click();
+  await page.getByRole('combobox', { name: '查看提交版本' }).selectOption({ label: 'V1' });
+  await expect(page.getByRole('heading', { name: '范围结构反馈' })).toBeVisible();
+  await expect(page.getByText('不为任意自定义策略编造收益')).toBeVisible();
+  await expect(metric.locator('strong')).toHaveText(originalDifference);
+  await page.getByRole('button', { name: '查看来源与条件' }).click();
+  await expect(page.getByRole('dialog')).toContainText('synthetic');
+  await expect(page.getByRole('dialog')).toContainText('V1');
+  await page.getByRole('button', { name: '返回报告', exact: true }).click();
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await page.getByRole('tab', { name: /范围构建/ }).click();
+  await capture(page, 'study-1280');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: '导出工作区备份' }).click();
+  const download = await downloadPromise;
+  const backup = JSON.parse(await readFile((await download.path())!, 'utf8'));
+  expect(Object.values(backup.cases)).toHaveLength(1);
+  const savedCase = Object.values(backup.cases)[0] as { versions: unknown[]; reports: { dataKind: string }[] };
+  expect(savedCase.versions).toHaveLength(2);
+  expect(savedCase.reports[0].dataKind).toBe('synthetic');
+  expect(errors).toEqual([]);
+  expect(external).toEqual([]);
+});
+
+test('D01: a custom spot is preserved without borrowing a different result', async ({ page }) => {
+  await page.goto('/library');
+  await page.getByRole('button', { name: '创建研究案例' }).click();
+  await page.getByRole('button', { name: '局面条件' }).click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: '局面条件' })).toBeFocused();
+  await page.getByRole('button', { name: '局面条件' }).click();
+  await page.getByRole('spinbutton', { name: '底池 bb' }).fill('6.5');
+  await page.getByRole('button', { name: '建立修订并清空草稿' }).click();
+  await page.getByRole('button', { name: '其余全部过牌' }).click();
+  await page.getByRole('button', { name: '提交策略', exact: true }).click();
+  await page.getByRole('button', { name: '运行模拟分析', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '这组输入还没有演示结果' })).toBeVisible();
+  await expect(page.getByText('当前条件没有匹配参考')).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: '这组输入还没有演示结果' })).toBeVisible();
+});
+
+test('D01: explicitly loading an authored example enables its bound report and restores as a separate draft', async ({ page }) => {
+  await page.goto('/library');
+  await page.getByRole('button', { name: '创建研究案例' }).click();
+  await page.getByRole('button', { name: '载入示例分配', exact: true }).click();
+  await expect(page.getByRole('dialog')).toContainText('并非真实 Solver 策略');
+  await page.getByRole('button', { name: '确认载入' }).click();
+  await expect(page.getByText('已保存到本地')).toBeVisible();
+  await capture(page, 'example-strategy-1440');
+  await page.getByRole('button', { name: '提交策略', exact: true }).click();
+  await page.getByRole('button', { name: '运行模拟分析', exact: true }).click();
+  await expect(page.getByText('仅绑定该预置策略的合成收益')).toBeVisible();
+  await expect(page.locator('strong').filter({ hasText: '2.04' })).toBeVisible();
+  await page.getByRole('button', { name: '返回当前草稿修改' }).click();
+  await page.getByRole('button', { name: '清空草稿', exact: true }).click();
+  await page.getByRole('button', { name: '确认清空' }).click();
+  await page.getByRole('tab', { name: /版本记录/ }).click();
+  await page.getByRole('button', { name: '恢复为草稿' }).click();
+  await page.getByRole('button', { name: '建立新草稿' }).click();
+  await expect(page.getByText(/569 \/ 569 个组合已完成/)).toBeVisible();
+  await page.getByRole('tab', { name: /版本记录/ }).click();
+  await expect(page.getByRole('heading', { name: '范围策略提交' })).toHaveCount(1);
+});
+
+test('D01: unavailable browser storage keeps a working memory session with an honest status', async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(window, 'indexedDB', { get() { throw new Error('storage unavailable'); } }));
+  await page.goto('/library');
+  await expect(page.getByText('仅内存模式')).toBeVisible();
+  await page.getByRole('button', { name: '创建研究案例' }).click();
+  await page.getByRole('button', { name: '其余全部过牌' }).click();
+  await page.getByRole('button', { name: '提交策略', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /提交版本/ })).toBeVisible();
+  await expect(page.getByText('已保存到本地')).toHaveCount(0);
+});

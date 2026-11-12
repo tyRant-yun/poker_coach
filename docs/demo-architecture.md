@@ -1,6 +1,6 @@
 # Demo 模块、集成与状态设计 v0.2
 
-状态：技术方案已确认，任务设计待审阅，未实现。目标是小型模块化前端，不搭建微服务、消息中间件或真实业务后台。
+状态：技术方案已确认，D01 已实现最小纵向闭环；其余模块仍为设计。目标是小型模块化前端，不搭建微服务、消息中间件或真实业务后台。
 
 ## 1. 技术方向
 
@@ -13,7 +13,7 @@
 - Zod 校验导入、快照和适配器结果；领域语义另行检查。
 - Vitest 验证关键状态机制；Playwright 验证完整旅程。框架版本和可用浏览器在获准开发后核实。
 
-当前不创建源码、安装依赖或启动服务。已确认的选择与取舍见 [技术栈决策](technology-selection.md)，待审阅任务见 [第一版任务设计](demo-v1-task-design.md)。暂定包结构见第 8 节。
+已确认的选择与取舍见 [技术栈决策](technology-selection.md)，任务见 [第一版任务设计](demo-v1-task-design.md)。D01 实际实现见 [交付记录](d01-delivery.md)，后续包结构见第 8 节。
 
 ## 2. 模块与决定权
 
@@ -103,7 +103,9 @@ Agent：planned → running → completed / failed / cancelled；显式暂停为
 
 刷新恢复：业务快照保留；尚未完成的 mock 作业和任务改为 interrupted，不假装后台继续运行，用户可重放或重试。完成制品保持可查看。
 
-## 8. 拟议目录（尚未创建）
+## 8. 目录规划与实际子集
+
+D01 已创建 app、study/domain、strategy、shared、ports、mocks、fixtures、persistence、styles 和对应测试。下图中的 knowledge、review、learning、agent 等属于后续规划，当前没有空实现冒充功能。
 
 ```text
 src/
