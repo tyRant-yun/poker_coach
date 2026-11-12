@@ -24,7 +24,8 @@ export function Study() {
   const [confirm, setConfirm] = useState<'example' | 'clear' | null>(null);
   if (!c) return <div className={s.emptyCard}><h1>没有找到这个研究案例</h1><p>案例可能保存在另一个浏览器中。</p><Link to="/library" className={s.primaryButton}>返回局面库</Link></div>;
   const stats = queries.stats(c);
-  const version = c.versions.find(v => v.id === params.get('version')) ?? c.versions.at(-1);
+  const requestedReport=c.reports.find(r=>r.id===params.get('report'));
+  const version = c.versions.find(v => v.id === (params.get('version')??requestedReport?.policyRevisionId)) ?? c.versions.at(-1);
   const changeTab = (view: string, versionId?: string) => setParams({ view, ...(versionId ? { version: versionId } : {}) });
   function submit() {
     const result = commands.submitPolicy(caseId);
@@ -41,16 +42,16 @@ export function Study() {
     {tab === 'hero' && c.spot.board.length===3 && actionsFor(c.spot).every(a=>['check','bet33','bet75'].includes(a.id)) && <HeroStudy key={c.id + c.spotRevisionId} c={c} onRange={label => { setSelected(label); changeTab('strategy'); }} />}
     {tab === 'strategy' && c.draft.assistance && <p className={s.assistanceNote}><Icon name="info" size={14} />当前草稿包含示例参考辅助，不作为独立范围训练的证据。</p>}
     {tab === 'strategy' && <div><StrategyEditor key={c.id} c={c} initialHand={selected} onSelectHand={setSelected} /><section className={s.submitBar}><div><span className={s.coverageRing} style={{ background: `conic-gradient(#76d6b3 ${stats.coverage * 360}deg,#34404a 0)` }}><span>{Math.round(stats.coverage * 100)}<small>%</small></span></span><div><b>你的范围构建</b><p>{stats.filled} / {stats.combos.length} 个组合已完成{stats.invalid ? ` · ${stats.invalid} 个频率待修正` : ''}</p></div></div><button className={s.primaryButton} onClick={submit}>提交策略 <Icon name="arrow" size={16} /></button></section><div className={s.inlineTools}><button onClick={() => commands.fillRemaining(caseId)}><Icon name="check" size={14} />{actionsFor(c.spot)[0]?.id==='check'?'其余全部过牌':`其余全部${actionsFor(c.spot)[0]?.name??'填写'}`}</button><button onClick={() => setConfirm('example')}>载入示例分配</button><button onClick={() => setConfirm('clear')}>清空草稿</button><span>提交版本将独立保存</span></div></div>}
-    {tab === 'feedback' && <Feedback c={c} version={version} onVersion={id => changeTab('feedback', id)} onEdit={() => changeTab('strategy')} />}
+    {tab === 'feedback' && <Feedback c={c} reportId={requestedReport?.id} version={version} onVersion={id => changeTab('feedback', id)} onEdit={() => changeTab('strategy')} />}
     {tab === 'history' && <VersionHistory c={c} onOpen={id => changeTab('feedback', id)} onRestore={id => { commands.restoreAsDraft(caseId, id); changeTab('strategy'); }} />}
     {conditions && <Conditions c={c} onClose={() => setConditions(false)} />}
     {confirm && <Dialog title={confirm === 'example' ? '载入示例分配' : '清空当前草稿'} onClose={() => setConfirm(null)}><div className={s.dialogBody}><p>{confirm === 'example' ? '将未锁定的分配替换为作者编写的完整示例分配。它用于演示比较，并非真实 Solver 策略。' : '移除当前草稿未锁定的行动分配。已经提交的版本和报告不会被删除。'}</p><div className={s.dialogActions}><button className={s.secondaryButton} onClick={() => setConfirm(null)}>保留当前草稿</button><button className={s.primaryButton} onClick={() => { if (confirm === 'example') commands.loadExample(caseId); else commands.clearDraft(caseId); setConfirm(null); }}>确认{confirm === 'example' ? '载入' : '清空'}</button></div></div></Dialog>}
   </div>;
 }
-function Feedback({ c, version, onVersion, onEdit }: { c: StudyCase; version?: PolicyRevision; onVersion: (id: string) => void; onEdit: () => void }) {
+function Feedback({ c, version, onVersion, onEdit, reportId }: { reportId?:string; c: StudyCase; version?: PolicyRevision; onVersion: (id: string) => void; onEdit: () => void }) {
   const [source, setSource] = useState(false);
-  const job = c.jobs.filter(j => j.policyRevisionId === version?.id).at(-1);
-  const report = c.reports.filter(r => r.policyRevisionId === version?.id).at(-1);
+  const report = c.reports.find(r=>r.id===reportId&&r.policyRevisionId===version?.id)??c.reports.filter(r => r.policyRevisionId === version?.id).at(-1);
+  const job = reportId?c.jobs.find(j=>j.id===report?.jobId):c.jobs.filter(j => j.policyRevisionId === version?.id).at(-1);
   const output = c.jobs.find(j => j.id === report?.jobId)?.result;
   const running = !!job && runningStatuses.includes(job.status);
   if (!version) {

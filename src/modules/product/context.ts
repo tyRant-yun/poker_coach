@@ -5,7 +5,7 @@ export type ProductContext = {
   getCase(id: string): StudyCase | undefined; replaceCase(c: StudyCase): void;
   editCase(c: StudyCase,next: StudyCase,label: string): void;
   fail<T = undefined>(message: string): Result<T>; notice(text: string,kind?: 'success'|'info'): void; stopAll(): void;
-  base: { createCase(name?: string,scenarioId?: ScenarioId): Result<string>; submitPolicy(id: string): Result<string>; loadExample(id: string): Result; editPolicy(id: string,combos: string[],allocation: Allocation,revision: number): Result; forkVersion(id: string,version: string,name: string): Result<string>; requestSolve(id: string,version: string): Promise<Result<string>>; requestReference(id: string): Promise<Result<string>>; flushSaves(): Promise<void> };
+  base: { createCase(name?: string,scenarioId?: ScenarioId): Result<string>; submitPolicy(id: string): Result<string>; loadExample(id: string): Result; editPolicy(id: string,combos: string[],allocation: Allocation,revision: number): Result; forkVersion(id: string,version: string,name: string): Result<string>; requestSolve(id: string,version: string): Promise<Result<string>>; requestReference(id: string): Promise<Result<string>>; cancelJob(caseId:string,jobId:string):void; flushSaves(): Promise<void> };
 };
 export const uid = (prefix: string) => `${prefix}-${crypto.randomUUID().slice(0,12)}`;
 export const now = () => new Date().toISOString();

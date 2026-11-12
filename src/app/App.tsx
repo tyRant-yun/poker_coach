@@ -1,11 +1,18 @@
-import { Component, lazy, Suspense, useEffect, useState } from 'react';
+import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
-import { Link, NavLink, Route, Routes, useBlocker, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Route, Routes, useBlocker, useLocation, useNavigate } from 'react-router-dom';
 import { commands, queries, useWorkspace } from './workspace';
 import { Board, Dialog, Icon, dateTime } from '../shared/ui';
 import s from '../styles/App.module.css';
 import { Settings } from '../modules/product/Settings';
 const Study = lazy(() => import('../modules/strategy/Study').then(module => ({ default: module.Study })));
+
+const PracticeHub = lazy(()=>import('../modules/product/LearningPages').then(m=>({default:m.PracticeHub})));
+const PracticeSessionPage = lazy(()=>import('../modules/product/LearningPages').then(m=>({default:m.PracticeSessionPage})));
+const Progress = lazy(()=>import('../modules/product/LearningPages').then(m=>({default:m.Progress})));
+const Knowledge = lazy(()=>import('../modules/product/Knowledge').then(m=>({default:m.Knowledge})));
+const AgentCenter = lazy(()=>import('../modules/product/AgentPanel').then(m=>({default:m.AgentCenter})));
+const AgentPanel = lazy(()=>import('../modules/product/AgentPanel').then(m=>({default:m.AgentPanel})));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: boolean }> {
   state = { error: false };
@@ -29,6 +36,12 @@ export function App() {
   const hasCases = useWorkspace(st => Object.keys(st.data.cases).length > 0);
   const [about, setAbout] = useState(false);
   const blocker = useBlocker(pendingInput);
+  const location = useLocation();
+  const [agentOpen,setAgentOpen] = useState(false);
+  const activePractice = location.pathname.startsWith('/practice/')?location.pathname.split('/')[2]:undefined;
+  const currentCase = location.pathname.startsWith('/study/')?location.pathname.split('/')[2]:undefined;
+  const lastPractice = useRef<string|undefined>(undefined);
+  useEffect(()=>{if(activePractice)lastPractice.current=activePractice;else if(lastPractice.current&&/^\/(study|knowledge|agent)(\/|$)/.test(location.pathname)){const session=queries.learning(queries.snapshot()).practice(lastPractice.current);if(session?.status==='answering'&&session.mode==='independent')commands.practiceHint(session.id);}},[activePractice,location.pathname]);
   useEffect(() => { void commands.initialize(); }, []);
   useEffect(() => {
     if (!notice || notice.kind === 'error') return;
@@ -50,6 +63,10 @@ export function App() {
       <nav className={s.nav} aria-label="主导航">
         <NavLink to="/" end className={({ isActive }) => isActive ? s.navActive : ''}><Icon name="home" />工作台</NavLink>
         <NavLink to="/library" className={({ isActive }) => isActive ? s.navActive : ''}><Icon name="grid" />局面库<span className={s.navCount}>10</span></NavLink>
+        <NavLink to="/practice" className={({isActive})=>isActive?s.navActive:''}><Icon name="play"/>训练中心</NavLink>
+        <NavLink to="/knowledge" className={({isActive})=>isActive?s.navActive:''}><Icon name="bookmark"/>理论知识</NavLink>
+        <NavLink to="/agent" className={({isActive})=>isActive?s.navActive:''}><Icon name="layers"/>Agent 任务</NavLink>
+        <NavLink to="/progress" className={({isActive})=>isActive?s.navActive:''}><Icon name="report"/>学习记录</NavLink>
         <NavLink to="/settings" className={({ isActive }) => isActive ? s.navActive : ''}><Icon name="sliders" />演示设置</NavLink>
         <NavLink to="/reports" className={({ isActive }) => isActive ? s.navActive : ''}><Icon name="report" />研究记录</NavLink>
       </nav>
@@ -57,11 +74,12 @@ export function App() {
       <div className={s.sidebarBottom}><button onClick={() => setAbout(true)}><Icon name="info" />关于这版演示</button><div className={s.localStatus}><span className={saveStatus === 'saved' ? s.greenDot : s.amberDot} />{pendingInput ? '输入尚未应用' : saveLabels[saveStatus]}</div><span className={s.buildLabel}>RIVERLINE · PRODUCT DEMO</span></div>
     </aside>
     <div className={s.mainShell}>
-      <header className={s.topbar}><div className={s.breadcrumb}>Riverline <span>/</span> 策略研究工作台</div><div className={s.topbarRight}><span className={s.demoBadge}><span />本地演示</span><button className={s.iconButton} onClick={downloadBackup} title="导出当前工作区备份" aria-label="导出工作区备份"><Icon name="download" /></button><span className={s.avatar}>R</span></div></header>
+      <header className={s.topbar}><div className={s.breadcrumb}>Riverline <span>/</span> 策略研究工作台</div><div className={s.topbarRight}><button className={s.secondaryButton} onClick={()=>setAgentOpen(true)}>Agent 助手</button><span className={s.demoBadge}><span />本地演示</span><button className={s.iconButton} onClick={downloadBackup} title="导出当前工作区备份" aria-label="导出工作区备份"><Icon name="download" /></button><span className={s.avatar}>R</span></div></header>
       {storageError && <div className={s.storageWarning} role="status"><Icon name="info" />{storageError}<button onClick={downloadBackup}>导出备份</button>{saveStatus === 'error' && <button onClick={commands.retrySave}>重试保存</button>}</div>}
-      {hydrated ? <main className={s.main}><Suspense fallback={<div className={s.loading}>正在打开研究视图…</div>}><Routes><Route path="/" element={<Home />} /><Route path="/library" element={<Library />} /><Route path="/study/:caseId" element={<Study />} /><Route path="/reports" element={<Reports />} /><Route path="/settings" element={<Settings/>}/><Route path="*" element={<div className={s.empty}><h1>这个页面还没有建立</h1><Link to="/">回到工作台</Link></div>} /></Routes></Suspense></main> : <div className={s.loading}><span className={s.spinner} />正在打开你的工作空间…</div>}
+      {hydrated ? <main className={s.main}><Suspense fallback={<div className={s.loading}>正在打开研究视图…</div>}><Routes><Route path="/" element={<Home />} /><Route path="/library" element={<Library />} /><Route path="/study/:caseId" element={<Study />} /><Route path="/reports" element={<Reports />} /><Route path="/settings" element={<Settings/>}/><Route path="/practice" element={<PracticeHub/>}/><Route path="/practice/:sessionId" element={<PracticeSessionPage/>}/><Route path="/progress" element={<Progress/>}/><Route path="/knowledge" element={<Knowledge/>}/><Route path="/agent" element={<AgentCenter/>}/><Route path="*" element={<div className={s.empty}><h1>这个页面还没有建立</h1><Link to="/">回到工作台</Link></div>} /></Routes></Suspense></main> : <div className={s.loading}><span className={s.spinner} />正在打开你的工作空间…</div>}
     </div>
     {notice && <div className={`${s.toast} ${notice.kind === 'error' ? s.errorToast : ''}`} role={notice.kind === 'error' ? 'alert' : 'status'}><Icon name={notice.kind === 'error' ? 'info' : 'check'} /><span>{notice.text}</span><button onClick={commands.dismissNotice} aria-label="关闭提示"><Icon name="close" size={16} /></button></div>}
+    {agentOpen&&<Dialog title="Agent 助手与工具轨迹" onClose={()=>setAgentOpen(false)}><Suspense fallback={<div className={s.dialogBody}>正在打开任务…</div>}><AgentPanel caseId={currentCase} practiceId={activePractice} onClose={()=>setAgentOpen(false)}/></Suspense></Dialog>}
     {about && <Dialog title="关于这版演示" onClose={() => setAbout(false)}><div className={s.dialogBody}><span className={s.demoBadge}>D02 · 范围编辑与版本比较</span><p>可以从 Hero 推演进入全范围，筛选、多选、批量混频、锁定、撤销、修订输入权重、提交、比较与建立分支。编辑、版本和本地保存真实工作。</p><p>范围、参考策略与收益数值由作者编写，均为合成示例，没有连接真实 Solver 或 AI 模型。</p><p>当前提供 S01。完整 Agent、连续策略和训练仍在后续轮次；Hero 自定义尺度和混合频率留待完整产品。</p><p className={s.muted}>数据保存在当前浏览器，不能替代独立备份。可以通过右上角导出 JSON。</p><button className={s.primaryButton} onClick={() => setAbout(false)}>了解，继续研究</button></div></Dialog>}
     {blocker.state === 'blocked' && <Dialog title="还有尚未应用的输入" onClose={() => blocker.reset()}><div className={s.dialogBody}><p>频率或权重输入尚未写入草稿。离开会放弃这些输入，已应用并保存的草稿仍保留。</p><div className={s.dialogActions}><button className={s.secondaryButton} onClick={() => blocker.reset()}>继续编辑</button><button className={s.primaryButton} onClick={() => { commands.setPendingInput(false); blocker.proceed(); }}>放弃输入并离开</button></div></div></Dialog>}
   </div></ErrorBoundary>;
@@ -99,5 +117,5 @@ function Library() {
 function Reports() {
   const cases = useWorkspace(st => st.data.cases);
   const rows = Object.values(cases).flatMap(c => c.reports.map(r => ({ c, r, v: c.versions.find(v => v.id === r.policyRevisionId)! }))).sort((a, b) => b.r.createdAt.localeCompare(a.r.createdAt));
-  return <div className={s.page}><div className={s.pageHeading}><div><span className={s.eyebrow}>RESEARCH RECORDS</span><h1>把每次修订，留成可回看的证据。</h1><p>报告始终引用提交时的局面与策略版本。</p></div><span className={s.outlineBadge}>{rows.length} 份报告</span></div>{rows.length ? <div className={s.recordList}>{rows.map(({ c, r, v }) => <Link className={s.recordRow} to={`/study/${c.id}?view=feedback&version=${v.id}`} key={r.id}><div className={s.recordIcon}><Icon name="report" /></div><div><h3>{c.name} <span className={s.versionPill}>V{v.number}</span></h3><p>{dateTime(r.createdAt)} · 合成参考 · {r.difference === null ? '未覆盖的自定义输入' : `频率差异 ${(r.difference * 100).toFixed(1)}%`}</p></div><Board cards={v.spot.board} small /><Icon name="chevron" /></Link>)}</div> : <div className={s.emptyCard}><Icon name="report" size={28} /><h3>还没有研究报告</h3><p>提交一份完整策略并运行模拟分析，报告就会出现在这里。</p><Link className={s.secondaryButton} to="/library">选择局面 <Icon name="arrow" size={16} /></Link></div>}</div>;
+  return <div className={s.page}><div className={s.pageHeading}><div><span className={s.eyebrow}>RESEARCH RECORDS</span><h1>把每次修订，留成可回看的证据。</h1><p>报告始终引用提交时的局面与策略版本。</p></div><span className={s.outlineBadge}>{rows.length} 份报告</span></div>{rows.length ? <div className={s.recordList}>{rows.map(({ c, r, v }) => <Link className={s.recordRow} to={`/study/${c.id}?view=feedback&version=${v.id}&report=${r.id}`} key={r.id}><div className={s.recordIcon}><Icon name="report" /></div><div><h3>{c.name} <span className={s.versionPill}>V{v.number}</span></h3><p>{dateTime(r.createdAt)} · 合成参考 · {r.difference === null ? '未覆盖的自定义输入' : `频率差异 ${(r.difference * 100).toFixed(1)}%`}</p></div><Board cards={v.spot.board} small /><Icon name="chevron" /></Link>)}</div> : <div className={s.emptyCard}><Icon name="report" size={28} /><h3>还没有研究报告</h3><p>提交一份完整策略并运行模拟分析，报告就会出现在这里。</p><Link className={s.secondaryButton} to="/library">选择局面 <Icon name="arrow" size={16} /></Link></div>}</div>;
 }

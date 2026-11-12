@@ -59,6 +59,8 @@ branch('S02-check-turn','S02-check-deal','转牌 · 面对下注','K♦ · BB B7
 branch('S02-fold','S02-bb','BB 弃牌 · 本手结束','BB 弃牌',['As','7d','2c'],'BTN',[],'terminal');
 branch('S02-unknown','S02-deal','其他转牌 · 未覆盖','5♣',['As','7d','2c','5c'],'BTN',actions,'decision','uncovered');
 branch('S02-unreachable','S02-fold','终局之后没有行动','无后续决策',['As','7d','2c'],'BTN',[],'terminal','unreachable');
+const transferTurnSpot: Spot = {...clone(scenarios[2].nodes[0].spot),nodeId:'S03-turn',board:['Kc','8d','3s','Th'],potMinor:910,stackMinor:9570};
+scenarios[2].nodes.push({id:'S03-turn',parent:'S03-root',label:'迁移转牌节点',via:'双方过牌 → T♥',kind:'decision',coverage:'covered',spot:transferTurnSpot,ranges:clone(scenarios[2].nodes[0].ranges),reference:authoredReference(transferTurnSpot,scenarios[2].nodes[0].ranges,39)});
 export function scenarioFor(id: string) { return scenarios.find(s => s.id === id); }
 export function nodeFor(spot: Spot): ScenarioNode | undefined {
   if (!spot.nodeId) return scenarioFor('S01')!.nodes[0];

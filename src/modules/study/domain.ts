@@ -115,6 +115,7 @@ export type StudyCase = {
   origin?: { handId: string; decisionId: string };
   experiment?: { baselineCaseId: string; baselineVersionId: string; variant: string; lock: import('../product/domain').NodeLock };
   favorite?: boolean;
+  agentSource?: {missionId:string;sourceCaseId:string;editRevision:number};
   createdAt: string;
   updatedAt: string;
   spotRevisionId: string;

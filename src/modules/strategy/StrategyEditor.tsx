@@ -65,7 +65,7 @@ export function StrategyEditor({ c, initialHand, onSelectHand }: { c: StudyCase;
     window.addEventListener('keydown', keyboard);
     return () => window.removeEventListener('keydown', keyboard);
   }, [c.id, dirty]);
-  useEffect(() => { commands.setPendingInput(dirty); return () => commands.setPendingInput(false); }, [dirty]);
+  useEffect(() => { commands.setPendingInput(dirty,c.id); return () => commands.setPendingInput(false); }, [dirty]);
   useEffect(() => { setPage(0); }, [category, suit, status, mode, player]);
   const stateLabel = (combo: string) => dead(combo) ? '死牌' : !live.has(combo) ? '权重 0 · 排除' : mode === 'range' ? `权重 ${(weights[combo] ?? 0) / 100}%` : !c.draft.choices[combo] ? '未填写' : !validAllocation(c.draft.choices[combo],actions) ? '待修正' : locks.has(combo) ? '已锁定' : '已分配';
   return <div className={`${s.editorLayout} ${focus ? s.editorFocus : ''}`}>

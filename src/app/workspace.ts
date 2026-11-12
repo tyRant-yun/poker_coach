@@ -8,6 +8,8 @@ import { indexedDbRepository } from '../persistence/indexed-db';
 import { createMockSolver } from '../mocks/solver';
 import { descendants, matchingReference, scenarios, scenarioFor } from '../fixtures/scenarios';
 import { emptyProduct, runningStatuses } from '../modules/product/domain';
+import { createLearningCommands, learningQueries } from '../modules/product/learning';
+import { createAgentCommands } from '../modules/product/agent';
 import { createResearchCommands, researchQueries } from '../modules/product/research';
 
 type Result<T = undefined> = { ok: true; value: T } | { ok: false; message: string };
@@ -19,6 +21,7 @@ type State = {
   storageError: string | null;
   notice: { text: string; kind: 'success' | 'error' | 'info' } | null;
   pendingInput: boolean;
+  pendingInputCaseId: string | null;
 };
 const uid = (prefix: string) => prefix + '-' + crypto.randomUUID().slice(0, 8);
 const now = () => new Date().toISOString();
@@ -33,7 +36,7 @@ function editable(c: StudyCase): EditableSnapshot {
 }
 
 export function createWorkspace(repository: WorkspaceRepository, solver: SolverPort) {
-  const store = createStore<State>()(() => ({ data: emptyData(), hydrated: false, saveStatus: 'loading', savedAt: null, storageError: null, notice: null, pendingInput: false }));
+  const store = createStore<State>()(() => ({ data: emptyData(), hydrated: false, saveStatus: 'loading', savedAt: null, storageError: null, notice: null, pendingInput: false, pendingInputCaseId: null }));
   let initializePromise: Promise<void> | null = null;
   let queue: Promise<void> = Promise.resolve();
   let mutation = 0;
@@ -145,7 +148,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
     },
     dismissNotice() { store.setState({ notice: null }); },
     showInfo(text: string) { notice(text, 'info'); },
-    setPendingInput(value: boolean) { store.setState({ pendingInput: value }); },
+    setPendingInput(value: boolean,caseId?:string) { store.setState({ pendingInput: value,pendingInputCaseId:value?caseId??null:null }); },
     retrySave() { if (persistenceEnabled) persist(); },
     createCase(name = 'BTN vs BB · 翻牌研究', scenarioId: ScenarioId = 'S01'): Result<string> {
       if (!store.getState().hydrated) return fail('工作区尚未载入。');
@@ -217,7 +220,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
     submitPolicy(caseId: string): Result<string> {
       const c = getCase(caseId);
       if (!c) return fail('案例不存在。');
-      if (store.getState().pendingInput) return fail('还有尚未应用的频率或权重输入，请先应用或放弃输入再提交。');
+      if (store.getState().pendingInput && (!store.getState().pendingInputCaseId || store.getState().pendingInputCaseId === caseId)) return fail('还有尚未应用的频率或权重输入，请先应用或放弃输入再提交。');
       const error = validateSubmission(c.spot, weightsFor(c), c.draft.choices);
       if (error) return fail(error);
       const last = c.versions.at(-1);
@@ -391,7 +394,9 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
   };
   const context = { getData:() => store.getState().data, replaceData, getCase, replaceCase, editCase, fail, notice, base:commands, stopAll:() => { controllers.forEach(c => c.abort()); skipControllers.forEach(c => c.abort()); } };
   const research = createResearchCommands(context);
-  return { store, commands:{...commands,...research} };
+  const learning = createLearningCommands(context);
+  const agent = createAgentCommands(context,research,learning);
+  return { store, commands:{...commands,...research,...learning,...agent} };
 }
 
 const workspace = createWorkspace(indexedDbRepository, createMockSolver());
@@ -400,6 +405,7 @@ export const useWorkspace = <T,>(selector: (state: State) => T): T => useStore(w
 export const queries = {
   catalogue: () => scenarios.map(({nodes,...item}) => ({...item,board:nodes[0].spot.board})),
   ...researchQueries,
+  learning: learningQueries,
   weights: (player: string = 'BTN', context?: { ranges?: RangeInputs }) => rangesFor(context)[player],
   stats: (c: StudyCase) => policyStats(c.spot, weightsFor(c), c.draft.choices),
   snapshot: () => copy(workspace.store.getState().data),
