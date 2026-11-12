@@ -1,6 +1,6 @@
-# 产品功能模块划分 v0.1
+# 产品功能模块划分 v0.2
 
-日期：2026-11-12。状态：整体产品设计建议稿，未实施本次模块重组。由用户“拆分一下功能模块”形成；不改变 `baseline/teaching-t1.0` 的交付范围和结果。本文不把源码文件夹、导航页面、外部 Solver 品牌或 Agent 名称直接当成业务模块。
+日期：2026-11-12。状态：整体产品设计建议稿，未实施本次模块重组。v0.1 由用户“拆分一下功能模块”形成，v0.2 根据“为什么不是所有功能都集成为 MCP 可以供 Agent 调用”补充完整 Agent 工具面；不改变 `baseline/teaching-t1.0` 的交付范围和结果。本文不把源码文件夹、导航页面、外部 Solver 品牌或 Agent 名称直接当成业务模块。
 
 目标：把扑克局面与策略分析能力，转换成能围绕真实用户判断进行解释、纠错和迁移检验的教学过程。当前仍用 stub/mock 验证功能关系，不接真实业务。BC 编号只标识本稿的业务边界候选，不是部署服务或新增开发任务编号；不替代 D01–D08 / TE01–TE09 的历史合同。
 
@@ -146,3 +146,70 @@ flowchart LR
 - UI 由工作台、学习、自由研究、复盘、知识与记录等入口组合模块；Demo 故障/速度/重置仅属于演示运行设施。
 
 本稿完成的是功能职责与协作边界设计，不代表已完成真实 Solver/LLM 集成、服务端权限或真实用户教学验证。
+
+## 7. Agent 原生与 MCP 开放原则
+
+**所有对外业务能力都应设计可供 Agent 使用的结构化入口，MCP 作为统一开放适配层。** 模块划分决定业务责任与数据归属；MCP 决定 Agent 如何发现和调用这些能力，两者同时成立。v0.1 已声明共用命令，但没有充分表达这层完整工具面，现明确补入。
+
+目的包括：Agent 能独立完成研究与教学用例；用户能通过界面查看、接手、修改和继续相同作品；未来可以接入其他符合条件的 Agent 客户端；工具验证与业务验证可分开执行。开放范围包括教学展示意图，不限于后台数据操作。
+
+```mermaid
+flowchart LR
+  U[产品界面] --> C[共用应用命令与查询]
+  A[内置 / 外部 Agent 客户端] --> M[MCP 适配层]
+  M --> C
+  C --> B[业务模块与固定制品]
+  B --> P[Mock / 后续真实能力适配器]
+```
+
+界面不必为每次本地操作绕行 MCP；业务模块内部不必以 MCP 相互调用。初期可以由一个 MCP Server 提供多个模块工具，不按十个模块拆十个服务。前端只是一个操作与展示入口，不能拥有 Agent 无法复用的独立业务实现。
+
+### 7.1 开放形式
+
+MCP 官方区分 Tools、Resources、Prompts。产品建议映射如下，不将所有内容强制做成写操作工具：
+
+| 形式 | 本产品用途 | 约束 |
+|---|---|---|
+| Tools | 查询、编辑、提交、运行分析、实验、评价、选题、复习、展示控制等明确业务操作 | 类型化输入/输出、前置条件、固定引用、结构化错误；读查询也可以是 Tool |
+| Resources | 当前允许读取的固定局面、策略、报告、知识主张和学习记录 | 读取/发现同样检查会话权限；只读不等于可以获取隐藏答案 |
+| Prompts | 用户可选择的“分析一手牌”“解释一个决策”“练习一个技能”等流程模板 | 帮助启动过程，不代替业务规则、权限或实际工具执行 |
+
+需要登记暴露的答案/提示/参考，通过相应 Tool 完成登记后再释放内容。资源 URI、相关链接或原文读取不得绕过 BC07 的信息边界。MCP 本身不定义扑克教学政策，也不自动保证开放的工具能教会用户。
+
+### 7.2 覆盖十个模块的目标工具面
+
+以下仅为设计示意名，未实现为 MCP Server 或现有工具。
+
+| 模块 | 示例业务工具 |
+|---|---|
+| BC01 局面与行动 | `create_situation`、`revise_situation`、`get_action_context` |
+| BC02 范围与策略 | `get_range`、`update_strategy_entries`（批量）、`commit_policy`、`fork_policy` |
+| BC03 分析计算 | `get_analysis_capabilities`、`query_node_strategy`、`query_combo_metrics`、`run_analysis`、`get_analysis_job`、`cancel_analysis_job` |
+| BC04 研究实验 | `create_study`、`record_hypothesis`、`create_controlled_experiment`、`compare_artifacts`、`record_conclusion` |
+| BC05 理论知识 | `search_theory`、`check_claim_applicability`、`build_citation_bundle`、`submit_knowledge_draft`、`publish_reviewed_claim` |
+| BC06 教学内容 | `get_learning_objectives`、`create_lesson_draft`、`validate_lesson`、`publish_lesson_version` |
+| BC07 学习与练习 | `get_learning_context`、`start_learning_session`、`request_hint`、`reveal_reference`、`assign_transfer`、`schedule_review` |
+| BC08 评价诊断 | `assess_attempt`、`request_diagnostic_evidence`、`get_feedback` |
+| BC09 教学 Agent | `propose_teaching_plan`、`get_next_teaching_options`、`advance_teaching_step`；Agent 运行器也可调用其他模块工具，不再造一套业务状态 |
+| BC10 手牌复盘 | `import_hand`、`confirm_hand_fields`、`get_decision_snapshot`、`extract_study`、`match_lesson` |
+
+用户提交作答仍是 BC07 的业务命令；学习者角色/用户操作凭证与 Agent 辅助来源必须区分。Agent 可保存明确标记的建议或示范，不能冒充用户首次无辅助作答。内容编辑、审核和发布也使用相应角色与资格，不因工具存在而自动获得权限。
+
+另提供 `present_study_view`、`focus_decision`、`highlight_combos`、`present_range_comparison` 等展示意图，由宿主前端执行，使讲解对应可见的局面、组合和证据。MCP 不自动渲染界面；普通 hover、动画帧、缓存更新和数据库内部写入不需要逐个开放工具。
+
+### 7.3 调用粒度与状态一致性
+
+- 工具表达可理解的业务动作：批量改一组组合、建立一项完整对照、读取一个节点的范围，而非要求模型逐格操作，也不只提供一个含糊的“处理扑克问题”入口。
+- 查询、编辑草稿、提交版本、运行计算和揭示参考有不同语义与副作用；不能用读取接口暗中代填策略或改变学习身份。
+- Agent 和 UI 使用相同的版本冲突检查、幂等、预算、信息投影及结果资格；返回成果 ID、版本、来源和状态，不能仅返回“成功”。
+- 求解等长操作返回可跟踪的业务作业引用，支持状态读取、取消与结果查询；具体协议扩展和版本在实现时单独选择，不把计划写成已支持。
+- 工具可发现不等于本会话可执行；不可执行时返回前置条件或权限错误。宿主可以按当前任务选择提供给模型的工具上下文，开放能力目录应有清楚描述。
+- 当前 Zustand/浏览器状态不是外部 MCP Server 可以直接访问的共享运行时。后续需要提取可复用应用服务并提供本地通信/宿主桥接或服务端运行容器；不能只给前端函数加工具名就宣称 MCP 集成完成。
+
+### 7.4 Demo 验收增量
+
+使用 Mock Solver 和 Mock Agent 仍可验证：通过真正的 MCP 客户端发现工具→读取允许上下文→建立研究与实验→获取固定结果与引用→产生评价→安排针对练习→界面展示相同作品，并可由用户接手。再从界面操作同一作品，核对 Agent 读到相同的新版本。
+
+同时检查：Agent 无法伪造用户无辅助作答、修改历史成绩、读取未允许答案或宣告缺失计算成功。目标是全业务能力覆盖、双入口一致及完整教学链，工具数量不是验收目标。此增量目前仅设计，未获本稿自动解释为开发已完成。
+
+协议依据（2026-11-12 查阅）：[MCP 服务端概念](https://modelcontextprotocol.io/docs/learn/server-concepts)、[MCP 架构范围](https://modelcontextprotocol.io/docs/learn/architecture)。业务开放范围、工具粒度、教学规则和验收标准为本产品设计建议，不是协议强制要求。
