@@ -189,3 +189,5 @@ fixture 不可修改；用户修改以覆盖层保存到 IndexedDB 数据库 `ri
 ## 13. T1 教学升级的后续设计
 
 教学核心、暴露/评价、命令与 schema2/独立本地库的设计见 [T1 领域合同](teaching-v2-contracts.md)，任务见 [T1 任务设计](teaching-v2-task-design.md)。这些是未实现的新设计，不代表当前数据库已迁移或当前 API 已存在；第 12 节继续准确描述当前应用。
+
+T1 v0.2 新增独立 Knowledge Context，理论查找/建设、来源定位、主张适用性、检索记录和逐主张引用见 [知识库合同](teaching-v2-knowledge-design.md)。Knowledge 只拥有依据与引用资格，Learning 拥有答案暴露，Solver 拥有数值结果，Agent 编排调用；新能力均未实现。

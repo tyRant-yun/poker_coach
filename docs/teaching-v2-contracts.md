@@ -1,14 +1,17 @@
-# T1 领域、命令与数据契约 v0.1
+# T1 领域、命令与数据契约 v0.2
 
 日期：2026-11-12。状态：设计，未实现接口。本文中的名称是后续实现合同，不是现有 API 声明。技术栈延用 [已确认方案](technology-selection.md)。
 
 配套：[产品旅程](teaching-v2-product-design.md)、[内容与答案](teaching-v2-content-spec.md)、[任务验收](teaching-v2-task-design.md)。
+
+v0.2 补入 [理论知识库契约](teaching-v2-knowledge-design.md)：Knowledge Context 独立拥有理论主张、来源、定位、审核、适用性与检索，Teaching Content 持有引用，不复制成无来源讲解。
 
 ## 1. 领域边界与文件落点
 
 | 边界 | 决定权 | 拟落点/复用 |
 |---|---|---|
 | Teaching Content | 课程/题目/解释/对照/类别/版本与资格 | 新 `src/modules/teaching/content`，固定资产在 `src/fixtures/teaching` |
+| Knowledge | 主题/概念、原子主张、来源/定位、审核、覆盖/冲突、检索和引用资格 | 扩展原 Knowledge 模块，独立知识命令工厂与本地索引 |
 | Learning | run、阶段、作答、暴露、迁移和复测 | 新教学命令工厂；复用现有 PracticeSession/Attempt 的兼容视图 |
 | Study/Strategy | 策略作品、固定输入、节点和编辑事务 | 复用现有 workspace、research 和 StrategyEditor |
 | Evaluation | 固定规则、可评价资格与反馈制品 | 新教学评价纯函数；旧研究报告口径不变 |
@@ -177,3 +180,17 @@ T1 使用 `WorkspaceSnapshot.schemaVersion=2`，TeachingState 自身为 version=
 - 新库迁移只读旧原件、失败可重试，schema1/2 导入及 owned ID/seq 映射不丢关系。
 - 假时钟推进、due 与 preview 分离；未知历史不计未见迁移或延迟掌握。
 - 旧 D01–D08 的主要命令与旅程保持可用，旧数值仍标原合成身份。
+
+## 13. 理论检索与引用补充合同
+
+TeachingState 增加 KnowledgeState 或同层规范化 knowledge 聚合，保存 topic/concept、source/revision/locator、claim/relation、researchTask、coverageGap、indexManifest、retrievalRecord 和 citationBundle。索引是已发布知识的派生视图，可重建，不决定主张真伪。
+
+知识主张与来源是不可变版本地址，导入不因复制改名清除语义引用；owned researchTask/用户反馈/检索记录等 ID 可重映射。旧 K01–K08 保留 legacy 来源身份和旧引用，只有实际拆解核对后才能建立新 claim 映射，不批量补造审核记录。
+
+`searchTheory` 接收 query、allowedContext、lesson/attempt refs 和 indexVersion，返回候选、条件状态、排除原因及 RetrievalRecord。独立题的结果投影不能包含目标答案标题/摘要/来源细节。命令返回的记录不得包含被拒绝的完整答案正文以供 UI/Agent 偷看。
+
+`checkTheoryApplicability` 使用主张已声明的条件做 match/conflict/insufficient-context/general-background 判定；不能用相关性分数取代。`buildTeachingCitationBundle` 只能引用当前允许、未撤回且有已核对支持边的 claim/locator，并把通用背景与数值依据分开。它检查引用和资格完整性，不声称自动证明自然语言命题。
+
+来源查找/草稿/定位/核对/发布/撤回命令见知识规格，写操作沿用 commandId/expectedRevision 与原子快照。资料文本是待处理数据，不可定义新工具或执行命令；本地 UI 按文本展示内容，不能把来源正文作为可执行 HTML。
+
+打开外部整篇来源或导出含答案知识包前，记录已知相关 scope 的 possible-exposure；不假定只读当前锚点。知识新版本不能重算旧 Attempt 的解释，缺失/撤回使新引用受限，旧证据只读保留和标状态。数据仍落 T1 独立库，无额外真实知识服务。

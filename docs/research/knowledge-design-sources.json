@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-12",
+  "timezone": "Asia/Shanghai",
+  "purpose": "Primary-source checks informing the new knowledge-system design, not a finished theory corpus.",
+  "sources": [
+    {
+      "id": "KS01",
+      "title": "Calculation, strategies and other concepts",
+      "publisher": "PioSOLVER",
+      "url": "https://site.piosolver.com/docs/faq/gto_concept/",
+      "publishedAt": null,
+      "inspection": "Search-rendered main text checked this turn; full official FAQ also read during prior solver research.",
+      "supports": [
+        "Range weight versus strategy semantics",
+        "Conditional real-frequency/matchups caveat",
+        "Mixing and EV conditions"
+      ],
+      "limits": "Concept background only; not evidence for local lesson frequencies.",
+      "checkedAt": "2026-11-12",
+      "sourceKind": "official-documentation-or-authored-teaching-article",
+      "knowledgePublicationStatus": "design-source-only",
+      "claimExtractionCompleted": false,
+      "sourceLocatorBundleCompleted": false
+    },
+    {
+      "id": "KS02",
+      "title": "MDF & Alpha",
+      "publisher": "GTO Wizard",
+      "url": "https://blog.gtowizard.com/mdf-alpha/",
+      "publishedAt": "2022-07-01",
+      "inspection": "Official article relevant main sections read through web open.",
+      "supports": [
+        "Defense includes calls and raises",
+        "Risk/reward setup and initial-bet formula limits",
+        "Applicability warnings"
+      ],
+      "limits": "Not a universal calling rule or numeric proof for the current lesson.",
+      "checkedAt": "2026-11-12",
+      "sourceKind": "official-documentation-or-authored-teaching-article",
+      "knowledgePublicationStatus": "design-source-only",
+      "claimExtractionCompleted": false,
+      "sourceLocatorBundleCompleted": false
+    },
+    {
+      "id": "KS03",
+      "title": "Equity Realization",
+      "publisher": "GTO Wizard",
+      "url": "https://blog.gtowizard.com/equity-realization/",
+      "publishedAt": "2022-11-16",
+      "inspection": "Official article relevant main sections read through web open.",
+      "supports": [
+        "Equity versus EV and future betting",
+        "EQR as conditional interpretive metric"
+      ],
+      "limits": "Does not provide this project's combo equity, EV or action frequencies.",
+      "checkedAt": "2026-11-12",
+      "sourceKind": "official-documentation-or-authored-teaching-article",
+      "knowledgePublicationStatus": "design-source-only",
+      "claimExtractionCompleted": false,
+      "sourceLocatorBundleCompleted": false
+    },
+    {
+      "id": "KS04",
+      "title": "Understanding Blockers in Poker",
+      "publisher": "GTO Wizard",
+      "url": "https://blog.gtowizard.com/understanding-blockers-in-poker/",
+      "publishedAt": "2023-03-14",
+      "inspection": "Official article relevant main sections read through web open.",
+      "supports": [
+        "Blocker interpretation depends on range and action role",
+        "Specific example versus general concept distinction"
+      ],
+      "limits": "Do not copy external strategy examples or infer that every blocker implies bluffing.",
+      "checkedAt": "2026-11-12",
+      "sourceKind": "official-documentation-or-authored-teaching-article",
+      "knowledgePublicationStatus": "design-source-only",
+      "claimExtractionCompleted": false,
+      "sourceLocatorBundleCompleted": false
+    },
+    {
+      "id": "KS05",
+      "title": "Tree Configuration in HRC",
+      "publisher": "HoldemResources",
+      "url": "https://www.holdemresources.net/docs/tree-config/",
+      "publishedAt": null,
+      "inspection": "Official document reopened this turn; main tree and abstract-game sections also read during prior research.",
+      "supports": [
+        "Game-tree assumptions constrain result scope",
+        "Model and configuration conditions must be explicit"
+      ],
+      "limits": "Documentation of modeling boundaries, not validation of local mock solver or lesson data.",
+      "checkedAt": "2026-11-12",
+      "sourceKind": "official-documentation-or-authored-teaching-article",
+      "knowledgePublicationStatus": "design-source-only",
+      "claimExtractionCompleted": false,
+      "sourceLocatorBundleCompleted": false
+    }
+  ],
+  "status": {
+    "registeredSources": 5,
+    "runtimeKnowledgeBaseBuilt": false,
+    "seedTargetsAreFutureWork": true
+  },
+  "futureT1Targets": {
+    "topics": 24,
+    "conceptIndexEntriesMinimum": 96,
+    "atomicClaimsMinimum": 36,
+    "locatedSourcesMinimum": 12,
+    "independentSourceOrganizationsMinimum": 3,
+    "misconceptionOrConditionPairsMinimum": 8,
+    "retrievalAcceptanceCasesMinimum": 18
+  },
+  "evidenceLimits": [
+    "No reference product execution or paid/private content access.",
+    "No source passage bundles, expert review or full corpus completed in this turn.",
+    "No external strategy database or full copyrighted work copied.",
+    "The five checked documents are not the twelve-source future corpus."
+  ],
+  "relatedPriorSourceIndex": "solver-teaching-sources.json",
+  "design": "../teaching-v2-knowledge-design.md"
+}

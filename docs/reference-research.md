@@ -88,3 +88,7 @@ Demo 保留规则与导入端口，以脚本和自有数据实现。未知文本
 2026-11-12，按用户要求读取关联聊天并逐项核对 PioSOLVER、GTO+、GTO Wizard、Simple Postflop、Simple GTO Trainer、HRC、MonkerSolver、FlopzillaPro 的官方资料。研究结果见 [逐产品分析](solver-teaching-research.md)，教学旅程、内容资格、评价、Agent 和 DDD 调整见 [教学产品方案](teaching-product-redesign.md)，证据与访问限制见 [专题来源索引](research/solver-teaching-sources.json)。
 
 本次是文档研究，没有安装运行参考产品、读取付费策略库或修改应用。建议功能 TE01–TE08 尚未实施；当前 Demo 的合成参考只验证流程，不具备真实 GTO 教材资格。PF01/PF02 翻前反馈已纳入新方案的候选主线，Hero 自定义尺度和混频仍暂缓。
+
+## 11. 理论知识建设的来源起点
+
+用户新增理论完整查找与知识库要求后，已补充 [知识库设计](teaching-v2-knowledge-design.md)，并核对少量官方概念文档/具名教学文章作为来源起点，见 [5 份设计来源记录](research/knowledge-design-sources.json)。它们说明术语、条件与引用边界，尚未成为带定位/审核的实际知识条目；不能把这次登记视为 36 主张/12 来源的首批建设已达标。

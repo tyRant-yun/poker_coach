@@ -6,7 +6,7 @@
 
 ## 当前开发门
 
-当前最新指令为“开始下一轮设计”。T1 教学升级设计已形成，入口为 `docs/teaching-v2-task-design.md`，配套产品、内容与领域合同见该文件。TE01–TE08 与 PF01/PF02 已纳入设计，尚未开发或验收。本次只交付设计，不把此前 D01–D08 的开发授权自动解释为已启动 T1 源码开发；后续以用户新的执行指令为准。不得把下列历史开发门当成仍有 D03–D08 待实现。
+当前为 T1 设计阶段，用户在“开始下一轮设计”后新增理论完整查找、知识库构建和 Agent 教学引用要求。设计入口为 `docs/teaching-v2-task-design.md` v0.2，配套产品、内容、领域及 `docs/teaching-v2-knowledge-design.md` 共五份规格。TE01–TE09 与 PF01/PF02 已纳入设计，尚未开发或验收。本次只交付设计，不把此前 D01–D08 的开发授权自动解释为已启动 T1 源码开发；后续以用户新的执行指令为准。不得把下列历史开发门当成仍有 D03–D08 待实现。
 
 R0 已通过。D01、Hero 与全范围反馈改进、D02 已交付；用户随后要求单次尽可能多完成，并发出“开始”。D03–D08 已按 C1→C2→C3 连续完成并通过整版验证，见 `docs/demo-v1-delivery.md`：57 项状态测试、20 条浏览器旅程、类型检查与构建通过。M2/M3/M4 在最终验收后共同记录最终提交。
 
@@ -17,7 +17,7 @@ R0 已通过。D01、Hero 与全范围反馈改进、D02 已交付；用户随�
 1. 阅读 `README.md`、`docs/development-plan.md` 和本文件的开发门；T1 当前为设计交付阶段，执行范围以用户新指令为准。
 2. 涉及产品流程时读取 `docs/product-design.md`；涉及状态或接口时读取 `docs/demo-architecture.md` 与 `docs/mock-contracts.md`。
 3. 开发以完整用户旅程为单位，按任务依赖推进。不要只做孤立页面、静态按钮或没有后续成果的聊天。
-4. 技术栈以 `docs/technology-selection.md` 为准；原 D01–D08 以 `docs/demo-v1-task-design.md` 为准，T1 以 `docs/teaching-v2-task-design.md` 及其三份配套规格为设计入口。牌面显示和参考优先浏览已实现；翻前核心教学、暴露、多维评价等 T1 新能力未实施。
+4. 技术栈以 `docs/technology-selection.md` 为准；原 D01–D08 以 `docs/demo-v1-task-design.md` 为准，T1 以 `docs/teaching-v2-task-design.md` 及其四份配套规格为设计入口。牌面显示和参考优先浏览已实现；翻前核心教学、暴露、多维评价、理论知识建设/引用等 T1 新能力未实施。
 5. D08 的任务/故障设置、持久化和制品字段随消费者前移，不留到最后重做；不为扩大批次引入空模块、削减验收或跳过内容资产。
 
 ## Demo 边界
