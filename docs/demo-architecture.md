@@ -185,3 +185,7 @@ fixture 不可修改；用户修改以覆盖层保存到 IndexedDB 数据库 `ri
 `WorkspaceSnapshot` 保留 schemaVersion=1，以 optional 字段增量兼容 D02；S01 旧内容不变，fixtureVersion 维持原值。导入另做领域引用与输入一致性校验，在同一快照内复制并映射对象关系；缺 fixture 的数值只保存在未验证档案。IndexedDB 损坏后只读保留原内容并进入内存工作区；下载原件和明确重置是两个独立操作。
 
 页面按需加载，依赖另分 vendor chunk；1024 折叠侧栏。持久化、导入与 UI 投影的关键不变量由 57 项状态测试及 20 条浏览器旅程组合验证，详见 [交付记录](demo-v1-delivery.md)。
+
+## 13. T1 教学升级的后续设计
+
+教学核心、暴露/评价、命令与 schema2/独立本地库的设计见 [T1 领域合同](teaching-v2-contracts.md)，任务见 [T1 任务设计](teaching-v2-task-design.md)。这些是未实现的新设计，不代表当前数据库已迁移或当前 API 已存在；第 12 节继续准确描述当前应用。

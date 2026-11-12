@@ -234,3 +234,7 @@ Demo 阶段先验证产品机制，而非宣称教学有效：
 学习设计研究只提供方向：Butler（2010）在文本学习中观察到重复测试对保持和迁移的益处；它不是扑克教学效果证据。[原始论文](https://andymatuschak.org/files/papers/Butler%20-%202010%20-%20Repeated%20Testing%20Produces%20Superior%20Transfer%20of%20Learning%20Relative%20to%20Repeated.pdf)
 
 本轮结果是产品设计建议。应用保持现状，原回滚标签不移动；进入下一轮开发时，应以一条可完成的教学旅程及以上明确边界细化任务。
+
+## 15. 后续 T1 详细设计
+
+用户随后要求“开始下一轮设计”。现已将本建议细化为 [T1 任务入口](teaching-v2-task-design.md) 及产品/内容/领域三份规格。确定两个有限教学包和完整验收，应用尚未开发；本文件保留方向研究记录，具体范围以 T1 详细设计为准。

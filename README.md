@@ -4,6 +4,8 @@
 
 实际范围、演示路线、截图、验证和限制见 [第一版交付记录](docs/demo-v1-delivery.md)。这是独立的新 Demo 工作区，旧项目与参考产品仅用于研究。
 
+最新设计：[T1 教学升级任务与审阅入口](docs/teaching-v2-task-design.md)。包含翻前至翻后与近邻组合两个教学包、Hero 局部构建、证据/反例/迁移、DDD 与数据恢复；目前仅设计完成，应用仍为上述第一版。
+
 ## 可以体验
 
 - S01–S10 局面库、收藏和最近记录；默认先浏览参考，无需先填写整个范围。
@@ -54,6 +56,10 @@ npm run e2e
 | [参考研究](docs/reference-research.md) | 产品/GitHub 比较、来源与取舍 |
 | [Solver 教学专题](docs/solver-teaching-research.md) | 7 组商业产品逐项功能分析与教学借鉴 |
 | [教学调整方案](docs/teaching-product-redesign.md) | 新教学旅程、内容资格、DDD、评分与候选任务；尚未实施 |
+| [T1 开发任务设计](docs/teaching-v2-task-design.md) | 当前设计入口、TE01–TE08、连续工作包与 TJ01–TJ10 验收 |
+| [T1 产品交互](docs/teaching-v2-product-design.md) | 两个入口、页面、阶段、身份与反馈 |
+| [T1 内容规格](docs/teaching-v2-content-spec.md) | 具体翻前树、金额、示意范围、题干与答案边界 |
+| [T1 领域合同](docs/teaching-v2-contracts.md) | DDD、命令、暴露投影、评价、版本与新旧数据隔离 |
 | [技术栈](docs/technology-selection.md) | 已确认技术方案与职责 |
 | [模块与集成](docs/demo-architecture.md) | 领域边界、应用命令、状态、实际实现 |
 | [Mock 合同](docs/mock-contracts.md) | 输入匹配、内容资产与模拟边界 |

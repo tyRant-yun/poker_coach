@@ -75,3 +75,9 @@ git rev-parse 'baseline/demo-v1.0^{commit}'
 ```
 
 需要回看整版时，在确认目标目录不存在后使用 `git worktree add --detach E:\poker_coach-v1-review baseline/demo-v1.0`；不覆盖当前工作区。此处仅提供恢复方法，未声称已新建该工作区或远程备份。
+
+## T1 教学设计检查点
+
+`baseline/teaching-t1-design-v0.1` 保存下一轮教学升级的产品、内容、领域和任务设计，仅表示文档设计完成。新应用功能、内容 fixture 和验收尚未完成；`baseline/teaching-t1-m1`、`baseline/teaching-t1.0` 留待实际开发后按条件创建。旧第一版标签不移动。
+
+T1 独立本地库与 schema2 仍只是设计。当前应用仍使用旧数据库，不能提前声称数据已迁移；未来回看旧代码时按 T1 领域合同说明新旧库的历史边界。
