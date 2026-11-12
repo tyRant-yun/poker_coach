@@ -59,6 +59,7 @@ export function HeroStudy({ c, onRange }: { c: StudyCase; onRange: (label: strin
   }
   const branchOptions: HeroPlanInput['opponentBranch'][] = action === 'check' ? ['turn-bet', 'turn-check'] : ['call', 'raise', 'fold'];
   const needsResponse = branch === 'raise' || branch === 'turn-bet';
+  if(!active.length)return <div className={s.emptyCard}><h2>当前范围没有可用 Hero</h2><p>请先在输入权重中加入组合；空范围不能建立 Hero 推演。</p><button className={s.primaryButton} onClick={()=>onRange('AA')}>返回输入范围编辑</button></div>;
   return <div className={s.heroStudy}>
     <div className={s.heroIntro}>
       <div><span className={s.eyebrow}>HAND → HAND CLASS → RANGE</span><h2>从一手牌开始，把行动放回整个范围。</h2><p>先选 Hero、想清当前行动和后续条件，再用完整参考连接同类组合。不必先填完几百个组合。</p></div>

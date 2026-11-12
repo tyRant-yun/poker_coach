@@ -1,4 +1,4 @@
-import { actions, actionsFor, activeCombos, allCombos, handByCombo, spotSignature } from '../modules/study/domain';
+import { actions, actionsFor, canonicalAssumption, activeCombos, allCombos, handByCombo, spotSignature } from '../modules/study/domain';
 import type { ActionDefinition, Choices, RangeInputs, Spot } from '../modules/study/domain';
 import type { HandDecision, KnowledgeItem, NodeLock, Scenario, ScenarioNode } from '../modules/product/domain';
 import { bbRange, btnRange, referenceChoices, s01Spot } from './s01';
@@ -56,6 +56,9 @@ branch('S02-turn','S02-deal','转牌 · BTN 决策','T♥ · BB 过牌',['As','7
 branch('S02-river','S02-turn','河牌 · 面对下注','双方过牌 → 9♠ · BB B75',['As','7d','2c','Th','9s'],'BTN',river);
 branch('S02-check-deal','S02-root','双方过牌 · 选择转牌','BTN 过牌',['As','7d','2c'],'BTN',actions,'chance');
 branch('S02-check-turn','S02-check-deal','转牌 · 面对下注','K♦ · BB B75',['As','7d','2c','Kd'],'BTN',defense);
+branch('S02-large-deal','S02-root','大注被跟注 · 选择转牌','BTN B75 / BB 跟注',['As','7d','2c'],'BTN',actions,'chance');
+branch('S02-large-turn','S02-large-deal','转牌 · 大注路径','Q♣ · BB 过牌',['As','7d','2c','Qc']);
+s02.nodes.find(n=>n.id==='S02-large-turn')!.spot.potMinor=1375;
 branch('S02-fold','S02-bb','BB 弃牌 · 本手结束','BB 弃牌',['As','7d','2c'],'BTN',[],'terminal');
 branch('S02-unknown','S02-deal','其他转牌 · 未覆盖','5♣',['As','7d','2c','5c'],'BTN',actions,'decision','uncovered');
 branch('S02-unreachable','S02-fold','终局之后没有行动','无后续决策',['As','7d','2c'],'BTN',[],'terminal','unreachable');
@@ -86,7 +89,7 @@ export function matchingReference(spot: Spot, ranges: RangeInputs): Choices | nu
   if (!node || node.coverage !== 'covered' || node.kind !== 'decision' || spot.upstream) return null;
   let expected = node.spot, reference = node.reference;
   if (spot.assumption) {
-    const p = (['overfold','sticky'] as const).map(experimentPreset).find(p => p.spot.assumption === spot.assumption);
+    const p = (['overfold','sticky'] as const).map(experimentPreset).find(p => canonicalAssumption(p.spot.assumption) === canonicalAssumption(spot.assumption));
     if (!p || !spot.nodeId?.startsWith('S06')) return null;
     expected = p.spot; reference = p.reference;
   }
@@ -114,3 +117,16 @@ export const handDecisions: HandDecision[] = [
   { id:'turn',label:'转牌 · BTN 行动前',board:['Qs','9h','5d','2c'],actor:'BTN',potMinor:1050,stackMinor:9300,actionHistory:['BTN 加注至 2.5 bb','BB 跟注','翻牌 BB 过牌','BTN 下注 2 bb','BB 跟注','转牌 BB 过牌'],hero:'AhQh',future:'河牌 7s',opponent:'QdJd' },
   { id:'river',label:'河牌 · BTN 行动前',board:['Qs','9h','5d','2c','7s'],actor:'BTN',potMinor:1550,stackMinor:9300,actionHistory:['翻牌 BTN B2 / BB 跟注','转牌双方过牌','河牌 BB 下注 5 bb'],hero:'AhQh',future:'BTN 跟注后摊牌',opponent:'QdJd' },
 ];
+
+for(const decision of handDecisions.slice(1)){
+  const base=scenarioFor('S07')!.nodes[0],spot:Spot={...clone(base.spot),nodeId:`S07-${decision.id}`,board:[...decision.board],potMinor:decision.potMinor,stackMinor:decision.stackMinor,actionSet:decision.id==='river'?river:actions};
+  scenarioFor('S07')!.nodes.push({id:spot.nodeId!,parent:decision.id==='river'?'S07-turn':'S07-root',via:'手牌预置延续',label:decision.label,kind:'decision',coverage:'covered',spot,ranges:clone(base.ranges),reference:authoredReference(spot,base.ranges,decision.id==='river'?81:65)});
+}
+
+// Authored report templates, only used after complete input and policy matching.
+export function evaluationTemplate(spot:Spot,template:'check'|'reference'){
+  const id=spot.nodeId??'S01-root', variant=spot.assumption?(['overfold','sticky']as const).find(v=>canonicalAssumption(experimentPreset(v).spot.assumption)===canonicalAssumption(spot.assumption)):undefined;
+  const ledger:Record<string,[number,number,number,number]>={'S01-root':[2.04,1.86,1.88,1.10],'S02-root':[2.10,1.72,1.81,1.01],'S02-bb':[.65,0,.42,0],'S02-turn':[1.70,1.30,1.42,.90],'S02-check-turn':[.85,0,.60,0],'S02-river':[.80,0,.64,0],'S02-large-turn':[1.90,1.50,1.62,1.03],'S03-root':[1.93,1.58,1.66,.92],'S03-turn':[1.44,1.12,1.20,.73],'S04-root':[4.60,3.80,3.90,2.60],'S05-root':[1.10,0,.78,0],'S06-root':variant==='overfold'?[3.40,2.60,2.71,1.80]:variant==='sticky'?[2.00,1.50,1.51,.92]:[2.30,2.00,1.90,1.20],'S07-root':[2.11,1.72,1.82,1.06],'S07-turn':[2.00,1.60,1.69,1.02],'S07-river':[.95,0,.65,0],'S08-root':[1.20,0,0,0],'S09-root':[1.30,1.00,0,0],'S10-root':[.12,.09,0,0]};
+  const row=ledger[id];if(!row)return null;const index=template==='reference'?0:1;
+  return {value:row[index],loss:template==='reference'?0:Number((row[0]-row[1]).toFixed(4)),adversarial:['S08','S09','S10'].some(prefix=>id.startsWith(prefix))?null:{value:row[index+2],unit:spot.unit??'bb',model:'单挑固定假设下的作者编写对抗评价示例，未经最佳回应计算'}};
+}

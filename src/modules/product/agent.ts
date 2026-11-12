@@ -48,7 +48,7 @@ export function createAgentCommands(ctx:ProductContext,research:ReturnType<typeo
     stepMission(id:string):Promise<Result>{
       const pending=executing.get(id);if(pending)return pending;
       const perform=async():Promise<Result>=>{
-        let m=get(id);if(!m||['completed','cancelled','conflict'].includes(m.status))return ctx.fail('当前任务不可执行下一步。');
+        let m=get(id);if(m?.blockedSource)return ctx.fail(m.blockedSource);if(!m||['completed','cancelled','conflict'].includes(m.status))return ctx.fail('当前任务不可执行下一步。');
         if(m.spent>=m.budget){update(id,{status:'failed',message:'演示额度耗尽；已产生成果保留，可增加本任务预算后继续。'});return ctx.fail('演示额度耗尽。');}
         const tool=steps[m.kind][m.cursor];if(!tool)return {ok:true,value:undefined};
         const trace=[...m.trace,{tool,status:'running',observation:'正在调用本地应用命令。',refs:[] as Mission['trace'][number]['refs']}];
@@ -76,7 +76,7 @@ export function createAgentCommands(ctx:ProductContext,research:ReturnType<typeo
           }else if(m.cursor===3&&m.kind!=='training'){
             m=get(id)!;const ids=m.kind==='experiment'?Object.keys(m.artifactRevisions??{}):[m.branchId!];
             for(const caseId of ids){const c=ctx.getCase(caseId)!;const expected=m.kind==='experiment'?m.artifactRevisions?.[caseId]:m.branchRevision;if(expected!==undefined&&c.draft.editRevision!==expected){update(id,{status:'conflict',message:'Agent 分支已被手工修改，未覆盖；可确认采用当前分支修订。'});return {ok:false,message:'分支冲突'};}
-              if(m.kind==='experiment'&&c.experiment&&!c.versions.length){const loaded=ctx.base.loadExample(caseId);if(!loaded.ok)throw Error(loaded.message);}
+              if(m.kind==='experiment'&&c.experiment&&!c.versions.length&&!Object.keys(c.draft.choices).length){const loaded=ctx.base.loadExample(caseId);if(!loaded.ok)throw Error(loaded.message);update(id,{artifactRevisions:{...get(id)?.artifactRevisions,[caseId]:ctx.getCase(caseId)!.draft.editRevision}});m=get(id)!;}
               const submitted=ctx.base.submitPolicy(caseId);if(!submitted.ok)throw Error(submitted.message);
               refs.push({type:'version',id:submitted.value,caseId});const solved=await solveOwned(id,caseId,submitted.value);if(!solved.ok)throw Error(solved.message);
               if(get(id)?.status==='cancelled')return {ok:false,message:'任务已取消'};
@@ -90,9 +90,9 @@ export function createAgentCommands(ctx:ProductContext,research:ReturnType<typeo
       };
       const promise=perform().finally(()=>executing.delete(id));executing.set(id,promise);return promise;
     },
-    runMission(id:string):Promise<Result>{const existing=loops.get(id);if(existing)return existing;const run=async():Promise<Result>=>{const m=get(id);if(!m)return ctx.fail('任务不存在。');if(['completed','cancelled','conflict'].includes(m.status))return ctx.fail('当前任务不能继续。');update(id,{status:'running'});while(get(id)?.status==='running'){const result=await api.stepMission(id);if(!result.ok)return result;}return {ok:true,value:undefined};};const promise=run().finally(()=>loops.delete(id));loops.set(id,promise);return promise;},
+    runMission(id:string):Promise<Result>{const existing=loops.get(id);if(existing)return existing;const run=async():Promise<Result>=>{const m=get(id);if(!m)return ctx.fail('任务不存在。');if(m.blockedSource)return ctx.fail(m.blockedSource);if(['completed','cancelled','conflict'].includes(m.status))return ctx.fail('当前任务不能继续。');update(id,{status:'running'});while(get(id)?.status==='running'){const result=await api.stepMission(id);if(!result.ok)return result;}return {ok:true,value:undefined};};const promise=run().finally(()=>loops.delete(id));loops.set(id,promise);return promise;},
     pauseMission(id:string){if(get(id)?.status==='running')update(id,{status:'paused',message:'已暂停；当前工具如已开始会先结束，之后不执行下一步。'});},
-    cancelMission(id:string){const m=get(id);if(!m||m.status==='completed')return;update(id,{status:'cancelled',message:'已取消，已产生成果保留，不执行下一工具。'});const linked=linkedJobs.get(id);if(linked)ctx.base.cancelJob(linked.caseId,linked.jobId);},
+    cancelMission(id:string){const m=get(id);if(!m||m.status==='completed')return;update(id,{status:'cancelled',trace:m.trace.map(t=>t.status==='running'?{...t,status:'cancelled',observation:'当前工具已取消；已登记成果保留，不执行下一工具。'}:t),message:'已取消，已产生成果保留，不执行下一工具。'});const linked=linkedJobs.get(id);if(linked)ctx.base.cancelJob(linked.caseId,linked.jobId);},
     setMissionBudget(id:string,budget:number):Result{const m=get(id);if(!m||!Number.isInteger(budget)||budget<m.spent||budget>50)return ctx.fail('预算需为已用额度至 50 的整数。');update(id,{budget});return {ok:true,value:undefined};},
     resolveMissionConflict(id:string):Result{const m=get(id);if(!m||m.status!=='conflict')return ctx.fail('当前没有冲突。');if(!m.branchId){const branch=ownedBranch(m);if(!branch)return ctx.fail('无法保留读取快照。');update(id,{branchId:branch.id,status:'paused',message:'将在读取快照的新分支继续；原草稿保留。'});}else{const c=ctx.getCase(m.branchId)!;update(id,{branchRevision:c.draft.editRevision,artifactRevisions:m.artifactRevisions?Object.fromEntries(Object.keys(m.artifactRevisions).map(caseId=>[caseId,ctx.getCase(caseId)!.draft.editRevision])):undefined,status:'paused',message:'已明确采用分支当前修订，下一步按其内容提交。'});}return {ok:true,value:undefined};},
   };return api;

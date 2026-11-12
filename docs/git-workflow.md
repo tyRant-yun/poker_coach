@@ -62,3 +62,16 @@ git revert <需要撤销的普通提交SHA>
 若发生冲突，解决后执行 `git revert --continue`；放弃本次回滚可执行 `git revert --abort`。
 
 默认不使用 `reset --hard`、`clean -fd` 或强制移动基线标签。Git 只保护已经提交的内容，也不替代独立备份。未推送到远程意味着当前副本仍只保存在本机。
+
+## 第一版完整 Demo 的实际记录
+
+本次从 `baseline/demo-v1-plan-v0.2` 连续推进，C1 提交 `51a18ce`，C2 提交 `0a5deed`。C3 和最终恢复/隔离修复在最终提交记录；全部 57 项状态测试、20 条浏览器旅程与构建通过后，`baseline/demo-v1-m2`、`baseline/demo-v1-m3`、`baseline/demo-v1.0` 共同指向最终提交。旧标签不移动，早期 C1/C2 并非整版验收基线。
+
+可只读核对最终基线：
+
+```powershell
+git show --stat baseline/demo-v1.0
+git rev-parse 'baseline/demo-v1.0^{commit}'
+```
+
+需要回看整版时，在确认目标目录不存在后使用 `git worktree add --detach E:\poker_coach-v1-review baseline/demo-v1.0`；不覆盖当前工作区。此处仅提供恢复方法，未声称已新建该工作区或远程备份。

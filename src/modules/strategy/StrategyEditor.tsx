@@ -83,7 +83,7 @@ export function StrategyEditor({ c, initialHand, onSelectHand }: { c: StudyCase;
           <label>状态<select aria-label="组合状态过滤" value={status} onChange={e => change(() => setStatus(e.target.value))}><option value="all">全部状态</option><option value="missing">未填写</option><option value="invalid">频率待修正</option><option value="locked">已锁定</option><option value="excluded">权重 0 · 排除</option><option value="dead">死牌</option></select></label>
         </div>
         <div className={s.matrixMeta}><span>{live.size} 个可用组合 · 加权组合量 {(activeCombos(c.spot, weights).reduce((sum, combo) => sum + weights[combo], 0) / 10000).toFixed(2)}</span><span>{mode === 'policy' ? 'X / B33 / B75' : '输入权重 %'}</span></div>
-        {view === 'matrix' ? <div className={s.matrix} role="group" aria-label={mode === 'policy' ? 'BTN 策略矩阵' : `${player} 输入范围矩阵`}>
+        {view === 'matrix' ? <div className={s.matrix} role="group" aria-label={mode === 'policy' ? `${c.spot.actor} 策略矩阵` : `${player} 输入范围矩阵`}>
           {handClasses.map(h => {
             const ids = h.combos.filter(combo => selectable.includes(combo));
             const liveIds = ids.filter(combo => live.has(combo));

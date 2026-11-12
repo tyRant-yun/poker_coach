@@ -1,6 +1,6 @@
 # 第一版 Demo 技术栈与架构决策
 
-日期：2026-11-12（Asia/Shanghai）。状态：技术方案已确认；用户已授权第一轮 D01，应用依赖已安装并锁定。实际实现和版本见 `d01-delivery.md` 与 package-lock.json。
+日期：2026-11-12（Asia/Shanghai）。状态：技术方案已确认，D01–D08 已按此方案实现并验证；应用依赖已安装并锁定。实际整版结果见 `demo-v1-delivery.md`，安装版本见 package-lock.json。
 
 ## 1. 已确认方案
 

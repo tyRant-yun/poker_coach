@@ -8,7 +8,7 @@ import { matchingReference, scenarioFor } from '../../fixtures/scenarios';
 import { fixtureVersion } from '../../fixtures/s01';
 
 export const exerciseNames: Record<ExerciseKind,string> = {range:'全范围构建',branch:'分支补全',diagnosis:'策略诊断',comparison:'局面比较'};
-function referenceFor(session:PracticeSession) {return matchingReference(session.input.spot,session.input.ranges!);}
+function referenceFor(session:PracticeSession) {return session.unavailableReason?null:matchingReference(session.input.spot,session.input.ranges!);}
 function initialChoices(kind:ExerciseKind,input:SolveInput):Choices {
   if(kind!=='branch')return {};
   return Object.fromEntries(activeCombos(input.spot,input.ranges![input.spot.actor]).slice(0,3).map(combo=>[combo,Object.fromEntries(actionsFor(input.spot).map((a,i)=>[a.id,i===0?10000:0]))]));
@@ -19,8 +19,8 @@ export function practiceView(data:WorkspaceSnapshot,id:string) {
   const reveal=session.revealed||session.status!=='answering';
   return {...safe,spot:copy(input.spot),weights:copy(input.ranges![input.spot.actor]),actions:actionsFor(input.spot),reference:reveal?referenceFor(session):null,
     hint:session.hints?'先检查覆盖与概率合计，再考虑各行动中的组合构成；频率差异不等于 EV 损失。':null,
-    prompt:session.kind==='range'?'为当前完整范围分配行动；可以先批量填入自己的纯行动，再调整牌类与组合。':session.kind==='branch'?'这是固定的后续节点。已给出 3 个组合的起始分配，请补齐其余组合。':session.kind==='diagnosis'?'示例组合分配为：行动一 50%，行动二 20%，其余 0%。提交完整策略前，应先处理什么？':'左侧局面底池 5.5 bb，右侧 7.5 bb，牌面与范围相同。能仅凭频率差异判断哪版 EV 更高吗？',
-    options:session.kind==='diagnosis'?[{id:'probability',label:'修正概率合计不足 100%'},{id:'always-bet',label:'所有组合改成下注'},{id:'no-change',label:'直接当作完整策略提交'}]:session.kind==='comparison'?[{id:'conditions',label:'不能，需要明确各版条件与评价模型'},{id:'frequency',label:'可以，下注更多的一版更优'},{id:'equal',label:'可以，频率相近就代表 EV 相同'}]:[],
+    prompt:session.unavailableReason?'来源练习版本缺失；仅保留原作答，不用当前题干或答案替代。':session.kind==='range'?'为当前完整范围分配行动；可以先批量填入自己的纯行动，再调整牌类与组合。':session.kind==='branch'?'这是固定研究节点。已给出 3 个组合的起始分配，请补齐其余组合。':session.kind==='diagnosis'?'示例组合分配为：行动一 50%，行动二 20%，其余 0%。提交完整策略前，应先处理什么？':`左侧局面底池 ${input.spot.potMinor/input.spot.unitsPerBb} bb，右侧 ${input.spot.potMinor/input.spot.unitsPerBb+2} bb，牌面与范围相同。能仅凭频率差异判断哪版 EV 更高吗？`,
+    options:session.unavailableReason?[]:session.kind==='diagnosis'?[{id:'probability',label:'修正概率合计不足 100%'},{id:'always-bet',label:'所有组合改成下注'},{id:'no-change',label:'直接当作完整策略提交'}]:session.kind==='comparison'?[{id:'conditions',label:'不能，需要明确各版条件与评价模型'},{id:'frequency',label:'可以，下注更多的一版更优'},{id:'equal',label:'可以，频率相近就代表 EV 相同'}]:[],
   };
 }
 export function createLearningCommands(ctx:ProductContext) {
@@ -33,9 +33,10 @@ export function createLearningCommands(ctx:ProductContext) {
       const template=kind==='branch'&&!c?scenarioFor(scenarioId==='S03'?'S03':'S02')!.nodes.find(n=>n.id===(scenarioId==='S03'?'S03-turn':'S02-turn'))!:scenario?.nodes[0];
       if(!template)return ctx.fail('该练习没有匹配输入。');
       const input=copy(fixedInput??(c?{spot:c.spot,spotRevisionId:c.spotRevisionId,ranges:c.ranges??scenario!.nodes[0].ranges}:{spot:template.spot,spotRevisionId:uid('exercise-input'),ranges:template.ranges}));
+      if(!activeCombos(input.spot,input.ranges![input.spot.actor]).length)return ctx.fail('当前输入没有可用组合，请先修订研究范围再建立练习。');
       const actualScenario=c?.scenarioId??(kind==='branch'&&scenarioId!=='S03'?'S02':scenarioId),id=uid('practice');
       const sourceVersion=c?.versions.find(v=>v.spotRevisionId===input.spotRevisionId);
-      put({id,kind,scenarioId:actualScenario,nodeId:input.spot.nodeId??`${actualScenario}-root`,input,sourceCaseId,sourceVersionId:sourceVersion?.id,mode,status:'answering',choices:initialChoices(kind,input),answer:'',reason:'',hints:mode==='assisted'?1:0,revealed:false,attempts:[],createdAt:now(),source:sourceCaseId?'research':'library'});
+      put({id,kind,scenarioId:actualScenario,nodeId:input.spot.nodeId??`${actualScenario}-root`,fixtureVersion,input,sourceCaseId,sourceVersionId:sourceVersion?.id,mode,status:'answering',choices:initialChoices(kind,input),answer:'',reason:'',hints:mode==='assisted'?1:0,revealed:false,attempts:[],createdAt:now(),source:sourceCaseId?'research':'library'});
       ctx.notice('练习已建立；作答期间不加载参考答案或未来分支。');return {ok:true,value:id};
     },
     savePractice(id:string,patch:{choices?:Choices;answer?:string;reason?:string}):Result {
@@ -57,9 +58,10 @@ export function createLearningCommands(ctx:ProductContext) {
       const pending=submitting.get(id);if(pending)return pending;
       const perform=async():Promise<Result<string>>=>{
         const session=ctx.getData().product?.sessions[id];if(!session||session.status!=='answering')return ctx.fail('当前练习不可重复提交。');
+        if(session.unavailableReason)return ctx.fail(session.unavailableReason);
         const snapshot=copy(session),spot=snapshot.input.spot,weights=snapshot.input.ranges![spot.actor];
         if(['range','branch'].includes(snapshot.kind)){const error=validateSubmission(spot,weights,snapshot.choices);if(error)return ctx.fail(error);}else if(!snapshot.answer)return ctx.fail('请先选择你的判断。');
-        const key=spotSignature(spot)+JSON.stringify(Object.entries(snapshot.input.ranges!).sort())+canonicalPolicy(snapshot.choices,activeCombos(spot,weights),actionsFor(spot))+snapshot.answer;
+        const key=snapshot.kind+fixtureVersion+spotSignature(spot)+JSON.stringify(Object.entries(snapshot.input.ranges!).sort())+canonicalPolicy(snapshot.choices,activeCombos(spot,weights),actionsFor(spot))+snapshot.answer;
         const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(key));
         const current=ctx.getData().product?.sessions[id];if(!current||current.status!=='answering')return ctx.fail('练习已改变或重置，本次未登记作答。');
         const reference=referenceFor(snapshot),difference=reference&&['range','branch'].includes(snapshot.kind)?frequencyDifference(spot,weights,snapshot.choices,reference):null;
@@ -80,7 +82,7 @@ export function createLearningCommands(ctx:ProductContext) {
       ctx.replaceData({...data,product:{...product,plans:{...product.plans,[id]:plan}}});return {ok:true,value:id};
     },
     executeTrainingPlan(id:string):Result<string>{
-      const plan=ctx.getData().product?.plans[id];if(!plan)return ctx.fail('训练计划不存在。');if(plan.sessionIds.length)return {ok:true,value:plan.sessionIds.find(id=>ctx.getData().product?.sessions[id]?.status!=='completed')??plan.sessionIds.at(-1)!};
+      const plan=ctx.getData().product?.plans[id];if(!plan)return ctx.fail('训练计划不存在。');if(plan.blockedSource)return ctx.fail(plan.blockedSource);if(plan.sessionIds.length)return {ok:true,value:plan.sessionIds.find(id=>ctx.getData().product?.sessions[id]?.status!=='completed')??plan.sessionIds.at(-1)!};
       const sessions:string[]=[];for(const kind of plan.exerciseKinds){const made=api.startPractice(kind,kind==='branch'?'S02':'S01',kind==='range'?plan.caseId:undefined,'independent',kind==='range'?plan.input:undefined);if(!made.ok)return made;sessions.push(made.value);}
       const data=ctx.getData(),product=data.product!;ctx.replaceData({...data,product:{...product,plans:{...product.plans,[id]:{...plan,sessionIds:sessions}}}});return {ok:true,value:sessions[0]};
     },

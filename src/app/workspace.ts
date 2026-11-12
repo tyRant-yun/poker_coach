@@ -6,9 +6,11 @@ import { btnRange, bbRange, fixtureVersion, s01Spot } from '../fixtures/s01';
 import type { SolverPort, WorkspaceRepository } from '../ports';
 import { indexedDbRepository } from '../persistence/indexed-db';
 import { createMockSolver } from '../mocks/solver';
-import { descendants, matchingReference, scenarios, scenarioFor } from '../fixtures/scenarios';
+import { descendants, evaluationTemplate, matchingReference, scenarios, scenarioFor } from '../fixtures/scenarios';
 import { emptyProduct, runningStatuses } from '../modules/product/domain';
 import { createLearningCommands, learningQueries } from '../modules/product/learning';
+import { createTransferCommands } from '../modules/product/transfer';
+import { createReviewCommands, reviewQueries } from '../modules/product/review';
 import { createAgentCommands } from '../modules/product/agent';
 import { createResearchCommands, researchQueries } from '../modules/product/research';
 
@@ -32,7 +34,7 @@ const weightsFor = (c?: { ranges?: RangeInputs; spot?: Spot }) => rangesFor(c)[c
 const locked = (c: StudyCase) => new Set(c.draft.lockedCombos ?? []);
 function editable(c: StudyCase): EditableSnapshot {
   return copy({ name: c.name, spot: c.spot, spotRevisionId: c.spotRevisionId, ranges: c.ranges,
-    choices: c.draft.choices, lockedCombos: c.draft.lockedCombos ?? [], assistance: c.draft.assistance, restoredFrom: c.draft.restoredFrom });
+    choices: c.draft.choices, lockedCombos: c.draft.lockedCombos ?? [], assistance: c.draft.assistance, restoredFrom: c.draft.restoredFrom, staleNodes:c.staleNodes });
 }
 
 export function createWorkspace(repository: WorkspaceRepository, solver: SolverPort) {
@@ -80,7 +82,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
       editHistory: { past: [...(c.editHistory?.past ?? []), { label, snapshot: editable(c) }].slice(-30), future: [] } });
   }
   function applySnapshot(c: StudyCase, snapshot: EditableSnapshot): StudyCase {
-    return { ...c, name: snapshot.name ?? c.name, spot: copy(snapshot.spot), spotRevisionId: snapshot.spotRevisionId, ranges: copy(snapshot.ranges),
+    return { ...c, name: snapshot.name ?? c.name, staleNodes:copy(snapshot.staleNodes??[]), spot: copy(snapshot.spot), spotRevisionId: snapshot.spotRevisionId, ranges: copy(snapshot.ranges),
       draft: { choices: copy(snapshot.choices), lockedCombos: [...snapshot.lockedCombos], assistance: snapshot.assistance, restoredFrom: snapshot.restoredFrom, editRevision: c.draft.editRevision + 1 } };
   }
   function updateJob(caseId: string, jobId: string, status: StudyCase['jobs'][number]['status'], stage: string) {
@@ -91,14 +93,14 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
     replaceCase({ ...c, jobs: c.jobs.map(j => j.id === jobId ? { ...j, status, stage, events:[...(j.events ?? []),{status,stage,at:now()}] } : j) });
   }
 
-  async function runSolve(caseId: string, versionId: string | null): Promise<Result<string>> {
+  async function runSolve(caseId: string, versionId: string | null, fixedInput?:SolveInput): Promise<Result<string>> {
     const c = getCase(caseId);
     const version = c?.versions.find(v => v.id === versionId);
     if (!c || (versionId !== null && !version)) return fail('请先提交一个完整的策略版本。');
-    const input: SolveInput = version
+    const input: SolveInput = fixedInput?copy(fixedInput):version
       ? { spot: copy(version.spot), spotRevisionId: version.spotRevisionId, choices: copy(version.choices), ranges: copy(rangesFor(version)) }
       : { spot: copy(c.spot), spotRevisionId: c.spotRevisionId, ranges: copy(rangesFor(c)) };
-    input.settings = copy(store.getState().data.product?.settings ?? emptyProduct().settings);
+    input.settings = copy(fixedInput?.settings ?? store.getState().data.product?.settings ?? emptyProduct().settings);
     input.executionAttempt = c.jobs.filter(j => j.policyRevisionId === versionId && j.spotRevisionId === input.spotRevisionId && j.settings?.outcome === input.settings?.outcome).length + 1;
     if (c.jobs.some(j => j.policyRevisionId === versionId && j.spotRevisionId === input.spotRevisionId && runningStatuses.includes(j.status))) return fail('相同输入已有模拟正在运行。');
     const jobId = uid('job');
@@ -107,7 +109,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
     const skip = new AbortController(); skipControllers.set(jobId,skip);
     replaceCase({ ...c, jobs: [...c.jobs, { id: jobId, policyRevisionId: versionId, spotRevisionId: input.spotRevisionId, status: 'queued', stage: '输入已固定，等待模拟', input:copy(input), settings:input.settings, events:[{status:'queued',stage:'输入已固定，等待模拟',at:now()}], createdAt: now() }] });
     try {
-      updateJob(caseId, jobId, 'running', '正在准备模拟分析');
+      updateJob(caseId, jobId, 'queued', '等待输入预检');
       const result = await solver.solve(input, (stage,status) => updateJob(caseId,jobId,status ?? 'running',stage),controller.signal,skip.signal);
       const latest = getCase(caseId);
       if (!latest || controller.signal.aborted || !runningStatuses.includes(latest.jobs.find(j => j.id === jobId)?.status ?? 'failed')) return { ok: false, message: '模拟已取消。' };
@@ -131,7 +133,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
           let interrupted = false;
           const data = loaded ?? emptyData();
           data.product ??= emptyProduct();
-          for (const mission of Object.values(data.product.missions)) if (['planned','running','paused'].includes(mission.status)) { mission.status = 'interrupted'; mission.message = '刷新前的脚本中断，可从已记录步骤继续。'; interrupted = true; }
+          for (const mission of Object.values(data.product.missions)) if (['planned','running','paused'].includes(mission.status)) { mission.status = 'interrupted'; mission.trace=mission.trace.map(t=>t.status==='running'?{...t,status:'interrupted',observation:'刷新前工具中断，恢复时检查已登记成果。'}:t); mission.message = '刷新前的脚本中断，可从已记录步骤继续。'; interrupted = true; }
           for (const c of Object.values(data.cases)) c.jobs = c.jobs.map(job => {
             if (!runningStatuses.includes(job.status)) return job;
             interrupted = true;
@@ -247,6 +249,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
       const c = getCase(caseId);
       if (!c) return fail('案例不存在。');
       const error = validateSpot(spot);
+      if(!rangesFor(c)[spot.actor])return fail('当前玩家没有输入范围，局面修订未应用。');
       if (error) return fail(error);
       editCase(c, { ...c, name: name.trim() || c.name, spot: copy(spot), spotRevisionId: uid('spot'), draft: { choices: {}, editRevision: c.draft.editRevision } }, '修订局面条件');
       notice('局面修订已建立，当前草稿已清空；历史版本仍保留。', 'info');
@@ -352,6 +355,12 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
     requestReference(caseId: string): Promise<Result<string>> {
       return runSolve(caseId, null);
     },
+    retryJob(caseId:string,jobId:string):Promise<Result<string>> {
+      const c=getCase(caseId),job=c?.jobs.find(j=>j.id===jobId);
+      if(!c||!job||!['failed','interrupted','cancelled'].includes(job.status))return Promise.resolve(fail('只有未完成的作业可以重试。'));
+      if(!job.input&&job.spotRevisionId!==c.spotRevisionId&&!job.policyRevisionId)return Promise.resolve(fail('旧作业没有输入快照，请从对应固定版本重新运行。'));
+      return runSolve(caseId,job.policyRevisionId,job.input);
+    },
     cancelJob(caseId: string, jobId: string) {
       controllers.get(jobId)?.abort();
       updateJob(caseId, jobId, 'cancelled', '已取消，未生成新报告');
@@ -378,25 +387,30 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
         differences[label].sum += weights[combo] * available.reduce((s, a) => s + Math.abs(version.choices[combo][a.id] - reference[combo][a.id]) / 20000, 0);
         differences[label].mass += weights[combo];
       }
+      const evaluated=template?evaluationTemplate(version.spot,template):null;
       const report: AssessmentReport = {
         id: uid('report'), jobId, policyRevisionId: version.id, spotRevisionId: version.spotRevisionId,
         inputFingerprint: job.result.inputFingerprint, dataKind: 'synthetic', createdAt: now(),
         difference: reference ? frequencyDifference(version.spot, weights, version.choices, reference) : null,
         largestDifferences: Object.entries(differences).map(([label, d]) => ({ label, difference: d.sum / d.mass })).sort((a, b) => b.difference - a.difference).slice(0, 5),
-        sampleEv: template ? { template, value: template === 'check' ? 1.86 : 2.04, loss: template === 'check' ? 0.18 : 0 } : null,
+        sampleEv: template&&evaluated?{template,value:evaluated.value,loss:evaluated.loss}:null,
+        sampleAdversarial:evaluated?.adversarial??null,
       };
       replaceCase({ ...c, reports: [...c.reports, report] });
       notice(reference ? '模拟反馈已生成。参考差异不等于实际 EV 损失。' : job.result.reason, 'info');
       return { ok: true, value: report.id };
     },
+    async readStoredBackup():Promise<Result<unknown>> {try{if(!repository.readRaw)return fail('此存储适配器不提供原始记录读取。');return {ok:true,value:await repository.readRaw()};}catch{return fail('原始本地存储无法读取；没有覆盖它。');}},
     skipWait(jobId: string) { skipControllers.get(jobId)?.abort(); },
     flushSaves() { return queue; },
   };
-  const context = { getData:() => store.getState().data, replaceData, getCase, replaceCase, editCase, fail, notice, base:commands, stopAll:() => { controllers.forEach(c => c.abort()); skipControllers.forEach(c => c.abort()); } };
+  const context = { getData:() => store.getState().data, replaceData, getCase, replaceCase, editCase, fail, notice, base:commands, onReset:()=>{persistenceEnabled=true;store.setState({pendingInput:false,pendingInputCaseId:null,storageError:null});}, stopAll:() => { controllers.forEach(c => c.abort()); skipControllers.forEach(c => c.abort()); } };
   const research = createResearchCommands(context);
   const learning = createLearningCommands(context);
   const agent = createAgentCommands(context,research,learning);
-  return { store, commands:{...commands,...research,...learning,...agent} };
+  const review=createReviewCommands(context,learning);
+  const transfer=createTransferCommands(context);
+  return { store, commands:{...commands,...research,...learning,...agent,...review,...transfer} };
 }
 
 const workspace = createWorkspace(indexedDbRepository, createMockSolver());
@@ -406,6 +420,7 @@ export const queries = {
   catalogue: () => scenarios.map(({nodes,...item}) => ({...item,board:nodes[0].spot.board})),
   ...researchQueries,
   learning: learningQueries,
+  ...reviewQueries,
   weights: (player: string = 'BTN', context?: { ranges?: RangeInputs }) => rangesFor(context)[player],
   stats: (c: StudyCase) => policyStats(c.spot, weightsFor(c), c.draft.choices),
   snapshot: () => copy(workspace.store.getState().data),

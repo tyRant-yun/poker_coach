@@ -1,6 +1,6 @@
 # Demo 理想流程与异常评审脚本
 
-状态：整版验收脚本尚未完整执行。D01/D02 及 Hero 片段已验证，最新实际结果见 `d02-delivery.md`；v0.2 连续开发的整版复核尚未执行。按钮名称是设计意图，实现后可微调，但业务行为不得丢失。
+状态：本次已通过状态测试与 Chromium 旅程组合验证 J01–J09，57 项状态测试、20 条浏览器旅程及类型检查/构建通过。实际映射、截图与局限见 [第一版交付](demo-v1-delivery.md)。以下为可复演脚本，按钮名称以实际 UI 为准；不将自动化通过表述为全部原生窗口的人工验收。
 
 ## 1. 准备
 
@@ -79,3 +79,9 @@
 记录实际 commit、fixtureVersion、旅程 ID、执行环境、实际结果、截图或日志、未覆盖项。只有执行后才能填写通过。
 
 整体通过要求：F01–F18 均有展示位置；J01–J09 能完成；关键异常可恢复；来源标识正确；没有真实业务依赖；不存在只靠静态截图冒充操作成功的核心能力。
+
+## 9. 本次实际验证
+
+2026-11-12，Windows 本地，Chromium。`npm run build`、`npm test`、`npm run e2e` 均通过。J01 由 d01/editor/hero 旅程覆盖，J02 由 research 旅程与 research 状态测试覆盖，J03/J05 由 learning-agent 与 product-complete 覆盖，J04/J07 由 product-complete 覆盖，J06 由 review-transfer 覆盖，J08/J09 由 runtime-safety、review-transfer、research 和 product-complete 组合覆盖。精确文件见整版交付表。
+
+1440/1280 的研究和编辑、1024 折叠布局已检查，牌面/研究/实验/复盘/四类作答截图已保存。路由离开提示与焦点恢复已验证；浏览器原生关闭窗口提示未另做操作系统级自动化。没有验证真实扑克正确性、真实智能或教学效果。

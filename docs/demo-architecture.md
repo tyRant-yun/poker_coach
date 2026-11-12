@@ -1,6 +1,6 @@
 # Demo 模块、集成与状态设计 v0.2
 
-状态：技术方案已确认，D01 已实现最小纵向闭环；其余模块仍为设计。目标是小型模块化前端，不搭建微服务、消息中间件或真实业务后台。
+状态：D01–D08 已实现并通过本地 Demo 验证；原设计名称与实际源码映射见第 12 节。目标是小型模块化前端，不搭建微服务、消息中间件或真实业务后台。
 
 ## 1. 技术方向
 
@@ -107,7 +107,7 @@ Agent：planned → running → completed / failed / cancelled；显式暂停为
 
 ## 8. 目录规划与实际子集
 
-D01 已创建 app、study/domain、strategy、shared、ports、mocks、fixtures、persistence、styles 和对应测试。下图中的 knowledge、review、learning、agent 等属于后续规划，当前没有空实现冒充功能。
+D01 当时创建 app、study/domain、strategy、shared、ports、mocks、fixtures、persistence、styles 和对应测试。下图保留最初目录规划；当前 knowledge、review、learning、agent 已按第 12 节实际文件落地。
 
 ```text
 src/
@@ -157,3 +157,31 @@ fixture 不可修改；用户修改以覆盖层保存到 IndexedDB 数据库 `ri
 - 版本恢复产生下一编号的草稿；提交后形成新版本。`branchSource` 记录命名研究分支的原案例/版本，成果不复制改名，原报告留在原案例。
 - `pendingInput` 仅为瞬时 UI 状态，不导出或持久化；路由阻塞和浏览器离开提示保护尚未应用的编辑。表单固定 `editRevision`，发生冲突保留输入，需显式核对或重新载入。保存失败/内存模式下也有浏览器离开提示。
 - IndexedDB 数据库和 `schemaVersion: 1` 保持兼容；新字段为可选/默认值，不清除旧数据。生产构建按研究视图分块加载。
+
+## 12. D03–D08 实际实现映射
+
+本节覆盖当前实现；前文目录和通用信封是设计表达，不要求与最终文件名一一对应。
+
+| 责任 | 实际位置 | 决定权 |
+|---|---|---|
+| 应用入口 | `src/app/workspace.ts` | 规范化状态、持久化调度、共用 commands/queries |
+| 研究/节点/实验 | `src/modules/product/research.ts`、`ResearchWorkbench.tsx` | 节点草稿、上游复核、参考请求、Node Lock、固定基准 |
+| 任务/求解 | `src/mocks/solver.ts`、`src/ports/index.ts`、`JobDrawer.tsx` | 固定输入、执行状态、质量、取消/重试 |
+| Agent | `src/modules/product/agent.ts`、`AgentPanel.tsx` | 3 条脚本、预算、工具轨迹、revision 冲突与恢复 |
+| 训练 | `src/modules/product/learning.ts`、`LearningPages.tsx` | 题目投影、辅助状态、不可变作答、迁移与计划 |
+| 知识 | `Knowledge.tsx`、`src/fixtures/scenarios.ts` | 8 条作者内容与来源、精确条目跳转 |
+| 复盘 | `review.ts`、`ReviewPage.tsx` | 原文、待确认字段、行动前投影、节点提取 |
+| 导入/导出/恢复 | `transfer.ts`、`DataTools.tsx`、`Settings.tsx` | 校验、复制和 ID 重映射、隔离未验证证据、重置 |
+| 内容/模式 | `src/fixtures/scenarios.ts`、`product/domain.ts`、`persistence/schema.ts` | S01–S10、学习/任务/手牌数据与持久化边界 |
+
+研究、学习、Agent、复盘和迁移命令工厂通过 `ProductContext` 复用核心命令；UI 不导入 fixture 取业务结果。实际类型为 `StudyCase`、`SolveJob`、`SolveResult`、报告、会话和 mission 等，输入、版本、来源分布在这些强类型对象中；未另建一个名称完全相同的通用 `DemoResult` 包装层。
+
+`Spot` 允许街道、当前行动方、预定义行动集合、数值单位、假设和上游标记；范围支持附加玩家，旧 S01 的隐式行动集合保留。节点草稿按 nodeId 暂存，切换不改写历史版本。提交包含当时 Spot 和各玩家范围。输入 fingerprint 规范化实际范围/牌面/行动/树/假设，忽略随机 ID 和标题。
+
+作业冻结输入与设置，重试旧作业仍用旧输入；跳过等待与取消分别处理，取消拒绝迟到结果。刷新未完成作业/Agent 为 interrupted，恢复步骤先查已产生成果，避免重复提交/求解。全局任务入口始终可打开固定版本结果。
+
+训练视图由命令层投影，揭示前不返回参考答案和未来信息；首次 Attempt 固定，提示/揭示导致辅助标记持续保留，反馈后的修改保存为新 Attempt。复盘玩家视图不返回全知原文、未来牌/行动或对手私牌，显式切全知才提供。
+
+`WorkspaceSnapshot` 保留 schemaVersion=1，以 optional 字段增量兼容 D02；S01 旧内容不变，fixtureVersion 维持原值。导入另做领域引用与输入一致性校验，在同一快照内复制并映射对象关系；缺 fixture 的数值只保存在未验证档案。IndexedDB 损坏后只读保留原内容并进入内存工作区；下载原件和明确重置是两个独立操作。
+
+页面按需加载，依赖另分 vendor chunk；1024 折叠侧栏。持久化、导入与 UI 投影的关键不变量由 57 项状态测试及 20 条浏览器旅程组合验证，详见 [交付记录](demo-v1-delivery.md)。

@@ -113,7 +113,7 @@ test('D02: compare two fixed reports, restore V1 into V3, and create a named ind
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('button', { name: '恢复为草稿' }).last().click();
   await page.getByRole('button', { name: '建立新草稿' }).click();
-  await expect(page.getByText(/V3 草稿/)).toBeVisible();
+  await expect(page.getByText(/^V3 草稿 · r/)).toBeVisible();
   await page.getByRole('button', { name: '提交策略', exact: true }).click();
   await page.getByRole('tab', { name: /版本记录/ }).click();
   await page.getByRole('button', { name: '新建研究分支' }).nth(1).click();
@@ -159,6 +159,9 @@ test('D02: range weights revise inputs, invalidate references, and render empty 
   await expect(page.getByText('无可用组合，整体行动频率无数据。请在输入权重中加入组合。')).toBeVisible();
   await page.getByRole('button', { name: '提交策略', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('没有可用组合');
+  await page.getByRole('tab', { name: /Hero 推演/ }).click();
+  await expect(page.getByRole('heading', { name: '当前范围没有可用 Hero' })).toBeVisible();
+  await page.getByRole('tab', { name: /全范围构建/ }).click();
   await page.getByRole('button', { name: /^撤销/ }).click();
   await expect(page.getByText('566 / 566 个组合已完成')).toBeVisible();
 });

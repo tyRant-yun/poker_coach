@@ -10,6 +10,7 @@ export type EditableSnapshot = {
   spot: Spot; spotRevisionId: string; ranges?: RangeInputs;
   choices: Choices; lockedCombos: string[]; assistance?: 'reference' | 'example';
   restoredFrom?: string;
+  staleNodes?: string[];
 };
 export type EditEntry = { label: string; snapshot: EditableSnapshot };
 export const actions: { id: Action; name: string; short: string; color: string }[] = [
@@ -104,6 +105,7 @@ export type AssessmentReport = {
   createdAt: string;
   difference: number | null;
   largestDifferences: { label: string; difference: number }[];
+  sampleAdversarial?: {value:number;unit:string;model:string}|null;
   sampleEv: { value: number; loss: number; template: 'check' | 'reference' } | null;
 };
 export type StudyCase = {
@@ -115,6 +117,8 @@ export type StudyCase = {
   origin?: { handId: string; decisionId: string };
   experiment?: { baselineCaseId: string; baselineVersionId: string; variant: string; lock: import('../product/domain').NodeLock };
   favorite?: boolean;
+  importWarnings?: string[];
+  unverifiedEvidence?: {fixtureVersion:string;raw:string};
   agentSource?: {missionId:string;sourceCaseId:string;editRevision:number};
   createdAt: string;
   updatedAt: string;
@@ -165,11 +169,15 @@ export function validateSubmission(spot: Spot, weights: RangeWeights, choices: C
   if (s.missing) return `还有 ${s.missing} 个组合尚未分配，请完成后再提交。`;
   return null;
 }
+export function canonicalAssumption(value?:string):string|undefined {
+  if(!value)return undefined;
+  try{const parsed:unknown=JSON.parse(value);const normalize=(v:unknown,key=''):unknown=>Array.isArray(v)?(key==='combos'?[...v].sort():v).map(x=>normalize(x)):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b)).map(([k,x])=>[k,normalize(x,k)])):v;return JSON.stringify(normalize(parsed));}catch{return value;}
+}
 export function spotSignature(spot: Spot): string {
-  return JSON.stringify({ ...spot, board: [...spot.board].sort() });
+  return JSON.stringify({board:[...spot.board].sort(),potMinor:spot.potMinor,stackMinor:spot.stackMinor,unitsPerBb:spot.unitsPerBb,actor:spot.actor,treeVersion:spot.treeVersion,actions:actionsFor(spot).map(a=>a.id).sort(),unit:spot.unit??'bb',assumption:canonicalAssumption(spot.assumption),upstream:spot.upstream?'unreviewed':undefined});
 }
 export function canonicalPolicy(choices: Choices, combos: string[], available = actions): string {
-  return JSON.stringify([...combos].sort().map(c => [c, ...available.map(a => choices[c]?.[a.id] ?? null)]));
+  return JSON.stringify([...combos].sort().map(c => [c, ...[...available].sort((a,b)=>a.id.localeCompare(b.id)).map(a => choices[c]?.[a.id] ?? null)]));
 }
 export function frequencyDifference(spot: Spot, weights: RangeWeights, user: Choices, reference: Choices): number {
   const combos = activeCombos(spot, weights);
@@ -181,7 +189,8 @@ export function frequencyDifference(spot: Spot, weights: RangeWeights, user: Cho
 export function validateSpot(spot: Spot): string | null {
   if (![0, 3, 4, 5].includes(spot.board.length) || spot.board.some(c => !/^[AKQJT2-9][shdc]$/.test(c)) || new Set(spot.board).size !== spot.board.length)
     return '公共牌应为 0、3、4 或 5 张不同的有效牌。';
-  if (![spot.potMinor, spot.stackMinor].every(v => Number.isInteger(v) && v > 0)) return '底池与剩余筹码必须为正数。';
+  if (![spot.potMinor, spot.stackMinor, spot.unitsPerBb].every(v => Number.isInteger(v) && v > 0)) return '底池与剩余筹码必须为正数。';
+  if(spot.actionSet&&(!spot.actionSet.length||new Set(spot.actionSet.map(a=>a.id)).size!==spot.actionSet.length))return '决策节点的行动集合不能为空或重复。';
   return null;
 }
 

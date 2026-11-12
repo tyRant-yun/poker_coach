@@ -4,6 +4,10 @@ import { snapshotSchema } from './schema';
 import { fixtureVersion } from '../fixtures/s01';
 
 export const indexedDbRepository: WorkspaceRepository = {
+  async readRaw() {
+    const db = await openDB('riverline-demo',1,{upgrade(db){db.createObjectStore('workspace');}});
+    try{return await db.get('workspace','current');}finally{db.close();}
+  },
   async load() {
     const db = await openDB('riverline-demo', 1, { upgrade(db) { db.createObjectStore('workspace'); } });
     try {

@@ -530,3 +530,16 @@ button:disabled { cursor: default; opacity: .4; }
 .sidebarHint { margin-top:18px; padding-top:16px; }
 .nav a { padding-top:9px; padding-bottom:9px; }
 @media(max-width:760px) { .trainingCards,.knowledgeGrid { grid-template-columns:1fr; } .planRow,.evidenceRow { flex-wrap:wrap; } .agentBody { padding:15px; } .intentInput { flex-wrap:wrap; } }
+.timeline { display:flex; flex-wrap:wrap; gap:10px; margin:22px 0; }
+.timeline button { padding:12px 16px; border:1px solid #41545e; background:#23323c; color:#b7cbd1; }
+.timeline button[aria-pressed="true"] { background:#2c4e42; border-color:#86d6b8; }
+.reviewDecision { display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:30px; padding:20px 0; }
+.reviewDecision li { margin:8px 0; font-size:12px; color:#a9bcc5; }
+.reviewDecision .productActions { flex-direction:column; align-items:stretch; }
+.importPreview { border:1px solid #456554; border-radius:8px; background:#213c31; padding:20px; margin:18px 0; }
+.productPanel details { color:#9bb6be; padding:12px 0; font-size:12px; }
+.productPanel details summary { cursor:pointer; }
+.productPanel textarea { width:100%; }
+.sidebarBottom { padding-top:18px; }
+.sidebarHint { padding-top:12px; margin-top:14px; }
+@media(max-width:1024px) { .sidebar { width:70px; flex-basis:70px; padding:22px 10px; } .mainShell { margin-left:70px; width:calc(100% - 70px); } .sidebar .brand { padding:0; justify-content:center; } .sidebar .brand>span,.sidebar .workspaceLabel,.sidebar .sidebarHint,.sidebar .sidebarBottom,.sidebar .navCount { display:none; } .sidebar .nav { margin-top:30px; } .sidebar .nav a { font-size:0; justify-content:center; padding:12px; gap:0; } .reviewDecision { grid-template-columns:minmax(0,1fr); } }
