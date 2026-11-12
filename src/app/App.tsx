@@ -1,10 +1,10 @@
-import { Component, useEffect, useState } from 'react';
+import { Component, lazy, Suspense, useEffect, useState } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
-import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Route, Routes, useBlocker, useNavigate } from 'react-router-dom';
 import { commands, queries, useWorkspace } from './workspace';
 import { Board, Dialog, Icon, dateTime } from '../shared/ui';
-import { Study } from '../modules/strategy/Study';
 import s from '../styles/App.module.css';
+const Study = lazy(() => import('../modules/strategy/Study').then(module => ({ default: module.Study })));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: boolean }> {
   state = { error: false };
@@ -23,13 +23,23 @@ export function App() {
   const savedAt = useWorkspace(st => st.savedAt);
   const storageError = useWorkspace(st => st.storageError);
   const notice = useWorkspace(st => st.notice);
+  const pendingInput = useWorkspace(st => st.pendingInput);
+  const hasCases = useWorkspace(st => Object.keys(st.data.cases).length > 0);
   const [about, setAbout] = useState(false);
+  const blocker = useBlocker(pendingInput);
   useEffect(() => { void commands.initialize(); }, []);
   useEffect(() => {
     if (!notice || notice.kind === 'error') return;
     const timer = setTimeout(commands.dismissNotice, 5500);
     return () => clearTimeout(timer);
   }, [notice]);
+  useEffect(() => {
+    const unload = (event: BeforeUnloadEvent) => {
+      if (pendingInput || (hasCases && ['saving', 'error', 'memory'].includes(saveStatus))) { event.preventDefault(); event.returnValue = ''; }
+    };
+    window.addEventListener('beforeunload', unload);
+    return () => window.removeEventListener('beforeunload', unload);
+  }, [pendingInput, hasCases, saveStatus]);
   const saveLabels = { loading: '正在载入', saving: '正在保存', saved: savedAt ? '已保存到本地' : '本地存储就绪', error: '保存未成功', memory: '仅内存模式' };
   return <ErrorBoundary><div className={s.app}>
     <aside className={s.sidebar}>
@@ -41,15 +51,16 @@ export function App() {
         <NavLink to="/reports" className={({ isActive }) => isActive ? s.navActive : ''}><Icon name="report" />研究记录</NavLink>
       </nav>
       <div className={s.sidebarHint}><span className={s.eyebrow}>当前探索</span><b>从组合到整个范围</b><p>构建、比较、修订。让每一次行动，都成为完整策略的一部分。</p><Link to="/library">开始一项研究 <Icon name="arrow" size={15} /></Link></div>
-      <div className={s.sidebarBottom}><button onClick={() => setAbout(true)}><Icon name="info" />关于这版演示</button><div className={s.localStatus}><span className={saveStatus === 'saved' ? s.greenDot : s.amberDot} />{saveLabels[saveStatus]}</div><span className={s.buildLabel}>FIRST LOOP · D01</span></div>
+      <div className={s.sidebarBottom}><button onClick={() => setAbout(true)}><Icon name="info" />关于这版演示</button><div className={s.localStatus}><span className={saveStatus === 'saved' ? s.greenDot : s.amberDot} />{pendingInput ? '输入尚未应用' : saveLabels[saveStatus]}</div><span className={s.buildLabel}>RANGE WORKSPACE · D02</span></div>
     </aside>
     <div className={s.mainShell}>
       <header className={s.topbar}><div className={s.breadcrumb}>Riverline <span>/</span> 策略研究工作台</div><div className={s.topbarRight}><span className={s.demoBadge}><span />本地演示</span><button className={s.iconButton} onClick={downloadBackup} title="导出当前工作区备份" aria-label="导出工作区备份"><Icon name="download" /></button><span className={s.avatar}>R</span></div></header>
       {storageError && <div className={s.storageWarning} role="status"><Icon name="info" />{storageError}<button onClick={downloadBackup}>导出备份</button>{saveStatus === 'error' && <button onClick={commands.retrySave}>重试保存</button>}</div>}
-      {hydrated ? <main className={s.main}><Routes><Route path="/" element={<Home />} /><Route path="/library" element={<Library />} /><Route path="/study/:caseId" element={<Study />} /><Route path="/reports" element={<Reports />} /><Route path="*" element={<div className={s.empty}><h1>这个页面还没有建立</h1><Link to="/">回到工作台</Link></div>} /></Routes></main> : <div className={s.loading}><span className={s.spinner} />正在打开你的工作空间…</div>}
+      {hydrated ? <main className={s.main}><Suspense fallback={<div className={s.loading}>正在打开研究视图…</div>}><Routes><Route path="/" element={<Home />} /><Route path="/library" element={<Library />} /><Route path="/study/:caseId" element={<Study />} /><Route path="/reports" element={<Reports />} /><Route path="*" element={<div className={s.empty}><h1>这个页面还没有建立</h1><Link to="/">回到工作台</Link></div>} /></Routes></Suspense></main> : <div className={s.loading}><span className={s.spinner} />正在打开你的工作空间…</div>}
     </div>
     {notice && <div className={`${s.toast} ${notice.kind === 'error' ? s.errorToast : ''}`} role={notice.kind === 'error' ? 'alert' : 'status'}><Icon name={notice.kind === 'error' ? 'info' : 'check'} /><span>{notice.text}</span><button onClick={commands.dismissNotice} aria-label="关闭提示"><Icon name="close" size={16} /></button></div>}
-    {about && <Dialog title="关于这版演示" onClose={() => setAbout(false)}><div className={s.dialogBody}><span className={s.demoBadge}>D01 · 首个完整反馈环</span><p>你可以创建研究、编辑组合、提交策略、运行模拟并查看反馈。编辑、版本和本地保存真实工作。</p><p>范围、参考策略与收益数值由作者编写，均为合成示例，没有连接真实 Solver 或 AI 模型。</p><p>第一轮只提供 S01。批量编辑、完整 Agent、连续策略和训练在后续轮次交付。</p><p className={s.muted}>数据保存在当前浏览器，不能替代独立备份。可以通过右上角导出 JSON。</p><button className={s.primaryButton} onClick={() => setAbout(false)}>了解，继续研究</button></div></Dialog>}
+    {about && <Dialog title="关于这版演示" onClose={() => setAbout(false)}><div className={s.dialogBody}><span className={s.demoBadge}>D02 · 范围编辑与版本比较</span><p>可以从 Hero 推演进入全范围，筛选、多选、批量混频、锁定、撤销、修订输入权重、提交、比较与建立分支。编辑、版本和本地保存真实工作。</p><p>范围、参考策略与收益数值由作者编写，均为合成示例，没有连接真实 Solver 或 AI 模型。</p><p>当前提供 S01。完整 Agent、连续策略和训练仍在后续轮次；Hero 自定义尺度和混合频率留待完整产品。</p><p className={s.muted}>数据保存在当前浏览器，不能替代独立备份。可以通过右上角导出 JSON。</p><button className={s.primaryButton} onClick={() => setAbout(false)}>了解，继续研究</button></div></Dialog>}
+    {blocker.state === 'blocked' && <Dialog title="还有尚未应用的输入" onClose={() => blocker.reset()}><div className={s.dialogBody}><p>频率或权重输入尚未写入草稿。离开会放弃这些输入，已应用并保存的草稿仍保留。</p><div className={s.dialogActions}><button className={s.secondaryButton} onClick={() => blocker.reset()}>继续编辑</button><button className={s.primaryButton} onClick={() => { commands.setPendingInput(false); blocker.proceed(); }}>放弃输入并离开</button></div></div></Dialog>}
   </div></ErrorBoundary>;
 }
 function useCreateCase() {
@@ -71,10 +82,17 @@ function Home() {
 }
 function Library() {
   const [search, setSearch] = useState('');
+  const [examplePending, setExamplePending] = useState(false);
+  const navigate = useNavigate();
+  async function openComparison() {
+    setExamplePending(true);
+    try { const result = await commands.createComparisonExample(); if (result.ok) navigate(`/study/${result.value}?view=history`); }
+    finally { setExamplePending(false); }
+  }
   const create = useCreateCase();
   const cards = queries.catalogue().filter(c => (c.title + c.subtitle + c.tags.join(' ')).toLowerCase().includes(search.toLowerCase()));
   return <div className={s.page}><div className={s.pageHeading}><div><span className={s.eyebrow}>SCENARIO LIBRARY</span><h1>选择一个值得深入的局面。</h1><p>第一轮从一份清楚、可重播的范围研究开始。</p></div></div><div className={s.libraryToolbar}><label className={s.search}><Icon name="search" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索位置、底池类型或街道" aria-label="搜索局面" /></label><span className={s.outlineBadge}>翻牌 · 现金局</span><span className={s.muted}>{cards.length} 个可用局面</span></div>
-    <div className={s.libraryLayout}><div>{cards.length ? cards.map(c => <section className={s.libraryCard} key={c.id}><div className={s.cardTopline}><span className={s.pill}>S01 · 首轮研究</span><span className={s.smallMuted}>合成示例</span></div><div className={s.libraryCardMain}><div><h2>{c.title}</h2><p>{c.subtitle}</p></div><Board cards={c.board} /></div><div className={s.tags}>{c.tags.map(t => <span key={t}>{t}</span>)}</div><p className={s.description}>{c.description}</p><div className={s.libraryCardFoot}><span><Icon name="layers" size={15} />3 种行动 · 组合级编辑</span><button className={s.primaryButton} onClick={create}>创建研究案例 <Icon name="arrow" size={16} /></button></div></section>) : <div className={s.emptyCard}><h3>没有找到匹配局面</h3><p>试试 BTN、BB、翻牌或 SRP。</p><button className={s.secondaryButton} onClick={() => setSearch('')}>清除搜索</button></div>}</div><aside className={s.guideCard}><span className={s.eyebrow}>HOW TO STUDY</span><h3>把局面变成策略</h3>{[['01', '构建', '为每个组合分配行动，而不只选择一手牌。'], ['02', '比较', '提交后，对照示例参考查看范围结构。'], ['03', '修订', '保留原版本，在新的草稿中继续思考。']].map(([n, title, text]) => <div className={s.guideStep} key={n}><span>{n}</span><div><b>{title}</b><p>{text}</p></div></div>)}<div className={s.guideNote}><Icon name="info" size={16} />参考与数值为演示材料，不是已验证的扑克建议。</div></aside></div></div>;
+    <div className={s.libraryLayout}><div>{cards.length ? cards.map(c => <section className={s.libraryCard} key={c.id}><div className={s.cardTopline}><span className={s.pill}>S01 · 首轮研究</span><span className={s.smallMuted}>合成示例</span></div><div className={s.libraryCardMain}><div><h2>{c.title}</h2><p>{c.subtitle}</p></div><Board cards={c.board} /></div><div className={s.tags}>{c.tags.map(t => <span key={t}>{t}</span>)}</div><p className={s.description}>{c.description}</p><div className={s.libraryCardFoot}><span><Icon name="layers" size={15} />3 种行动 · 组合级编辑</span><button className={s.secondaryButton} disabled={examplePending} onClick={() => void openComparison()}>{examplePending ? '正在建立示例…' : '打开双版本示例'}</button><button className={s.primaryButton} onClick={create}>创建研究案例 <Icon name="arrow" size={16} /></button></div></section>) : <div className={s.emptyCard}><h3>没有找到匹配局面</h3><p>试试 BTN、BB、翻牌或 SRP。</p><button className={s.secondaryButton} onClick={() => setSearch('')}>清除搜索</button></div>}</div><aside className={s.guideCard}><span className={s.eyebrow}>HOW TO STUDY</span><h3>把局面变成策略</h3>{[['01', '构建', '为每个组合分配行动，而不只选择一手牌。'], ['02', '比较', '提交后，对照示例参考查看范围结构。'], ['03', '修订', '保留原版本，在新的草稿中继续思考。']].map(([n, title, text]) => <div className={s.guideStep} key={n}><span>{n}</span><div><b>{title}</b><p>{text}</p></div></div>)}<div className={s.guideNote}><Icon name="info" size={16} />参考与数值为演示材料，不是已验证的扑克建议。</div></aside></div></div>;
 }
 function Reports() {
   const cases = useWorkspace(st => st.data.cases);

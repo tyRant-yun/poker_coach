@@ -8,10 +8,10 @@ export function ReferenceFillButton({ c, jobId, onComplete }: { c: StudyCase; jo
   const [confirm, setConfirm] = useState(false);
   const job = c.jobs.find(j => j.id === jobId);
   const compatible = job?.spotRevisionId === c.spotRevisionId;
-  const missing = queries.stats(c).missing;
+  const missing = queries.stats(c).combos.filter(combo => !c.draft.choices[combo] && !(c.draft.lockedCombos ?? []).includes(combo)).length;
   return <>
     <div className={s.referenceFill}>
-      <div><b>只调整你关心的部分</b><p>已有行动保留，其余 {missing} 个未填写组合可以用参考辅助补全。</p></div>
+      <div><b>只调整你关心的部分</b><p>已有行动与锁定部分保留，其余 {missing} 个未填写组合可以用参考辅助补全。</p></div>
       <button className={s.secondaryButton} disabled={!compatible || !missing} onClick={() => setConfirm(true)}>
         <Icon name="layers" size={15} />用参考补全未填写组合
       </button>

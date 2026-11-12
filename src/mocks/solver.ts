@@ -1,5 +1,6 @@
 import { activeCombos, canonicalPolicy, spotSignature } from '../modules/study/domain';
-import { btnRange, fixtureVersion, referenceChoices, s01Spot } from '../fixtures/s01';
+import { btnRange, bbRange, fixtureVersion, referenceChoices, s01Spot } from '../fixtures/s01';
+import { allCombos } from '../modules/study/domain';
 import type { SolverPort } from '../ports';
 import { solveResultSchema } from '../persistence/schema';
 
@@ -16,10 +17,13 @@ export function createMockSolver(waitMs = 650): SolverPort {
     await delay(waitMs / 2, signal);
     onStage('正在读取预置参考');
     await delay(waitMs, signal);
-    const input = spotSignature(version.spot) + canonicalPolicy(version.choices ?? {}, activeCombos(version.spot, btnRange));
+    const ranges = version.ranges ?? { BTN: btnRange, BB: bbRange };
+    const rangeKey = JSON.stringify(allCombos.map(c => [c, ranges.BTN[c] ?? 0, ranges.BB[c] ?? 0]));
+    const input = spotSignature(version.spot) + rangeKey + canonicalPolicy(version.choices ?? {}, activeCombos(version.spot, ranges.BTN));
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
     const inputFingerprint = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
-    const matched = spotSignature(version.spot) === spotSignature(s01Spot);
+    const matched = spotSignature(version.spot) === spotSignature(s01Spot)
+      && allCombos.every(c => (ranges.BTN[c] ?? 0) === (btnRange[c] ?? 0) && (ranges.BB[c] ?? 0) === (bbRange[c] ?? 0));
     return solveResultSchema.parse({
       dataKind: 'synthetic', fixtureVersion, inputFingerprint,
       availability: matched ? 'available' : 'uncovered',

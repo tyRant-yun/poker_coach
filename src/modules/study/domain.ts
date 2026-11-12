@@ -2,6 +2,14 @@ export type Action = 'check' | 'bet33' | 'bet75';
 export type Allocation = Record<Action, number>;
 export type Choices = Record<string, Allocation>;
 export type RangeWeights = Record<string, number>;
+export type RangeInputs = { BTN: RangeWeights; BB: RangeWeights };
+export type EditableSnapshot = {
+  name?: string;
+  spot: Spot; spotRevisionId: string; ranges?: RangeInputs;
+  choices: Choices; lockedCombos: string[]; assistance?: 'reference' | 'example';
+  restoredFrom?: string;
+};
+export type EditEntry = { label: string; snapshot: EditableSnapshot };
 export const actions: { id: Action; name: string; short: string; color: string }[] = [
   { id: 'check', name: '过牌', short: 'X', color: '#79aee8' },
   { id: 'bet33', name: '下注 33%', short: 'B33', color: '#e6ad6b' },
@@ -33,7 +41,7 @@ export type Spot = {
   rangeVersion: string;
   treeVersion: string;
 };
-export type PolicyDraft = { editRevision: number; choices: Choices; assistance?: 'reference' | 'example' };
+export type PolicyDraft = { editRevision: number; choices: Choices; assistance?: 'reference' | 'example'; lockedCombos?: string[]; restoredFrom?: string };
 export type HeroPlanInput = {
   combo: string;
   action: Action;
@@ -43,12 +51,13 @@ export type HeroPlanInput = {
   reason: string;
 };
 export type HeroPlan = HeroPlanInput & { id: string; spotRevisionId: string; createdAt: string };
-export type SolveInput = { spot: Spot; spotRevisionId: string; choices?: Choices };
+export type SolveInput = { spot: Spot; spotRevisionId: string; choices?: Choices; ranges?: RangeInputs };
 export type PolicyRevision = {
   id: string;
   number: number;
   spotRevisionId: string;
   spot: Spot;
+  ranges?: RangeInputs;
   choices: Choices;
   createdAt: string;
   assistance?: 'reference' | 'example';
@@ -91,6 +100,9 @@ export type StudyCase = {
   updatedAt: string;
   spotRevisionId: string;
   spot: Spot;
+  ranges?: RangeInputs;
+  editHistory?: { past: EditEntry[]; future: EditEntry[] };
+  branchSource?: { caseId: string; versionId: string; versionNumber: number };
   draft: PolicyDraft;
   versions: PolicyRevision[];
   jobs: SolveJob[];

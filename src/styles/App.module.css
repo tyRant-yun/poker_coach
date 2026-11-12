@@ -409,3 +409,52 @@
 @media(max-width:950px) { .sidebar { width: 72px; flex-basis: 72px; align-items: center; padding: 24px 8px; } .brand { padding: 0; } .brand > span, .workspaceLabel, .sidebarHint, .sidebarBottom { display: none; } .nav { margin-top: 40px; width: 100%; } .nav a { font-size: 0; padding: 13px; justify-content: center; } .navCount { display: none; } .mainShell { margin-left: 72px; width: calc(100% - 72px); } .toast { left: calc(50% + 36px); } .libraryLayout { grid-template-columns: 1fr; } .libraryLayout > .guideCard { display: none; } .topbar { padding-inline: 24px; } }
 @media(max-width:760px) { .main { padding: 19px; } .pageHeading h1 { font-size: 21px; } .homeHero { grid-template-columns: 1fr; padding: 26px; } .heroCopy h2 { font-size: 30px; } .heroCopy h2 br { display: none; } .heroScene { max-width: none; } .statGrid { gap: 9px; } .statGrid > div { padding: 13px 11px; } .statGrid strong { font-size: 21px; } .statGrid small { font-size: 8px; } .editorLayout { grid-template-columns: 1fr; } .inspector { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; } .inspectorCard { grid-row: span 2; } .spotBand { flex-wrap: wrap; justify-content: flex-start; gap: 21px; } .spotPosition { margin-left: auto; } .spotMetric b { font-size: 18px; } .studyHeading h1 { font-size: 19px; } .studyHeading .secondaryButton { font-size: 9px; padding: 7px 9px; } .studyHeading p { font-size: 10px; } .playingCard { width: 35px; height: 48px; } .smallCard { width: 27px; height: 36px; } .caseGrid { grid-template-columns: 1fr; } .versionRow { flex-wrap: wrap; } .versionRowActions { width: 100%; padding-left: 56px; } .recordRow { padding: 16px; gap: 12px; } .recordRow .board { display: none; } .storageWarning { padding: 10px 18px; flex-wrap: wrap; } }
 @media(max-width:520px) { .sidebar { width: 56px; padding-inline: 5px; } .mainShell { margin-left: 56px; width: calc(100% - 56px); } .brand img { width: 30px; } .main { padding: 16px 12px; } .topbar { padding: 0 14px; height: 57px; } .breadcrumb { font-size: 9px; } .breadcrumb span { margin: 0 5px; } .topbarRight { gap: 9px; } .avatar { display: none; } .demoBadge { font-size: 8px; padding: 3px 5px; } .pageHeading h1 { font-size: 19px; } .pageHeading p { font-size: 10px; } .homeHero { padding: 23px; } .heroCopy h2 { font-size: 26px; } .heroCopy h2 br { display: block; } .statGrid { grid-template-columns: 1fr; } .statGrid small { display: inline; margin-left: 10px; } .sectionHeading p { max-width: 160px; } .inspector { grid-template-columns: 1fr; } .studyHeading { flex-wrap: wrap; } .spotBand { padding: 14px; gap: 16px; } .spotBoard { gap: 10px; } .spotPosition { margin-left: 0; border: 0; padding: 0; gap: 20px; } .matrixPanel { padding: 11px; } .matrix { gap: 2px; } .matrixCell b { font-size: 8px; } .matrixCell > span { display: none; } .matrixMeta { font-size: 8px; } .matrixFoot { font-size: 7px; gap: 10px; } .matrixFoot > span:last-child { display: none; } .frequencyLegend { font-size: 7px; gap: 5px; } .frequencyLegend b { font-size: 8px; } .submitBar { padding: 11px; } .submitBar .primaryButton { font-size: 9px; padding-inline: 9px; } .studyTabs { gap: 20px; } .studyTabs > button { font-size: 11px; gap: 5px; } .feedbackMetrics { grid-template-columns: 1fr; } .feedbackMetrics > div { display: flex; align-items: center; gap: 10px; } .feedbackMetrics p { flex: 1; } .feedbackMetrics strong { margin: 0; font-size: 21px; } .feedbackMetrics > div > span { width: 85px; } .versionHeader { flex-wrap: wrap; } .feedbackMain { padding: 15px; } .versionContext code { display: none; } .libraryToolbar { flex-wrap: wrap; } .search { width: 100%; } .libraryCard { padding: 19px; } .libraryCardMain { flex-wrap: wrap; } .libraryCardMain h2 { font-size: 26px; } .libraryCardFoot .primaryButton { width: 100%; } .sceneActions { gap: 15px; } .sourceList { grid-template-columns: 65px minmax(0,1fr); } .dialogBody { padding: 20px; } .dialogActions { flex-wrap: wrap; } .toast { left: calc(50% + 28px); font-size: 10px; padding: 10px; } }
+.editorToolbar, .editorFilters, .selectionTools, .editHistoryBar, .lockTools, .pagination, .comparisonCounts { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.editorToolbar { padding: 0 22px 14px; justify-content: space-between; }
+.matrix { user-select: none; }
+.editorFilters { padding: 0 22px 14px; border-bottom: 1px solid var(--line); }
+.editorFilters label { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.editorFilters select, .comparisonSelects select { border: 1px solid #3a4752; background: #202b36; color: #e0e8ed; border-radius: 6px; padding: 6px 8px; max-width: 145px; }
+.selectionTools { padding: 14px 0; font-size: 11px; }
+.selectionTools button, .editHistoryBar button, .lockTools button, .pagination button { border: 1px solid #3a4752; border-radius: 6px; padding: 7px 10px; color: #b8d4cf; background: #24333d; cursor: pointer; font-size: 11px; }
+.selectionTools span, .editHistoryBar span, .lockTools span { color: #82929f; margin-left: auto; font-size: 11px; }
+.matrixPanel > .selectionTools, .matrixPanel > .fieldHelp, .matrixPanel > .rangeNote { margin-left: 22px; margin-right: 22px; }
+.comboGrid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 5px; padding: 0 22px; }
+.comboGrid button { display: flex; flex-direction: column; gap: 5px; text-align: center; align-items: center; min-height: 50px; padding: 7px 3px; background: #24323d; border: 1px solid #384853; border-radius: 4px; cursor: pointer; }
+.comboGrid button small { font-size: 9px; color: #a1b0bd; }
+.comboGrid button[aria-pressed="true"] { border: 2px solid #83d8bc; background: #2e4d48; padding: 6px 2px; }
+.comboGrid button:disabled { opacity: .35; cursor: default; }
+.pagination { justify-content: center; padding: 14px; font-size: 11px; color: #9eacb6; }
+.editHistoryBar { padding: 14px 0; }
+.editHistoryDetails { color: #9eacb6; font-size: 11px; padding: 8px 0 18px; }
+.editHistoryDetails summary { cursor: pointer; }
+.editHistoryDetails li { padding: 3px 0; }
+.lockTools { margin-top: 18px; padding-top: 16px; border-top: 1px solid #38444e; }
+.lockTools span { flex-basis: 100%; }
+.editorFocus { grid-template-columns: minmax(0,1fr); }
+.editorFocus .inspector { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.editorFocus .matrixCell { min-height: 45px; }
+.inspector .handHeading h2 { font-size: 30px; }
+.libraryCardFoot { flex-wrap: wrap; gap: 12px; }
+.versionComparison { margin-top: 24px; border: 1px solid #34414c; border-radius: 12px; background: #1c2732; padding: 24px; }
+.versionComparison .panelHeader { padding: 0 0 18px; }
+.comparisonSelects { display: flex; gap: 30px; padding-bottom: 18px; }
+.comparisonSelects label { display: flex; align-items: center; gap: 12px; font-size: 12px; color: #a4b3be; }
+.versionTotals { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.versionTotals > div { background: #202e38; border: 1px solid #374750; border-radius: 9px; padding: 18px; min-width: 0; }
+.versionTotals h3 { margin: 0 0 12px; }
+.versionTotals p { font-size: 12px; color: #b6c6cd; }
+.versionTotals code { font-size: 10px; color: #8599a6; overflow-wrap: anywhere; }
+.comparisonCounts { margin: 20px 0; font-size: 12px; color: #b3cccb; }
+.comparisonCounts span { background: #293d43; padding: 7px 12px; border-radius: 6px; }
+.versionComparison .matrix { padding: 0; }
+.versionComparison .diffCell { background: #705b3e; }
+.comparisonTableWrap { overflow-x: auto; }
+.comparisonTable { width: 100%; border-collapse: collapse; font-size: 12px; }
+.comparisonTable th { text-align: left; font-weight: 500; color: #aec3c9; }
+.comparisonTable td, .comparisonTable th { border-bottom: 1px solid #34444f; padding: 12px 8px; }
+.compareComboValues { display: flex; flex-direction: column; gap: 5px; color: #b6c2cc; font-size: 11px; }
+.compareComboValues b { font-weight: 500; color: #80d1b7; }
+button:disabled { cursor: default; opacity: .4; }
+@media (max-width: 1300px) { .editorToolbar { gap: 12px; } .editorFilters { gap: 8px; } .comboGrid { grid-template-columns: repeat(4,minmax(0,1fr)); } .versionRowActions { flex-wrap: wrap; } .versionTotals .frequencyLegend { gap: 8px; } }
+@media (max-width: 850px) { .versionTotals, .editorFocus .inspector { grid-template-columns: 1fr; } .comparisonSelects { gap: 12px; flex-wrap: wrap; } }

@@ -12,7 +12,7 @@ const branchLabels = { call: '翻牌：BB 跟注', raise: '翻牌：BB 加注', 
 
 export function HeroStudy({ c, onRange }: { c: StudyCase; onRange: (label: string) => void }) {
   const latest = queries.latestHeroPlan(c);
-  const active = activeCombos(c.spot, queries.weights());
+  const active = activeCombos(c.spot, queries.weights('BTN', c));
   const defaultCombo = active.find(combo => handByCombo[combo] === 'AKs') ?? active[0] ?? '';
   const [combo, setCombo] = useState(latest?.combo ?? defaultCombo);
   const [action, setAction] = useState<Action | null>(latest?.action ?? null);
@@ -120,7 +120,7 @@ export function HeroStudy({ c, onRange }: { c: StudyCase; onRange: (label: strin
     <div ref={resultRef} className={s.heroResults} role="region" aria-label="Hero 对照与全范围参考" tabIndex={-1}>
     {reference && refJob && <>
       {refAllocation && <div className={s.heroReferenceSummary}><Board cards={[combo.slice(0, 2), combo.slice(2)]} small /><div><b>Hero 在参考中的位置</b><p>{actions.map(a => `${a.name} ${percent(refAllocation[a.id] / 10000)}`).join(' · ')}</p></div><span className={s.pill}>合成示例</span></div>}
-      <ReferenceRange spot={c.spot} reference={reference} weights={queries.weights()} heroCombo={combo}
+      <ReferenceRange spot={c.spot} reference={reference} weights={queries.weights('BTN', c)} heroCombo={combo}
         userChoices={preview ? { [combo]: preview } : {}} userLabel="Hero 当前想法" />
       <ReferenceFillButton c={c} jobId={refJob.id} onComplete={() => onRange(label)} />
     </>}

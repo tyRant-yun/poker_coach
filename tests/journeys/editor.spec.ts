@@ -1,0 +1,181 @@
+import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { mkdir, readFile } from 'node:fs/promises';
+import type { WorkspaceSnapshot } from '../../src/modules/study/domain';
+
+test.beforeAll(async () => { await mkdir('.artifacts/d02', { recursive: true }); });
+async function start(page: Page) {
+  await page.goto('/library');
+  await page.getByRole('button', { name: '创建研究案例' }).click();
+  await page.getByRole('tab', { name: /全范围构建/ }).click();
+}
+async function backup(page: Page): Promise<WorkspaceSnapshot> {
+  const pending = page.waitForEvent('download');
+  await page.getByRole('button', { name: '导出工作区备份' }).click();
+  const file = await pending;
+  return JSON.parse(await readFile((await file.path())!, 'utf8'));
+}
+async function capture(page: Page, name: string) {
+  if (await page.getByRole('button', { name: '关闭提示' }).count()) await page.getByRole('button', { name: '关闭提示' }).click();
+  await page.evaluate(() => scrollTo(0, 0));
+  await page.screenshot({ path: `.artifacts/d02/${name}.png`, fullPage: true, animations: 'disabled' });
+}
+async function mix(page: Page, x: string, b: string) {
+  await page.getByRole('spinbutton', { name: '过牌频率', exact: true }).fill(x);
+  await page.getByRole('spinbutton', { name: '下注 33%频率', exact: true }).fill(b);
+}
+
+test('D02: lock, batch edit, undo/redo, drag-select, filter, and preserve pending input on navigation', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await start(page);
+  await page.getByTestId('cell-AA').focus();
+  await page.keyboard.press('Enter');
+  await mix(page, '50', '50');
+  await page.getByRole('button', { name: '应用到 3 个组合' }).click();
+  await page.getByRole('button', { name: '选择组合 AhAd', exact: true }).click();
+  await page.getByRole('button', { name: '锁定所选' }).click();
+  await page.getByRole('button', { name: '编辑整个 AA' }).click();
+  await mix(page, '25', '75');
+  await page.getByRole('button', { name: '应用到 3 个组合' }).click();
+  let data = Object.values((await backup(page)).cases)[0];
+  expect(data.draft.choices.AhAd).toEqual({ check: 5000, bet33: 5000, bet75: 0 });
+  expect(data.draft.choices.AhAc).toEqual({ check: 2500, bet33: 7500, bet75: 0 });
+  await page.getByRole('button', { name: /^撤销/ }).click();
+  await expect(page.getByRole('spinbutton', { name: '过牌频率', exact: true })).toHaveValue('50');
+  await page.getByRole('button', { name: '重做', exact: true }).click();
+  await expect(page.getByRole('spinbutton', { name: '过牌频率', exact: true })).toHaveValue('33.33');
+  const k = (await page.getByTestId('cell-KK').boundingBox())!;
+  const q = (await page.getByTestId('cell-QQ').boundingBox())!;
+  await page.mouse.move(k.x + k.width / 2, k.y + k.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(q.x + q.width / 2, q.y + q.height / 2);
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: '应用到 12 个组合' })).toBeVisible();
+  await mix(page, '40', '60');
+  await page.getByRole('button', { name: '应用到 12 个组合' }).click();
+  data = Object.values((await backup(page)).cases)[0];
+  expect(data.editHistory?.past).toHaveLength(4);
+  await page.getByRole('combobox', { name: '类别过滤' }).selectOption('pair');
+  await page.getByRole('combobox', { name: '花色过滤' }).selectOption('h');
+  await page.getByRole('button', { name: '具体组合', exact: true }).click();
+  await expect(page.getByRole('group', { name: 'BTN 具体组合列表' })).toBeVisible();
+  await capture(page, 'combos-1440');
+  await mix(page, '30', '60');
+  await page.getByRole('tab', { name: /版本记录/ }).click();
+  await expect(page.getByRole('dialog')).toContainText('尚未应用');
+  await page.getByRole('button', { name: '继续编辑', exact: true }).click();
+  await expect(page.getByRole('spinbutton', { name: '过牌频率', exact: true })).toHaveValue('30');
+  await page.goBack();
+  await expect(page.getByRole('dialog')).toContainText('尚未应用');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: '放弃输入', exact: true }).click();
+  await page.getByRole('button', { name: '矩阵', exact: true }).click();
+  await page.getByRole('combobox', { name: '类别过滤' }).selectOption('all');
+  await page.getByRole('combobox', { name: '花色过滤' }).selectOption('all');
+  await page.getByRole('button', { name: '焦点模式', exact: true }).click();
+  await capture(page, 'focus-1440');
+  await page.keyboard.press('Escape');
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await capture(page, 'editor-1280');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(page.getByText('已保存到本地')).toBeVisible();
+  await page.reload();
+  const restored = Object.values((await backup(page)).cases)[0];
+  expect(restored.draft.lockedCombos).toEqual(['AhAd']);
+  expect(restored.editHistory?.past).toHaveLength(4);
+  expect(errors).toEqual([]);
+});
+
+test('D02: compare two fixed reports, restore V1 into V3, and create a named independent branch', async ({ page }) => {
+  await start(page);
+  await page.getByRole('button', { name: '其余全部过牌' }).click();
+  await page.getByRole('button', { name: '提交策略', exact: true }).click();
+  await page.getByRole('button', { name: '运行模拟分析', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '范围结构反馈' })).toBeVisible();
+  await page.getByRole('button', { name: '返回当前草稿修改' }).click();
+  await page.getByTestId('cell-AA').click();
+  await mix(page, '50', '50');
+  await page.getByRole('button', { name: '应用到 3 个组合' }).click();
+  await page.getByRole('button', { name: '提交策略', exact: true }).click();
+  await page.getByRole('button', { name: '运行模拟分析', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '范围结构反馈' })).toBeVisible();
+  const original = Object.values((await backup(page)).cases)[0];
+  expect(original.versions).toHaveLength(2);
+  expect(original.reports).toHaveLength(2);
+  await page.getByRole('tab', { name: /版本记录/ }).click();
+  await expect(page.getByRole('heading', { name: '版本差异比较' })).toBeVisible();
+  await expect(page.getByText('变化 3', { exact: true })).toBeVisible();
+  await expect(page.getByRole('cell').filter({ hasText: 'X 50.00% / B33 50.00%' })).toHaveCount(3);
+  await capture(page, 'comparison-1440');
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await capture(page, 'comparison-1280');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: '恢复为草稿' }).last().click();
+  await page.getByRole('button', { name: '建立新草稿' }).click();
+  await expect(page.getByText(/V3 草稿/)).toBeVisible();
+  await page.getByRole('button', { name: '提交策略', exact: true }).click();
+  await page.getByRole('tab', { name: /版本记录/ }).click();
+  await page.getByRole('button', { name: '新建研究分支' }).nth(1).click();
+  await page.getByRole('textbox', { name: '分支名称' }).fill('保留 V2 · 范围实验');
+  await page.getByRole('button', { name: '创建并打开分支' }).click();
+  await expect(page.getByRole('heading', { name: '保留 V2 · 范围实验', exact: true })).toBeVisible();
+  await capture(page, 'branch-1280');
+  const all = Object.values((await backup(page)).cases);
+  const source = all.find(c => c.id === original.id)!;
+  const branch = all.find(c => c.id !== original.id)!;
+  expect(source.versions.slice(0, 2)).toEqual(original.versions);
+  expect(source.reports).toEqual(original.reports);
+  expect(source.versions).toHaveLength(3);
+  expect(branch.branchSource?.versionId).toBe(original.versions[1].id);
+  expect(branch.draft.choices).toEqual(original.versions[1].choices);
+});
+
+test('D02: range weights revise inputs, invalidate references, and render empty ranges without false action totals', async ({ page }) => {
+  await start(page);
+  await page.getByRole('button', { name: '其余全部过牌' }).click();
+  await page.getByRole('button', { name: '提交策略', exact: true }).click();
+  await page.getByRole('button', { name: '运行模拟分析', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '范围结构反馈' })).toBeVisible();
+  await page.getByRole('button', { name: '返回当前草稿修改' }).click();
+  await page.getByRole('button', { name: '输入权重', exact: true }).click();
+  await page.getByTestId('cell-AA').click();
+  await page.getByRole('spinbutton', { name: '输入权重', exact: true }).fill('0');
+  await page.getByRole('button', { name: '应用到 3 个组合' }).click();
+  await expect(page.getByText('566 / 566 个组合已完成')).toBeVisible();
+  await capture(page, 'range-weights-1440');
+  await page.getByRole('button', { name: '提交策略', exact: true }).click();
+  await page.getByRole('button', { name: '运行模拟分析', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '这组输入还没有演示结果' })).toBeVisible();
+  await page.getByRole('tab', { name: /版本记录/ }).click();
+  await expect(page.getByText('移除 3', { exact: true })).toBeVisible();
+  await expect(page.getByText(/此处仅作描述性并排比较/)).toBeVisible();
+  await page.getByRole('tab', { name: /全范围构建/ }).click();
+  await page.getByRole('button', { name: '输入权重', exact: true }).click();
+  await page.getByRole('button', { name: /选择筛选结果/ }).click();
+  await page.getByRole('spinbutton', { name: '输入权重', exact: true }).fill('0');
+  await page.getByRole('button', { name: '应用到 1176 个组合' }).click();
+  await page.getByRole('button', { name: '行动频率', exact: true }).click();
+  await expect(page.getByText('无可用组合，整体行动频率无数据。请在输入权重中加入组合。')).toBeVisible();
+  await page.getByRole('button', { name: '提交策略', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('没有可用组合');
+  await page.getByRole('button', { name: /^撤销/ }).click();
+  await expect(page.getByText('566 / 566 个组合已完成')).toBeVisible();
+});
+
+test('D02: open an authored two-version example with both synthetic reports ready', async ({ page }) => {
+  const external: string[] = [];
+  page.on('request', request => { if (!['127.0.0.1', 'localhost'].includes(new URL(request.url()).hostname)) external.push(request.url()); });
+  await page.goto('/library');
+  await page.getByRole('button', { name: '打开双版本示例', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'S01 · 双版本对照示例', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '范围策略提交', exact: true })).toHaveCount(2);
+  await expect(page.getByRole('heading', { name: '版本差异比较', exact: true })).toBeVisible();
+  await capture(page, 'example-comparison-1440');
+  const c = Object.values((await backup(page)).cases)[0];
+  expect(c.reports.map(r => r.sampleEv?.template)).toEqual(['reference', 'check']);
+  await page.getByRole('button', { name: '查看反馈', exact: true }).last().click();
+  await expect(page.getByRole('heading', { name: '范围结构反馈', exact: true })).toBeVisible();
+  await expect(page.getByRole('group', { name: '全范围推荐策略矩阵', exact: true })).toBeVisible();
+  expect(external).toEqual([]);
+});
