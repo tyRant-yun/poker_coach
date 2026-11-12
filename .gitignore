@@ -1,0 +1,28 @@
+# Dependencies and build products
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+.cache/
+playwright-report/
+test-results/
+
+# Local secrets and machine state
+.env
+.env.*
+!.env.example
+*.local
+*.log
+.DS_Store
+Thumbs.db
+.data/
+.artifacts/
+.tmp/
+*.tsbuildinfo
+
+# IDE-local files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
