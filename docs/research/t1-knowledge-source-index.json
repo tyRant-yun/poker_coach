@@ -1,0 +1,356 @@
+{
+  "version": 1,
+  "purpose": "T1 概念背景；不证明作者示意频率或战略 EV",
+  "method": "开发时人工读取官方公开页面；运行时本地检索，无在线采集/LLM",
+  "locatorNote": "小节名为主要定位，L 行号为本次阅读文本位置；文章未提供版本号，核对日期已保存，不声称永久原文快照。",
+  "sources": [
+    {
+      "id": "TS01",
+      "title": "Pio 概念 FAQ",
+      "author": "PioSOLVER",
+      "url": "https://site.piosolver.com/docs/faq/gto_concept/",
+      "checkedAt": "2026-11-12",
+      "readStatus": "read-and-located",
+      "review": "作者阅读、自写摘要与定位自检；未独立教学审核",
+      "claims": [
+        {
+          "claimId": "TC01",
+          "title": "范围权重",
+          "section": "What is the difference between Range and Strategy?",
+          "locator": "L58"
+        },
+        {
+          "claimId": "TC02",
+          "title": "行动频率",
+          "section": "What is the difference between Range and Strategy?",
+          "locator": "L60"
+        },
+        {
+          "claimId": "TC03",
+          "title": "自身行动后的范围",
+          "section": "What is the difference between Range and Strategy?",
+          "locator": "L61-L64"
+        },
+        {
+          "claimId": "TC05",
+          "title": "混合动作的 EV 条件",
+          "section": "Why is solver sometimes choosing action with negative EV?",
+          "locator": "L28-L33"
+        },
+        {
+          "claimId": "TC06",
+          "title": "EV 的参照原点",
+          "section": "What are two numbers returned by solver command calc_ev_pp?",
+          "locator": "L38-L40"
+        }
+      ]
+    },
+    {
+      "id": "TS02",
+      "title": "Pio 数值含义",
+      "author": "PioSOLVER",
+      "url": "https://site.piosolver.com/docs/viewer/numbers_in_piosolver/",
+      "checkedAt": "2026-11-12",
+      "readStatus": "read-and-located",
+      "review": "作者阅读、自写摘要与定位自检；未独立教学审核",
+      "claims": [
+        {
+          "claimId": "TC04",
+          "title": "真实频率与相容性",
+          "section": "Range weight vs real frequency",
+          "locator": "L39-L43"
+        },
+        {
+          "claimId": "TC07",
+          "title": "权益的含义",
+          "section": "Equity calculation",
+          "locator": "L58-L63"
+        }
+      ]
+    },
+    {
+      "id": "TS03",
+      "title": "Equity Realization",
+      "author": "GTO Wizard · Andrew Brokos",
+      "url": "https://blog.gtowizard.com/equity-realization/",
+      "checkedAt": "2026-11-12",
+      "readStatus": "read-and-located",
+      "review": "作者阅读、自写摘要与定位自检；未独立教学审核",
+      "claims": [
+        {
+          "claimId": "TC08",
+          "title": "权益不直接等于决策价值",
+          "section": "Equity and Expected Value",
+          "locator": "paragraphs 1-3"
+        },
+        {
+          "claimId": "TC09",
+          "title": "权益实现与后续策略",
+          "section": "Equity Realization; Using Equity Realization",
+          "locator": "main definition and closing discussion"
+        },
+        {
+          "claimId": "TC10",
+          "title": "EQR 的单位约定",
+          "section": "Equity Realization",
+          "locator": "definition and displayed relation"
+        }
+      ]
+    },
+    {
+      "id": "TS04",
+      "title": "MDF & Alpha",
+      "author": "GTO Wizard · Tombos21",
+      "url": "https://blog.gtowizard.com/mdf-alpha/",
+      "checkedAt": "2026-11-12",
+      "readStatus": "read-and-located",
+      "review": "作者阅读、自写摘要与定位自检；未独立教学审核",
+      "claims": [
+        {
+          "claimId": "TC11",
+          "title": "防守不只是跟注",
+          "section": "What Counts as “Defending”?",
+          "locator": "L56-L58"
+        },
+        {
+          "claimId": "TC12",
+          "title": "MDF 的零权益假设",
+          "section": "What Is the Minimum Defense Frequency?",
+          "locator": "L49-L55"
+        },
+        {
+          "claimId": "TC13",
+          "title": "初始下注公式有边界",
+          "section": "Calculation / The Formula",
+          "locator": "L90-L103; disclaimer after cheat sheet"
+        },
+        {
+          "claimId": "TC14",
+          "title": "对手假设影响防守研究",
+          "section": "Warning About MDF",
+          "locator": "L59-L71"
+        }
+      ]
+    },
+    {
+      "id": "TS05",
+      "title": "Understanding Blockers in Poker",
+      "author": "GTO Wizard · Madmanslime",
+      "url": "https://blog.gtowizard.com/understanding-blockers-in-poker/",
+      "checkedAt": "2026-11-12",
+      "readStatus": "read-and-located",
+      "review": "作者阅读、自写摘要与定位自检；未独立教学审核",
+      "claims": [
+        {
+          "claimId": "TC15",
+          "title": "阻断取决于行动角色",
+          "section": "Understanding Blockers",
+          "locator": "L49-L81"
+        },
+        {
+          "claimId": "TC16",
+          "title": "先看对手范围再解释花色",
+          "section": "Analyzing Blockers",
+          "locator": "L124-L140"
+        }
+      ]
+    },
+    {
+      "id": "TS06",
+      "title": "Breakdown Tab",
+      "author": "GTO Wizard Help",
+      "url": "https://help.gtowizard.com/breakdown-tab/",
+      "checkedAt": "2026-11-12",
+      "readStatus": "read-and-located",
+      "review": "作者阅读、自写摘要与定位自检；未独立教学审核",
+      "claims": [
+        {
+          "claimId": "TC17",
+          "title": "类别内行动比例",
+          "section": "Definitions",
+          "locator": "L35-L36"
+        },
+        {
+          "claimId": "TC18",
+          "title": "行动内类别占比",
+          "section": "Definitions",
+          "locator": "L37-L38"
+        },
+        {
+          "claimId": "TC19",
+          "title": "类别范围占比",
+          "section": "Definitions",
+          "locator": "L31-L34"
+        }
+      ]
+    },
+    {
+      "id": "TS07",
+      "title": "Tree Configuration",
+      "author": "HoldemResources",
+      "url": "https://www.holdemresources.net/docs/tree-config/",
+      "checkedAt": "2026-11-12",
+      "readStatus": "read-and-located",
+      "review": "作者阅读、自写摘要与定位自检；未独立教学审核",
+      "claims": [
+        {
+          "claimId": "TC25",
+          "title": "研究树定义问题",
+          "section": "Introduction",
+          "locator": "L61-L65"
+        },
+        {
+          "claimId": "TC26",
+          "title": "加注至与增量",
+          "section": "Sizing Syntax",
+          "locator": "L71-L84"
+        }
+      ]
+    },
+    {
+      "id": "TS08",
+      "title": "Working with Frequency Locks",
+      "author": "HoldemResources",
+      "url": "https://www.holdemresources.net/docs/frequency-locks/",
+      "checkedAt": "2026-11-12",
+      "readStatus": "read-and-located",
+      "review": "作者阅读、自写摘要与定位自检；未独立教学审核",
+      "claims": [
+        {
+          "claimId": "TC22",
+          "title": "频率锁定与组合锁定",
+          "section": "Key Concepts",
+          "locator": "L90-L94"
+        },
+        {
+          "claimId": "TC23",
+          "title": "保留未锁行动",
+          "section": "How to Use Frequency Locking",
+          "locator": "L78-L81"
+        },
+        {
+          "claimId": "TC24",
+          "title": "锁定修改后的重算",
+          "section": "How to Use Frequency Locking",
+          "locator": "L84"
+        }
+      ]
+    },
+    {
+      "id": "TS09",
+      "title": "Postflop Calculations",
+      "author": "HoldemResources",
+      "url": "https://www.holdemresources.net/docs/postflop/",
+      "checkedAt": "2026-11-12",
+      "readStatus": "read-and-located",
+      "review": "作者阅读、自写摘要与定位自检；未独立教学审核",
+      "claims": [
+        {
+          "claimId": "TC31",
+          "title": "翻后副本的输入继承",
+          "section": "Setting Up Postflop Calculations",
+          "locator": "L68-L78"
+        },
+        {
+          "claimId": "TC32",
+          "title": "抽象影响可解释粒度",
+          "section": "Postflop Abstraction Options",
+          "locator": "L79-L117"
+        },
+        {
+          "claimId": "TC33",
+          "title": "缺失 EV 不应填零",
+          "section": "Postflop Abstraction Options / [LQ] IR",
+          "locator": "L111-L117"
+        }
+      ]
+    },
+    {
+      "id": "TS10",
+      "title": "Monte Carlo Sampling",
+      "author": "HoldemResources",
+      "url": "https://www.holdemresources.net/docs/monte-carlo-sampling/",
+      "checkedAt": "2026-11-12",
+      "readStatus": "read-and-located",
+      "review": "作者阅读、自写摘要与定位自检；未独立教学审核",
+      "claims": [
+        {
+          "claimId": "TC27",
+          "title": "CI 是启发式指标",
+          "section": "The Convergence Indicator (CI)",
+          "locator": "L70-L80"
+        },
+        {
+          "claimId": "TC28",
+          "title": "罕见分支的收敛",
+          "section": "The Convergence Indicator (CI)",
+          "locator": "L74-L81"
+        },
+        {
+          "claimId": "TC29",
+          "title": "子树重算固定上游",
+          "section": "Subtree Sampling",
+          "locator": "L89-L105"
+        },
+        {
+          "claimId": "TC30",
+          "title": "初始采样并非完成",
+          "section": "The Basics: Calculating a Monte Carlo Hand",
+          "locator": "L52-L66"
+        }
+      ]
+    },
+    {
+      "id": "TS11",
+      "title": "Views",
+      "author": "MonkerWare",
+      "url": "https://www.monkerware.com/views.html",
+      "checkedAt": "2026-11-12",
+      "readStatus": "read-and-located",
+      "review": "作者阅读、自写摘要与定位自检；未独立教学审核",
+      "claims": [
+        {
+          "claimId": "TC20",
+          "title": "分类视图的聚合",
+          "section": "Introducing views",
+          "locator": "paragraph 1"
+        },
+        {
+          "claimId": "TC21",
+          "title": "类别优先级",
+          "section": "Creating a view",
+          "locator": "paragraph after format example"
+        },
+        {
+          "claimId": "TC36",
+          "title": "未分类组合仍需保留",
+          "section": "Creating a view",
+          "locator": "paragraph after format example"
+        }
+      ]
+    },
+    {
+      "id": "TS12",
+      "title": "Abstraction",
+      "author": "MonkerWare",
+      "url": "https://www.monkerware.com/compare.html",
+      "checkedAt": "2026-11-12",
+      "readStatus": "read-and-located",
+      "review": "作者阅读、自写摘要与定位自检；未独立教学审核",
+      "claims": [
+        {
+          "claimId": "TC34",
+          "title": "并桶限制策略",
+          "section": "Abstraction",
+          "locator": "paragraphs 1-2"
+        },
+        {
+          "claimId": "TC35",
+          "title": "抽象可能舍弃阻断差异",
+          "section": "Omaha postflop",
+          "locator": "final example and paragraph"
+        }
+      ]
+    }
+  ]
+}

@@ -12,7 +12,7 @@ export type PracticeSession = { id: string; kind: ExerciseKind; scenarioId: Scen
 export type Attempt = { id: string; createdAt: string; choices: Choices; answer: string; reason: string; assisted: boolean; revealed: boolean; difference: number | null; correct: boolean | null; feedback: string; fixtureVersion: string; inputFingerprint: string };
 export type TrainingPlan = { id: string; caseId: string; missionId?: string; title: string; reason: string; blockedSource?:string; input?: SolveInput; exerciseKinds: ExerciseKind[]; sessionIds: string[] };
 export type ImportedHand = { id: string; raw: string; kind: 'complete' | 'incomplete' | 'unknown'; confirmed: boolean; missing: string[]; createdAt: string; decisions: HandDecision[] };
-export type HandDecision = { id: string; label: string; board: string[]; actor: string; potMinor: number; stackMinor: number; actionHistory: string[]; hero: string; future?: string; opponent?: string };
+export type HandDecision = { id: string; label: string; board: string[]; actor: string; potMinor: number; stackMinor: number; actionHistory: string[]; hero: string; teachingInput?:{spot:import('../study/domain').Spot;ranges:import('../study/domain').RangeInputs;packageRef:import('../teaching/domain').AssetRef;inputHash:string};future?: string; opponent?: string };
 export type ProductState = { settings: DemoSettings; missions: Record<string, Mission>; sessions: Record<string, PracticeSession>; plans: Record<string, TrainingPlan>; hands: Record<string, ImportedHand> };
 export const emptyProduct = (): ProductState => ({ settings: { ...defaultSettings }, missions: {}, sessions: {}, plans: {}, hands: {} });
 export const runningStatuses: JobStatus[] = ['queued', 'preflight', 'running', 'postprocessing'];

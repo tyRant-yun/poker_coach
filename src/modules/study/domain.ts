@@ -1,6 +1,6 @@
 export type Action = string;
 export type ActionDefinition = { id: string; name: string; short: string; color: string };
-export type ScenarioId = 'S01' | 'S02' | 'S03' | 'S04' | 'S05' | 'S06' | 'S07' | 'S08' | 'S09' | 'S10';
+export type ScenarioId = 'S01' | 'S02' | 'S03' | 'S04' | 'S05' | 'S06' | 'S07' | 'S08' | 'S09' | 'S10' | 'TP01' | 'TP02';
 export type Allocation = Record<Action, number>;
 export type Choices = Record<string, Allocation>;
 export type RangeWeights = Record<string, number>;
@@ -134,7 +134,7 @@ export type StudyCase = {
   heroPlans: HeroPlan[];
   note: string;
 };
-export type WorkspaceSnapshot = { schemaVersion: 1; fixtureVersion: string; cases: Record<string, StudyCase>; product?: import('../product/domain').ProductState };
+export type WorkspaceSnapshot = { schemaVersion: 1 | 2; fixtureVersion: string; cases: Record<string, StudyCase>; product?: import('../product/domain').ProductState; teaching?: import('../teaching/domain').TeachingState };
 
 export function activeCombos(spot: Spot, weights: RangeWeights): string[] {
   return allCombos.filter(c => weights[c] > 0 && !spot.board.some(card => c.slice(0, 2) === card || c.slice(2) === card));

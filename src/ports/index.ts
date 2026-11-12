@@ -3,6 +3,7 @@ import type { JobStatus, SolveInput, SolveResult, WorkspaceSnapshot } from '../m
 export interface WorkspaceRepository {
   load(): Promise<WorkspaceSnapshot | null>;
   readRaw?():Promise<unknown>;
+  reset?():Promise<void>;
   save(snapshot: WorkspaceSnapshot): Promise<void>;
 }
 export interface SolverPort {

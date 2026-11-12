@@ -1,3 +1,4 @@
+import { createTeachingCoach } from '../modules/teaching/coach';
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import { actionsFor, activeCombos, allCombos, canonicalPolicy, frequencyDifference, handByCombo, normalizeCombo, policyStats, validAllocation, validateHeroPlan, validateSpot, validateSubmission } from '../modules/study/domain';
@@ -13,6 +14,10 @@ import { createTransferCommands } from '../modules/product/transfer';
 import { createReviewCommands, reviewQueries } from '../modules/product/review';
 import { createAgentCommands } from '../modules/product/agent';
 import { createResearchCommands, researchQueries } from '../modules/product/research';
+import { emptyTeaching, upgradeTeachingSnapshot } from '../modules/teaching/content';
+import { createTeachingCommands } from '../modules/teaching/commands';
+import { createKnowledgeCommands } from '../modules/teaching/knowledge';
+import { teachingQueries } from '../modules/teaching/queries';
 
 type Result<T = undefined> = { ok: true; value: T } | { ok: false; message: string };
 type State = {
@@ -28,7 +33,7 @@ type State = {
 const uid = (prefix: string) => prefix + '-' + crypto.randomUUID().slice(0, 8);
 const now = () => new Date().toISOString();
 const copy = <T,>(value: T): T => structuredClone(value);
-const emptyData = (): WorkspaceSnapshot => ({ schemaVersion: 1, fixtureVersion, cases: {} });
+const emptyData = (): WorkspaceSnapshot => ({ schemaVersion: 2, fixtureVersion, cases: {},teaching:emptyTeaching() });
 const rangesFor = (c?: { ranges?: RangeInputs }): RangeInputs => c?.ranges ?? { BTN: btnRange, BB: bbRange };
 const weightsFor = (c?: { ranges?: RangeInputs; spot?: Spot }) => rangesFor(c)[c?.spot?.actor ?? 'BTN'] ?? rangesFor(c).BTN;
 const locked = (c: StudyCase) => new Set(c.draft.lockedCombos ?? []);
@@ -58,6 +63,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
     const snapshot = copy(store.getState().data);
     store.setState({ saveStatus: 'saving' });
     queue = queue.then(async () => {
+      if(!persistenceEnabled)return;
       try {
         await repository.save(snapshot);
         if (seq === mutation) store.setState({ saveStatus: 'saved', savedAt: now(), storageError: null });
@@ -94,6 +100,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
   }
 
   async function runSolve(caseId: string, versionId: string | null, fixedInput?:SolveInput): Promise<Result<string>> {
+    if(teachingQueries.activeIndependent(store.getState().data))return fail('独立题期间不读取研究参考；请先明确使用辅助。');
     const c = getCase(caseId);
     const version = c?.versions.find(v => v.id === versionId);
     if (!c || (versionId !== null && !version)) return fail('请先提交一个完整的策略版本。');
@@ -131,7 +138,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
         try {
           const loaded = await repository.load();
           let interrupted = false;
-          const data = loaded ?? emptyData();
+          const data = upgradeTeachingSnapshot(loaded ?? emptyData());
           data.product ??= emptyProduct();
           for (const mission of Object.values(data.product.missions)) if (['planned','running','paused'].includes(mission.status)) { mission.status = 'interrupted'; mission.trace=mission.trace.map(t=>t.status==='running'?{...t,status:'interrupted',observation:'刷新前工具中断，恢复时检查已登记成果。'}:t); mission.message = '刷新前的脚本中断，可从已记录步骤继续。'; interrupted = true; }
           for (const c of Object.values(data.cases)) c.jobs = c.jobs.map(job => {
@@ -140,7 +147,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
             return { ...job, status: 'interrupted', stage: '刷新前的模拟已中断，可重新运行' };
           });
           store.setState({ data, hydrated: true, saveStatus: 'saved' });
-          if (interrupted) persist();
+          if (interrupted || loaded?.schemaVersion===1 || loaded&&JSON.stringify(loaded.teaching)!==JSON.stringify(data.teaching)) persist();
         } catch {
           persistenceEnabled = false;
           store.setState({ hydrated: true, saveStatus: 'memory', storageError: '无法读取本地存储；原记录未覆盖。本次内容仅保留在内存，请导出备份。' });
@@ -154,6 +161,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
     retrySave() { if (persistenceEnabled) persist(); },
     createCase(name = 'BTN vs BB · 翻牌研究', scenarioId: ScenarioId = 'S01'): Result<string> {
       if (!store.getState().hydrated) return fail('工作区尚未载入。');
+      if(teachingQueries.activeIndependent(store.getState().data))return fail('独立题不能创建含答案的研究；请先明确请求辅助。');
       const template = scenarioFor(scenarioId)?.nodes[0];
       if (!template) return fail('没有找到演示局面。');
       const id = uid('case');
@@ -201,6 +209,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
       return commands.editPolicy(caseId, remaining, Object.fromEntries(actionsFor(c.spot).map((a,i) => [a.id,i === 0 ? 10000 : 0])), c.draft.editRevision);
     },
     loadExample(caseId: string): Result {
+      if(teachingQueries.activeIndependent(store.getState().data))return fail('独立题期间不读取示例答案。');
       const c = getCase(caseId);
       if (!c) return fail('案例不存在。');
       const example = matchingReference(c.spot,rangesFor(c));
@@ -404,19 +413,28 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
     skipWait(jobId: string) { skipControllers.get(jobId)?.abort(); },
     flushSaves() { return queue; },
   };
-  const context = { getData:() => store.getState().data, replaceData, getCase, replaceCase, editCase, fail, notice, base:commands, onReset:()=>{persistenceEnabled=true;store.setState({pendingInput:false,pendingInputCaseId:null,storageError:null});}, stopAll:() => { controllers.forEach(c => c.abort()); skipControllers.forEach(c => c.abort()); } };
+  const context = { getData:() => store.getState().data, replaceData, getCase, replaceCase, editCase, fail, notice, base:commands,
+    saved:async()=>{await queue;return store.getState().saveStatus==='saved';},memory:()=>!persistenceEnabled,
+    enterMemory:()=>{persistenceEnabled=false;store.setState({saveStatus:'memory',storageError:'辅助内存模式：没有持久化，不能作为未见或延迟保持证据。'});},
+    onReset:()=>{persistenceEnabled=true;store.setState({pendingInput:false,pendingInputCaseId:null,storageError:null});if(repository.reset)queue=queue.then(async()=>{try{await repository.reset!();}catch{persistenceEnabled=false;store.setState({saveStatus:'error',storageError:'重置未完成，原存储保留；请先导出原件。'});}});}, stopAll:() => { controllers.forEach(c => c.abort()); skipControllers.forEach(c => c.abort()); } };
   const research = createResearchCommands(context);
   const learning = createLearningCommands(context);
   const agent = createAgentCommands(context,research,learning);
   const review=createReviewCommands(context,learning);
   const transfer=createTransferCommands(context);
-  return { store, commands:{...commands,...research,...learning,...agent,...review,...transfer} };
+  const teaching=createTeachingCommands(context),theory=createKnowledgeCommands(context);
+  const coach=createTeachingCoach(context,teaching,theory);
+  return { store, commands:{...commands,...research,...learning,...agent,...review,...transfer,...teaching,...theory,...coach,
+    async prepareMarkdownExport():Promise<Result<string>>{const result=teaching.teachingExportExposure();if(!result.ok)return result;if(!context.memory()&&!await context.saved())return fail('暴露记录保存失败，未生成学习记录导出。');const current=store.getState().data;replaceData({...current,teaching:{...current.teaching!,pendingDisclosure:false}});return {ok:true,value:transfer.exportMarkdown()};},
+    async prepareWorkspaceExport():Promise<Result<WorkspaceSnapshot>>{const result=teaching.teachingExportExposure();if(!result.ok)return result;if(!context.memory()&&!await context.saved())return fail('暴露记录保存失败，暂未生成含答案备份。');const current=store.getState().data;replaceData({...current,teaching:{...current.teaching!,pendingDisclosure:false}});return {ok:true,value:copy(store.getState().data)};},
+  } };
 }
 
 const workspace = createWorkspace(indexedDbRepository, createMockSolver());
 export const commands = workspace.commands;
 export const useWorkspace = <T,>(selector: (state: State) => T): T => useStore(workspace.store, selector);
 export const queries = {
+  teaching:teachingQueries,
   catalogue: () => scenarios.map(({nodes,...item}) => ({...item,board:nodes[0].spot.board})),
   ...researchQueries,
   learning: learningQueries,

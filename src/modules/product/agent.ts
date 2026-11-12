@@ -1,3 +1,4 @@
+import { activeIndependent } from '../teaching/queries';
 import { actionsFor, activeCombos, validAllocation } from '../study/domain';
 import type { Choices, StudyCase } from '../study/domain';
 import { capture, copy, now, uid } from './context';
@@ -32,6 +33,7 @@ export function createAgentCommands(ctx:ProductContext,research:ReturnType<typeo
   }
   const api={
     startMission(caseId:string,intent:keyof typeof missionNames|string,mode:'suggest'|'branch'='branch',practiceId?:string):Result<string>{
+      if(activeIndependent(ctx.getData().teaching))return ctx.fail('独立题期间不运行研究 Agent；请在当前题目显式请求提示。');
       if(practiceId)return ctx.fail('训练上下文不能启动读取参考或改写研究的脚本。请使用练习内提示，辅助状态会被记录。');
       const kind=Object.keys(missionNames).includes(intent)?intent as keyof typeof missionNames:/实验|对照/.test(intent)?'experiment':/训练|计划/.test(intent)?'training':/分析|诊断|改进/.test(intent)?'improve':null;
       if(!kind)return ctx.fail('未匹配脚本。支持：诊断并改进、建立对照实验、生成训练计划。没有执行工具。');

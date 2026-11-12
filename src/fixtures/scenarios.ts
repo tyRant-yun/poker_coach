@@ -1,3 +1,4 @@
+import { builtInTeachingBundle } from './teaching/content';
 import { actions, actionsFor, canonicalAssumption, activeCombos, allCombos, handByCombo, spotSignature } from '../modules/study/domain';
 import type { ActionDefinition, Choices, RangeInputs, Spot } from '../modules/study/domain';
 import type { HandDecision, KnowledgeItem, NodeLock, Scenario, ScenarioNode } from '../modules/product/domain';
@@ -98,6 +99,7 @@ export function matchingReference(spot: Spot, ranges: RangeInputs): Choices | nu
   return reference ? clone(reference) : null;
 }
 export function authoredMetrics(spot: Spot, reference: Choices) {
+  if(spot.nodeId?.startsWith('TP'))return undefined;
   return Object.fromEntries(Object.keys(reference).map((combo,i) => [combo,{ equity: .23 + ((i * 11 + spot.board.length * 17) % 64) / 100, ev: Object.fromEntries(actionsFor(spot).map((a,n) => [a.id, Number((.12 + ((i * 3 + n * 7) % 43) / 20).toFixed(2))])), category: handByCombo[combo].length === 2 ? '口袋对子示例组' : i % 3 === 0 ? '成牌示例组' : i % 3 === 1 ? '听牌示例组' : '其他示例组' }]));
 }
 export const knowledge: KnowledgeItem[] = [
@@ -129,4 +131,10 @@ export function evaluationTemplate(spot:Spot,template:'check'|'reference'){
   const ledger:Record<string,[number,number,number,number]>={'S01-root':[2.04,1.86,1.88,1.10],'S02-root':[2.10,1.72,1.81,1.01],'S02-bb':[.65,0,.42,0],'S02-turn':[1.70,1.30,1.42,.90],'S02-check-turn':[.85,0,.60,0],'S02-river':[.80,0,.64,0],'S02-large-turn':[1.90,1.50,1.62,1.03],'S03-root':[1.93,1.58,1.66,.92],'S03-turn':[1.44,1.12,1.20,.73],'S04-root':[4.60,3.80,3.90,2.60],'S05-root':[1.10,0,.78,0],'S06-root':variant==='overfold'?[3.40,2.60,2.71,1.80]:variant==='sticky'?[2.00,1.50,1.51,.92]:[2.30,2.00,1.90,1.20],'S07-root':[2.11,1.72,1.82,1.06],'S07-turn':[2.00,1.60,1.69,1.02],'S07-river':[.95,0,.65,0],'S08-root':[1.20,0,0,0],'S09-root':[1.30,1.00,0,0],'S10-root':[.12,.09,0,0]};
   const row=ledger[id];if(!row)return null;const index=template==='reference'?0:1;
   return {value:row[index],loss:template==='reference'?0:Number((row[0]-row[1]).toFixed(4)),adversarial:['S08','S09','S10'].some(prefix=>id.startsWith(prefix))?null:{value:row[index+2],unit:spot.unit??'bb',model:'单挑固定假设下的作者编写对抗评价示例，未经最佳回应计算'}};
+}
+
+// Teaching examples have independent input identities and no strategic EV metrics.
+for(const pkg of Object.values(builtInTeachingBundle.packages)) {
+  const selected=Object.values(builtInTeachingBundle.nodes).filter(n=>n.id.startsWith(pkg.scenarioId));
+  scenarios.push({id:pkg.scenarioId,title:pkg.title,subtitle:'概念教学 · 作者示意范围 · 无真实 GTO 数值',board:builtInTeachingBundle.nodes[pkg.rootNode].spot.board,tags:['教学',pkg.id==='LP-A'?'翻前':'翻牌','concept-demo'],description:pkg.description+' 策略分布是作者设定，未接真实求解。',unit:'bb',nodes:selected.map(n=>({id:n.id,label:n.label,parent:n.parent,via:n.via,kind:n.kind==='segment-end'?'terminal':n.kind,spot:n.spot,ranges:n.ranges,reference:n.reference,coverage:'covered'}))});
 }
