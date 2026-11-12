@@ -52,6 +52,8 @@ npm run e2e
 | [第一版交付](docs/demo-v1-delivery.md) | 本轮成果、演示路线、F/J 覆盖、验证与局限 |
 | [产品设计](docs/product-design.md) | F01–F18、J01–J09、页面与体验约定 |
 | [参考研究](docs/reference-research.md) | 产品/GitHub 比较、来源与取舍 |
+| [Solver 教学专题](docs/solver-teaching-research.md) | 7 组商业产品逐项功能分析与教学借鉴 |
+| [教学调整方案](docs/teaching-product-redesign.md) | 新教学旅程、内容资格、DDD、评分与候选任务；尚未实施 |
 | [技术栈](docs/technology-selection.md) | 已确认技术方案与职责 |
 | [模块与集成](docs/demo-architecture.md) | 领域边界、应用命令、状态、实际实现 |
 | [Mock 合同](docs/mock-contracts.md) | 输入匹配、内容资产与模拟边界 |

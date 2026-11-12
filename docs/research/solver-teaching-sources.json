@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 1,
+  "researchDate": "2026-11-12",
+  "timezone": "Asia/Shanghai",
+  "scope": "Official product/help pages and tutorial text outlines; one original learning study. No product installation, login, video watching, paid data or independent performance verification.",
+  "originThread": {
+    "url": "codex://threads/01a1cdfc-2ab0-7dd1-b60e-82b8c604606a",
+    "read": "Most recent completed commercial solver research turn via read_thread",
+    "groups": [
+      "PioSOLVER",
+      "GTO+",
+      "GTO Wizard",
+      "Simple Postflop / Simple GTO Trainer",
+      "HRC",
+      "MonkerSolver",
+      "FlopzillaPro"
+    ]
+  },
+  "sources": [
+    {
+      "id": "PIO-01",
+      "product": "PioSOLVER",
+      "url": "https://site.piosolver.com/docs/feature_overview/",
+      "inspection": "public-document-text",
+      "supports": "结果浏览、树、聚合、训练、节点锁定及脚本",
+      "limits": "页面含 2015 年历史段落；不采用性能或活跃度宣传",
+      "productExecuted": false
+    },
+    {
+      "id": "PIO-02",
+      "product": "PioSOLVER",
+      "url": "https://site.piosolver.com/docs/viewer/numbers_in_piosolver/",
+      "inspection": "public-document-text",
+      "supports": "范围/策略/真实频率、匹配和数值语义",
+      "limits": "不等于本项目已经实现 matchups 计算",
+      "productExecuted": false
+    },
+    {
+      "id": "PIO-03",
+      "product": "PioSOLVER",
+      "url": "https://piosolver.com/docs/faq/gto_concept/",
+      "inspection": "public-document-text",
+      "supports": "混合动作 EV、策略分布与范围",
+      "limits": "条件结论，不用近似解的微小差异制造唯一答案",
+      "productExecuted": false
+    },
+    {
+      "id": "GTP-01",
+      "product": "GTO+",
+      "url": "https://www.gtoplus.com/videos2/",
+      "inspection": "public-document-text",
+      "supports": "树、分析、锁定、数据库、训练、范围预设和联动",
+      "limits": "只读取教程文字目录，未观看视频；范围菜单不证明任意翻前求解",
+      "productExecuted": false
+    },
+    {
+      "id": "GTW-01",
+      "product": "GTO Wizard",
+      "url": "https://help.gtowizard.com/study-mode/",
+      "inspection": "public-document-text",
+      "supports": "局面导航、策略、组合、范围、构成和聚合",
+      "limits": "未登录应用，不验证套餐及数据覆盖",
+      "productExecuted": false
+    },
+    {
+      "id": "GTW-02",
+      "product": "GTO Wizard",
+      "url": "https://help.gtowizard.com/practice-mode-overview/",
+      "inspection": "public-document-text",
+      "supports": "翻前至河牌与指定节点训练",
+      "limits": "官方文档描述，不验证学习效果",
+      "productExecuted": false
+    },
+    {
+      "id": "GTW-03",
+      "product": "GTO Wizard",
+      "url": "https://help.gtowizard.com/how-to-use-the-trainer/",
+      "inspection": "public-document-text",
+      "supports": "整手/单街/单点、分组、输入和信息显示",
+      "limits": "不照抄评分或阈值，Hero 混频仍暂缓",
+      "productExecuted": false
+    },
+    {
+      "id": "GTW-04",
+      "product": "GTO Wizard",
+      "url": "https://help.gtowizard.com/how-to-use-the-range-builder/",
+      "inspection": "public-document-text",
+      "supports": "局部/类别构建、锁定、辅助与分类反馈",
+      "limits": "频率评价不等同于 EV 或可利用性",
+      "productExecuted": false
+    },
+    {
+      "id": "GTW-05",
+      "product": "GTO Wizard",
+      "url": "https://help.gtowizard.com/measure-performance/",
+      "inspection": "public-document-text",
+      "supports": "品牌评分、频率与 EV 指标、会话回放",
+      "limits": "本项目不沿用品牌评分或把频率指标当教学真值",
+      "productExecuted": false
+    },
+    {
+      "id": "GTW-06",
+      "product": "GTO Wizard",
+      "url": "https://help.gtowizard.com/analyze-mode-guide/",
+      "inspection": "public-document-text",
+      "supports": "牌谱分析、回放和匹配边界",
+      "limits": "含 Coming soon；不作为待实现项已交付证据，不改变本项目严格配对",
+      "productExecuted": false
+    },
+    {
+      "id": "SPF-01",
+      "product": "Simple Postflop",
+      "url": "https://simplepoker.com/en/Solutions/Simple_Postflop",
+      "inspection": "public-document-text",
+      "supports": "翻前/翻后、树、策略指标、锁定与批量",
+      "limits": "含历史需求及宣传；不采纳速度、精度或系统支持比较",
+      "productExecuted": false
+    },
+    {
+      "id": "SGT-01",
+      "product": "Simple GTO Trainer",
+      "url": "https://simplepoker.com/en/Help/Intro_58",
+      "inspection": "public-document-text",
+      "supports": "预设/自定义训练与求解成果联动",
+      "limits": "未运行或导入商业成果",
+      "productExecuted": false
+    },
+    {
+      "id": "SGT-02",
+      "product": "Simple GTO Trainer",
+      "url": "https://simplepoker.com/en/Help/Training_Modes_62",
+      "inspection": "public-document-text",
+      "supports": "Drill/Regular 及 Cloud/Custom 支持差异",
+      "limits": "不宣称所有来源均支持所有模式",
+      "productExecuted": false
+    },
+    {
+      "id": "HRC-01",
+      "product": "HRC",
+      "url": "https://www.holdemresources.net/docs",
+      "inspection": "public-document-text",
+      "supports": "文档目录与能力范围",
+      "limits": "只用于定位专题，不独立推断未读内容",
+      "productExecuted": false
+    },
+    {
+      "id": "HRC-02",
+      "product": "HRC",
+      "url": "https://www.holdemresources.net/docs/tree-config/",
+      "inspection": "public-document-text",
+      "supports": "翻前/翻后树与研究假设、抽象",
+      "limits": "不承诺全部扑克行动空间，不重复产品许可参数",
+      "productExecuted": false
+    },
+    {
+      "id": "HRC-03",
+      "product": "HRC",
+      "url": "https://www.holdemresources.net/docs/monte-carlo-sampling/",
+      "inspection": "public-document-text",
+      "supports": "采样、CI、子树范围和节点锁定",
+      "limits": "CI 为 heuristic，不视为严格误差界",
+      "productExecuted": false
+    },
+    {
+      "id": "HRC-04",
+      "product": "HRC",
+      "url": "https://www.holdemresources.net/docs/frequency-locks/",
+      "inspection": "public-document-text",
+      "supports": "频率锁定与组合策略的区别",
+      "limits": "本项目当前只有组合式示例锁定",
+      "productExecuted": false
+    },
+    {
+      "id": "HRC-05",
+      "product": "HRC",
+      "url": "https://www.holdemresources.net/docs/postflop/",
+      "inspection": "public-document-text",
+      "supports": "专门翻后、继承输入与抽象/功能限制",
+      "limits": "独立计算继承快照；不推断所有后续上游修改联动",
+      "productExecuted": false
+    },
+    {
+      "id": "HRC-06",
+      "product": "HRC",
+      "url": "https://www.holdemresources.net/blog/hrc-1v4-update-knockout-bounty/",
+      "inspection": "public-document-text",
+      "supports": "ICM/FGS/MTT 赏金及单位区分",
+      "limits": "2018 年更新，只证明历史发布说明，不比较今天全部选项",
+      "productExecuted": false
+    },
+    {
+      "id": "MON-01",
+      "product": "MonkerSolver",
+      "url": "https://www.monkerware.com/solver.html",
+      "inspection": "public-document-text",
+      "supports": "Holdem/Omaha、多玩家、树与抽象",
+      "limits": "不验证性能或无限规模可行性",
+      "productExecuted": false
+    },
+    {
+      "id": "MON-02",
+      "product": "MonkerSolver",
+      "url": "https://www.monkerware.com/compare.html",
+      "inspection": "public-document-text",
+      "supports": "手牌并桶和信息损失",
+      "limits": "不采纳性能对照为独立证据",
+      "productExecuted": false
+    },
+    {
+      "id": "MON-03",
+      "product": "MonkerSolver",
+      "url": "https://www.monkerware.com/views.html",
+      "inspection": "public-document-text",
+      "supports": "类别聚合和优先规则",
+      "limits": "不推断分类视图就是求解抽象",
+      "productExecuted": false
+    },
+    {
+      "id": "FLZ-01",
+      "product": "FlopzillaPro",
+      "url": "https://www.flopzilla.com/videos/",
+      "inspection": "public-document-text",
+      "supports": "统计/分类/过滤/权益/后续牌和 GTO+ 联动",
+      "limits": "只读文字目录，未观看或计算；属于范围分析器",
+      "productExecuted": false
+    },
+    {
+      "id": "LEARN-01",
+      "product": "Butler 2010",
+      "url": "https://andymatuschak.org/files/papers/Butler%20-%202010%20-%20Repeated%20Testing%20Produces%20Superior%20Transfer%20of%20Learning%20Relative%20to%20Repeated.pdf",
+      "inspection": "public-document-text",
+      "supports": "原始研究的重复测试、保持与迁移结果",
+      "limits": "研究是文本学习；PDF 为论文托管副本，DOI 10.1037/a0019902，不证明扑克教学有效",
+      "productExecuted": false
+    }
+  ],
+  "accessLimitations": [
+    {
+      "url": "https://www.flopzilla.com/",
+      "result": "timeout",
+      "fallback": "FLZ-01"
+    },
+    {
+      "url": "https://site.piosolver.com/docs/viewer_manual/",
+      "result": "not accessible",
+      "fallback": "PIO-01/PIO-02; official user manual index also read via navigation"
+    },
+    {
+      "url": "https://help.gtowizard.com/how-to-work-with-analyze-mode/",
+      "result": "not accessible",
+      "fallback": "GTW-06"
+    },
+    {
+      "url": "https://doi.org/10.1037/a0019902",
+      "result": "robots denied",
+      "fallback": "LEARN-01; article abstract and initial text read in indexed original paper"
+    }
+  ],
+  "localImplementationEvidence": [
+    {
+      "path": "src/fixtures/scenarios.ts",
+      "observed": "Some reference allocations, EV/equity and category tags are index-generated synthetic demo assets; they cannot substantiate real poker explanations."
+    },
+    {
+      "path": "src/modules/product/learning.ts",
+      "observed": "Existing diagnosis/comparison templates teach probability completeness and metric boundaries, not a complete strategic reasoning curriculum."
+    },
+    {
+      "path": "src/modules/product/agent.ts",
+      "observed": "Three scripted missions; applying a reference patch is not itself a learner diagnosis."
+    }
+  ],
+  "deliverables": [
+    "docs/solver-teaching-research.md",
+    "docs/teaching-product-redesign.md"
+  ]
+}

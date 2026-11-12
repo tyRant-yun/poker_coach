@@ -82,3 +82,9 @@ Demo 保留规则与导入端口，以脚本和自有数据实现。未知文本
 - 单节点到多街计划、研究到训练的跳转是否顺畅。
 
 这些是后续评审目标，本轮不要求用户逐项回答。
+
+## 10. 商业 Solver 与教学产品专题（后续研究）
+
+2026-11-12，按用户要求读取关联聊天并逐项核对 PioSOLVER、GTO+、GTO Wizard、Simple Postflop、Simple GTO Trainer、HRC、MonkerSolver、FlopzillaPro 的官方资料。研究结果见 [逐产品分析](solver-teaching-research.md)，教学旅程、内容资格、评价、Agent 和 DDD 调整见 [教学产品方案](teaching-product-redesign.md)，证据与访问限制见 [专题来源索引](research/solver-teaching-sources.json)。
+
+本次是文档研究，没有安装运行参考产品、读取付费策略库或修改应用。建议功能 TE01–TE08 尚未实施；当前 Demo 的合成参考只验证流程，不具备真实 GTO 教材资格。PF01/PF02 翻前反馈已纳入新方案的候选主线，Hero 自定义尺度和混频仍暂缓。
