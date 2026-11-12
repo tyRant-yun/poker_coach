@@ -39,5 +39,5 @@ export function referenceChoices(spot = s01Spot): Choices {
 export const catalogue = [{
   id: 'S01', title: 'BTN vs BB', subtitle: '单加注底池 · 翻牌范围构建', board: s01Spot.board,
   tags: ['现金局', '6-max', '100 bb', 'SRP'],
-  description: '从整个范围出发，分配过牌与两种下注尺寸，再比较你的范围结构。',
+  description: '先选择 Hero 并规划行动，再对照全范围参考；可以只改关心的组合，按需辅助补全。',
 }];

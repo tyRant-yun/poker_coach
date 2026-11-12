@@ -22,6 +22,7 @@ test('D01: create, edit, submit, compare, revise, reload, and recover the origin
   await page.getByRole('link', { name: /局面库/ }).first().click();
   await page.getByRole('button', { name: '创建研究案例' }).click();
   await expect(page).toHaveURL(/\/study\/case-/);
+  await page.getByRole('tab', { name: /全范围构建/ }).click();
   await expect(page.getByRole('group', { name: 'BTN 策略矩阵' })).toBeVisible();
   await page.getByRole('button', { name: '提交策略', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('尚未分配');
@@ -39,6 +40,8 @@ test('D01: create, edit, submit, compare, revise, reload, and recover the origin
   await expect(page.getByRole('heading', { name: /提交版本/ })).toBeVisible();
   await page.getByRole('button', { name: '运行模拟分析', exact: true }).click();
   await expect(page.getByRole('heading', { name: '范围结构反馈' })).toBeVisible();
+  await expect(page.getByRole('group', { name: '全范围推荐策略矩阵' })).toBeVisible();
+  await expect(page.getByRole('group', { name: '全范围推荐策略矩阵' }).getByRole('button')).toHaveCount(169);
   await expect(page.getByText('不为任意自定义策略编造收益')).toBeVisible();
   await capture(page, 'feedback-1440');
   const metric = page.locator('div').filter({ has: page.getByText('参考频率差异', { exact: true }) }).filter({ has: page.locator('strong') }).last();
@@ -81,6 +84,7 @@ test('D01: create, edit, submit, compare, revise, reload, and recover the origin
 test('D01: a custom spot is preserved without borrowing a different result', async ({ page }) => {
   await page.goto('/library');
   await page.getByRole('button', { name: '创建研究案例' }).click();
+  await page.getByRole('tab', { name: /全范围构建/ }).click();
   await page.getByRole('button', { name: '局面条件' }).click();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: '局面条件' })).toBeFocused();
@@ -99,6 +103,7 @@ test('D01: a custom spot is preserved without borrowing a different result', asy
 test('D01: explicitly loading an authored example enables its bound report and restores as a separate draft', async ({ page }) => {
   await page.goto('/library');
   await page.getByRole('button', { name: '创建研究案例' }).click();
+  await page.getByRole('tab', { name: /全范围构建/ }).click();
   await page.getByRole('button', { name: '载入示例分配', exact: true }).click();
   await expect(page.getByRole('dialog')).toContainText('并非真实 Solver 策略');
   await page.getByRole('button', { name: '确认载入' }).click();
@@ -124,6 +129,7 @@ test('D01: unavailable browser storage keeps a working memory session with an ho
   await page.goto('/library');
   await expect(page.getByText('仅内存模式')).toBeVisible();
   await page.getByRole('button', { name: '创建研究案例' }).click();
+  await page.getByRole('tab', { name: /全范围构建/ }).click();
   await page.getByRole('button', { name: '其余全部过牌' }).click();
   await page.getByRole('button', { name: '提交策略', exact: true }).click();
   await expect(page.getByRole('heading', { name: /提交版本/ })).toBeVisible();

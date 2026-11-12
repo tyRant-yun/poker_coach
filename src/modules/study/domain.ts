@@ -33,7 +33,17 @@ export type Spot = {
   rangeVersion: string;
   treeVersion: string;
 };
-export type PolicyDraft = { editRevision: number; choices: Choices };
+export type PolicyDraft = { editRevision: number; choices: Choices; assistance?: 'reference' | 'example' };
+export type HeroPlanInput = {
+  combo: string;
+  action: Action;
+  opponentBranch: 'call' | 'raise' | 'fold' | 'turn-bet' | 'turn-check';
+  response: 'call' | 'raise' | 'fold' | 'reassess';
+  turnPlan: string;
+  reason: string;
+};
+export type HeroPlan = HeroPlanInput & { id: string; spotRevisionId: string; createdAt: string };
+export type SolveInput = { spot: Spot; spotRevisionId: string; choices?: Choices };
 export type PolicyRevision = {
   id: string;
   number: number;
@@ -41,6 +51,7 @@ export type PolicyRevision = {
   spot: Spot;
   choices: Choices;
   createdAt: string;
+  assistance?: 'reference' | 'example';
 };
 export type JobStatus = 'queued' | 'running' | 'completed' | 'cancelled' | 'failed' | 'interrupted';
 export type SolveResult = {
@@ -53,7 +64,7 @@ export type SolveResult = {
 };
 export type SolveJob = {
   id: string;
-  policyRevisionId: string;
+  policyRevisionId: string | null;
   spotRevisionId: string;
   status: JobStatus;
   stage: string;
@@ -84,6 +95,7 @@ export type StudyCase = {
   versions: PolicyRevision[];
   jobs: SolveJob[];
   reports: AssessmentReport[];
+  heroPlans: HeroPlan[];
   note: string;
 };
 export type WorkspaceSnapshot = { schemaVersion: 1; fixtureVersion: string; cases: Record<string, StudyCase> };
@@ -136,5 +148,23 @@ export function validateSpot(spot: Spot): string | null {
   if (spot.board.length !== 3 || spot.board.some(c => !/^[AKQJT2-9][shdc]$/.test(c)) || new Set(spot.board).size !== 3)
     return '请输入三张不同的翻牌，例如 As 7d 2c。';
   if (![spot.potMinor, spot.stackMinor].every(v => Number.isInteger(v) && v > 0)) return '底池与剩余筹码必须为正数。';
+  return null;
+}
+
+export function normalizeCombo(input: string): string | null {
+  const m = input.replace(/\s/g, '').match(/^([AKQJT2-9])([shdc])([AKQJT2-9])([shdc])$/i);
+  if (!m) return null;
+  const a = m[1].toUpperCase() + m[2].toLowerCase();
+  const b = m[3].toUpperCase() + m[4].toLowerCase();
+  return allCombos.find(c => c === a + b || c === b + a) ?? null;
+}
+export function validateHeroPlan(plan: HeroPlanInput, spot: Spot, weights: RangeWeights): string | null {
+  const combo = normalizeCombo(plan.combo);
+  if (!combo || !activeCombos(spot, weights).includes(combo)) return 'Hero 手牌与公共牌冲突，或不在当前输入范围中。';
+  if (!actions.some(a => a.id === plan.action)) return '请先选择 Hero 的当前行动。';
+  const branches = plan.action === 'check' ? ['turn-bet', 'turn-check'] : ['call', 'raise', 'fold'];
+  if (!branches.includes(plan.opponentBranch)) return '这条后续分支与当前行动不一致：BTN 过牌后进入转牌。';
+  if (!['call', 'raise', 'fold', 'reassess'].includes(plan.response)) return '请选择有效的后续计划。';
+  if (!['raise', 'turn-bet'].includes(plan.opponentBranch) && plan.response !== 'reassess') return '该分支没有待回应的下注，请在下一决策点再评估。';
   return null;
 }

@@ -319,6 +319,90 @@
 .empty { text-align: center; padding: 50px 20px; color: #90a3b5; }
 .empty h1, .empty h3 { color: #d3dee6; font-weight: 500; }
 .empty p { font-size: 11px; }
+.assistanceNote { display: flex; align-items: center; gap: 8px; color: #d2bc91; border: 1px solid #554b36; background: #332e2280; border-radius: 6px; padding: 10px 14px; font-size: 10px; }
+.heroStudy { display: flex; flex-direction: column; gap: 20px; }
+.heroResults { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 20px; }
+.heroResults > .referenceCard { margin-top: 0; }
+.heroIntro { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; padding: 7px 0 3px; }
+.heroIntro h2 { font-size: 20px; font-weight: 500; margin: 9px 0 8px; }
+.heroIntro p { color: #91a6b4; font-size: 11px; margin: 0; line-height: 1.9; }
+.heroIntro > .pill { flex-shrink: 0; margin-top: 9px; }
+.heroLayout { display: grid; grid-template-columns: 275px minmax(0,1fr); gap: 20px; align-items: start; }
+.heroHandCard, .heroPlanCard { border: 1px solid #34463f; border-radius: 9px; background: #19242c; padding: 22px; min-width: 0; }
+.heroHandCard { background: linear-gradient(145deg,#21332c,#19242d 65%); }
+.heroCards { display: flex; align-items: center; gap: 20px; padding: 13px 0 23px; }
+.heroCards .playingCard { width: 48px; height: 65px; }
+.heroCards > span:last-child { font-size: 26px; font-weight: 550; letter-spacing: -.7px; color: #cde3d8; }
+.heroHandCard .formField { font-size: 10px; }
+.heroHandCard .formField select { font-size: 11px; width: 100%; }
+.heroRangeFact { display: flex; align-items: flex-start; gap: 8px; color: #95b7a6; border-top: 1px solid #34473d; padding: 14px 0; }
+.heroRangeFact svg { flex-shrink: 0; margin-top: 4px; }
+.heroRangeFact p { font-size: 10px; line-height: 1.9; margin: 0; }
+.heroCoverage { border-top: 1px solid #34473d; padding-top: 14px; margin-top: 18px; }
+.heroCoverage b { font-size: 11px; font-weight: 500; }
+.heroCoverage p { color: #829e8e; font-size: 9px; margin: 5px 0 0; }
+.heroPlanCard .panelHeader h2 { font-size: 13px; }
+.heroPlanCard .formField { font-size: 10px; margin-bottom: 14px; }
+.heroPlanCard .formField select, .heroPlanCard .formField textarea { font-size: 11px; width: 100%; line-height: 1.8; }
+.heroActionChoices { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin: 20px 0 17px; }
+.heroActionChoices button { display: flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid #43515f; padding: 12px; background: #1c2935; color: #b7c7d5; font-size: 11px; }
+.heroActionChoices i { width: 6px; height: 6px; border-radius: 50%; }
+.heroActionChoices button.heroActionSelected { background: #304b3d; border-color: #92ceaf; color: #d8f1e3; box-shadow: inset 0 0 0 1px #8ac5a533; }
+.heroStreetNote { color: #b3d6c2; background: #253b30; border-radius: 5px; font-size: 10px; padding: 9px 12px; }
+.heroLine { display: flex; align-items: center; gap: 10px; margin: 1px 0 18px; padding: 13px; background: #131e27; border: 1px solid #2d3e4b; border-radius: 6px; flex-wrap: wrap; }
+.heroLine > span { font-size: 10px; color: #b6cdbe; }
+.heroLine > svg { color: #607e70; flex-shrink: 0; }
+.heroPlanFoot { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.heroPlanFoot p { color: #7f98a9; font-size: 9px; margin: 0; }
+.heroSaved { display: flex; gap: 7px; align-items: center; color: #8db79d; font-size: 9px; border-top: 1px solid #33453c; margin-top: 14px; padding-top: 12px; }
+.heroBridge { border: 1px solid #31443c; border-radius: 8px; background: #1a2926; padding: 19px 22px; }
+.heroBridge h3 { font-size: 13px; font-weight: 500; margin: 0 0 6px; }
+.heroBridge p { color: #91a99d; font-size: 10px; margin: 0; }
+.heroBridgeActions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 15px; }
+.heroBridgeActions button:disabled { opacity: .4; }
+.heroReferenceRequest { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 10px 0 0; }
+.heroReferenceRequest h2 { font-size: 17px; font-weight: 500; margin: 9px 0 6px; }
+.heroReferenceRequest p { color: #879eaf; font-size: 10px; margin: 0; }
+.heroReferenceSummary { display: flex; gap: 16px; align-items: center; border: 1px solid #42614e; border-radius: 8px; background: #23382c; padding: 17px 20px; }
+.heroReferenceSummary b { font-size: 12px; font-weight: 500; }
+.heroReferenceSummary p { font-size: 10px; color: #a6c5b2; margin: 5px 0 0; }
+.heroReferenceSummary > .pill { margin-left: auto; }
+.referenceCard { background: #19252f; border: 1px solid #3c5549; border-radius: 9px; padding: 20px; margin-top: 20px; min-width: 0; }
+.heroStudy > .referenceCard { margin-top: 0; }
+.referenceHeading { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+.referenceHeading h2 { font-size: 16px; font-weight: 500; margin: 8px 0 6px; }
+.referenceHeading h2 > span { margin-left: 6px; vertical-align: middle; }
+.referenceHeading p { color: #8da3b3; font-size: 9px; line-height: 1.9; margin: 0; }
+.referenceCard > .frequencyGroup { margin-top: 12px; border-bottom: 1px solid #314451; padding-bottom: 17px; }
+.referenceLayout { display: grid; grid-template-columns: minmax(0,1fr) 240px; gap: 20px; margin-top: 20px; align-items: start; }
+.referenceLayout > div { min-width: 0; }
+.referenceFilters { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 13px; }
+.referenceFilters button { padding: 4px 7px; border: 1px solid #384e5a; background: #1d2c37; color: #8fa6b7; font-size: 9px; }
+.referenceFilters button.refFilterActive { border-color: #6eab8a; background: #2d4d3b; color: #c8e5d4; }
+.referenceMatrix { width: 100%; }
+.matrixCell.heroCell { outline: 1px solid #d0b573; outline-offset: -2px; }
+.referenceDetail { background: #14212b; border: 1px solid #364c57; padding: 16px; border-radius: 7px; }
+.referenceHand { display: flex; align-items: center; gap: 12px; margin-top: 20px; }
+.referenceTable { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 9px; }
+.referenceTable th { color: #7f9aaa; font-weight: 400; padding: 8px 0; border-bottom: 1px solid #3a4d58; text-align: right; }
+.referenceTable th:first-child { text-align: left; }
+.referenceTable td { padding: 11px 0; border-bottom: 1px solid #2a3e4a; color: #c4d5df; text-align: right; font-variant-numeric: tabular-nums; }
+.referenceTable td:first-child { text-align: left; white-space: nowrap; }
+.referenceTable td i { display: inline-block; width: 4px; height: 4px; border-radius: 50%; margin-right: 5px; }
+.referenceConnection { display: flex; align-items: flex-start; gap: 8px; color: #97b5a7; }
+.referenceConnection svg { flex-shrink: 0; margin-top: 4px; }
+.referenceConnection p { font-size: 9px; margin: 0; line-height: 1.9; }
+.referenceConnection b { color: #b9d9c9; font-weight: 500; }
+.referenceFill { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; background: #1c2b29; border: 1px solid #385345; border-radius: 7px; padding: 17px 19px; margin-top: 15px; }
+.referenceFill b { font-size: 11px; font-weight: 500; }
+.referenceFill p { font-size: 9px; color: #91ad9e; margin: 5px 0 0; }
+.referenceFill button { font-size: 9px; }
+.referenceFill button:disabled { opacity: .5; }
+.feedbackMain .referenceLayout { grid-template-columns: minmax(0,1fr) 210px; gap: 14px; }
+.feedbackMain .referenceMatrix .matrixCell b { font-size: 9px; }
+@media(max-width:1250px) { .feedbackMain .referenceLayout { grid-template-columns: 1fr; } .referenceLayout { grid-template-columns: minmax(0,1fr) 220px; } .heroLayout { grid-template-columns: 240px minmax(0,1fr); gap: 16px; } .heroHandCard, .heroPlanCard { padding: 18px; } .heroActionChoices button { padding: 10px 7px; font-size: 10px; } .heroPlanFoot { align-items: flex-end; } .heroPlanFoot p { max-width: 220px; } }
+@media(max-width:1000px) { .heroLayout { grid-template-columns: 1fr; } .heroHandCard { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; } .heroHandCard > .fieldHeading, .heroRangeFact, .heroCoverage { grid-column: 1 / -1; margin: 0; } .heroCards { grid-row: span 2; padding: 5px 0; } .heroHandCard .formField { margin: 0; } .heroHandCard > .textButton { grid-column: 1 / -1; } .heroIntro h2 { font-size: 18px; } .referenceLayout { grid-template-columns: 1fr; } .referenceDetail { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 20px; } .referenceDetail > .fieldHeading, .referenceConnection { grid-column: 1 / -1; } .referenceTable { grid-row: span 2; margin: 0; } .referenceHand { margin-top: 12px; } .referenceDetail > .comboList { align-self: start; } }
+@media(max-width:600px) { .heroIntro { gap: 10px; } .heroIntro h2 { font-size: 17px; } .heroIntro > .pill { display: none; } .heroReferenceRequest { align-items: flex-start; flex-direction: column; gap: 15px; } .heroPlanCard .formColumns { grid-template-columns: 1fr; gap: 0; } .heroPlanFoot { align-items: flex-start; flex-direction: column; gap: 12px; } .heroPlanFoot .primaryButton { width: 100%; } .heroBridgeActions { flex-direction: column; align-items: stretch; } .referenceHeading { align-items: flex-start; } .referenceHeading h2 { font-size: 14px; } .referenceHeading > .outlineBadge { display: none; } .referenceCard { padding: 12px; } .referenceDetail { display: block; } .referenceTable { margin: 14px 0; } .heroReferenceSummary { flex-wrap: wrap; gap: 12px; } .heroReferenceSummary > .pill { margin-left: 0; } .studyTabs { gap: 15px; overflow-x: auto; } .studyTabs > button { white-space: nowrap; } .studyTabs > button > span { display: none; } }
 @media(min-width:1600px) { .main { padding: 36px 42px; } .matrixCell b { font-size: 13px; } }
 @media(max-width:1250px) { .main { padding: 25px; } .spotBand { gap: 16px; padding: 19px; } .actionPath { padding-left: 15px; font-size: 8px; } .spotPosition { gap: 13px; padding-left: 16px; } .editorLayout { grid-template-columns: minmax(0,1fr) 260px; gap: 16px; } .inspectorCard { padding: 17px; } .matrixPanel { padding: 17px; } .homeHero { padding: 30px; gap: 30px; } .heroCopy h2 { font-size: 31px; } .heroScene { padding: 22px; } .feedbackLayout { grid-template-columns: minmax(0,1fr) 240px; gap: 15px; } .feedbackMain { padding: 20px; } .guideCard { padding: 20px; } .simulationBox { flex-wrap: wrap; } .simulationBox > button { margin-left: auto; } }
 @media(max-width:1100px) { .sidebar { width: 180px; flex-basis: 180px; padding-inline: 12px; } .mainShell { margin-left: 180px; width: calc(100% - 180px); } .brand { font-size: 21px; } .workspaceLabel { font-size: 9px; } .main { padding: 22px; } .actionPath { display: none; } .pageHeading h1 { font-size: 23px; } .sessionLabel { display: none; } .heroCopy h2 { font-size: 29px; } .heroCopy p { font-size: 11px; } .homeHero { gap: 25px; padding: 26px; } .sceneActions { gap: 10px; font-size: 8px; } .statGrid small { display: block; margin-left: 0; } .toast { left: calc(50% + 90px); } .tabHint { display: none; } .inlineTools { gap: 13px; } .inlineTools > span { display: none; } .feedbackLayout { grid-template-columns: 1fr; } .feedbackAside { display: none; } .studyHeading h1 { font-size: 22px; } .libraryCardMain h2 { font-size: 26px; } .libraryCardFoot { flex-wrap: wrap; } }

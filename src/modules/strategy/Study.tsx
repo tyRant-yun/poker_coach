@@ -2,29 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { commands, queries, useWorkspace } from '../../app/workspace';
 import { actions, activeCombos, handClasses, policyStats } from '../study/domain';
-import type { Allocation, Choices, HandClass, PolicyRevision, RangeWeights, StudyCase } from '../study/domain';
+import type { Allocation, HandClass, PolicyRevision, StudyCase } from '../study/domain';
 import { Board, Dialog, Icon, dateTime, percent } from '../../shared/ui';
+import { average, cellBackground, FrequencyBar } from './RangeVisuals';
+import { ReferenceRange } from './ReferenceRange';
+import { ReferenceFillButton } from './ReferenceFillButton';
+import { HeroStudy } from './HeroStudy';
 import s from '../../styles/App.module.css';
 
-function average(combos: string[], choices: Choices, weights: RangeWeights): Allocation {
-  const mass = combos.reduce((sum, c) => sum + weights[c], 0);
-  return Object.fromEntries(actions.map(a => [a.id, mass ? combos.reduce((sum, c) => sum + weights[c] * (choices[c]?.[a.id] ?? 0), 0) / mass : 0])) as Allocation;
-}
-function cellBackground(value: Allocation) {
-  const x = Math.min(100, value.check / 100);
-  const y = Math.min(100, x + value.bet33 / 100);
-  const z = Math.min(100, y + value.bet75 / 100);
-  return `linear-gradient(90deg,#315675 0%,#315675 ${x}%,#85613e ${x}%,#85613e ${y}%,#695280 ${y}%,#695280 ${z}%,#26313d ${z}%)`;
-}
-function FrequencyBar({ totals, label }: { totals: Allocation; label?: string }) {
-  const assigned = actions.reduce((sum, a) => sum + totals[a.id], 0);
-  return <div className={s.frequencyGroup}>{label && <span className={s.smallMuted}>{label}</span>}<div className={s.frequencyBar}>{actions.map(a => <span key={a.id} style={{ width: `${totals[a.id] * 100}%`, background: a.color }} title={`${a.name} ${percent(totals[a.id])}`} />)}{assigned < .9999 && <span style={{ width: `${(1 - assigned) * 100}%`, background: '#34404f' }} />}</div><div className={s.frequencyLegend}>{actions.map(a => <span key={a.id}><i style={{ background: a.color }} />{a.name}<b>{percent(totals[a.id])}</b></span>)}{assigned < .9999 && <span><i style={{ background: '#34404f' }} />未分配<b>{percent(1 - assigned)}</b></span>}</div></div>;
-}
 export function Study() {
   const { caseId = '' } = useParams();
   const c = useWorkspace(st => st.data.cases[caseId]);
   const [params, setParams] = useSearchParams();
-  const tab = params.get('view') ?? 'strategy';
+  const tab = params.get('view') ?? 'hero';
   const [conditions, setConditions] = useState(false);
   const [selected, setSelected] = useState('AKs');
   const [confirm, setConfirm] = useState<'example' | 'clear' | null>(null);
@@ -40,7 +30,9 @@ export function Study() {
     <div className={s.studyTopline}><Link to="/library"><Icon name="grid" size={14} />局面库</Link><Icon name="chevron" size={13} /><span>S01 · 翻牌研究</span><span className={s.studyDraft}>草稿 r{c.draft.editRevision}</span></div>
     <div className={s.studyHeading}><div><h1>{c.name}</h1><p>构建整个范围的行动，观察策略的结构。</p></div><button className={s.secondaryButton} onClick={() => setConditions(true)}><Icon name="sliders" size={16} />局面条件</button></div>
     <section className={s.spotBand}><div className={s.spotBoard}><span className={s.eyebrow}>FLOP</span><Board cards={c.spot.board} /></div><div className={s.spotMetric}><span>底池</span><b>{(c.spot.potMinor / c.spot.unitsPerBb).toFixed(1)}<small>bb</small></b></div><div className={s.spotMetric}><span>有效剩余筹码</span><b>{(c.spot.stackMinor / c.spot.unitsPerBb).toFixed(1)}<small>bb</small></b></div><div className={s.spotPosition}><div><span>行动方</span><strong>BTN <small>IP</small></strong></div><div><span>对手</span><strong>BB <small>OOP</small></strong></div></div><div className={s.actionPath}><span>翻前 <b>BTN 2.5 bb</b><Icon name="chevron" size={12} /><b>BB 跟注</b></span><span>翻牌 <b>BB 过牌</b><Icon name="chevron" size={12} /><strong>轮到 BTN</strong></span></div></section>
-    <div className={s.studyTabs} role="tablist" aria-label="研究视图">{[['strategy', '范围构建', '01'], ['feedback', '参考与反馈', '02'], ['history', '版本记录', String(c.versions.length).padStart(2, '0')]].map(([id, name, num]) => <button role="tab" aria-selected={tab === id} className={tab === id ? s.tabActive : ''} onClick={() => changeTab(id)} key={id}>{name}<span>{num}</span></button>)}<span className={s.tabHint}><span className={s.greenDot} />组合级策略 · 合成输入</span></div>
+    <div className={s.studyTabs} role="tablist" aria-label="研究视图">{[['hero', 'Hero 推演', '推荐'], ['strategy', '全范围构建', '进阶'], ['feedback', '参考与反馈', '对照'], ['history', '版本记录', String(c.versions.length).padStart(2, '0')]].map(([id, name, num]) => <button role="tab" aria-selected={tab === id} className={tab === id ? s.tabActive : ''} onClick={() => changeTab(id)} key={id}>{name}<span>{num}</span></button>)}<span className={s.tabHint}><span className={s.greenDot} />Hero → 同类 → 全范围</span></div>
+    {tab === 'hero' && <HeroStudy key={c.id + c.spotRevisionId} c={c} onRange={label => { setSelected(label); changeTab('strategy'); }} />}
+    {tab === 'strategy' && c.draft.assistance && <p className={s.assistanceNote}><Icon name="info" size={14} />当前草稿包含示例参考辅助，不作为独立范围训练的证据。</p>}
     {tab === 'strategy' && <div className={s.editorLayout}><div className={s.editorMain}><RangeEditor c={c} selected={selected} onSelect={setSelected} /><section className={s.submitBar}><div><span className={s.coverageRing} style={{ background: `conic-gradient(#76d6b3 ${stats.coverage * 360}deg,#34404a 0)` }}><span>{Math.round(stats.coverage * 100)}<small>%</small></span></span><div><b>你的范围构建</b><p>{stats.filled} / {stats.combos.length} 个组合已完成{stats.invalid ? ` · ${stats.invalid} 个频率待修正` : ''}</p></div></div><button className={s.primaryButton} onClick={submit}>提交策略 <Icon name="arrow" size={16} /></button></section><div className={s.inlineTools}><button onClick={() => commands.fillRemaining(caseId)}><Icon name="check" size={14} />其余全部过牌</button><button onClick={() => setConfirm('example')}>载入示例分配</button><button onClick={() => setConfirm('clear')}>清空草稿</button><span>提交版本将独立保存</span></div></div><Inspector c={c} hand={handClasses.find(h => h.label === selected)!} /></div>}
     {tab === 'feedback' && <Feedback c={c} version={version} onVersion={id => changeTab('feedback', id)} onEdit={() => changeTab('strategy')} />}
     {tab === 'history' && <History c={c} onOpen={id => changeTab('feedback', id)} onRestore={id => { commands.restoreAsDraft(caseId, id); changeTab('strategy'); }} />}
@@ -92,14 +84,24 @@ function Feedback({ c, version, onVersion, onEdit }: { c: StudyCase; version?: P
   const report = c.reports.filter(r => r.policyRevisionId === version?.id).at(-1);
   const output = c.jobs.find(j => j.id === report?.jobId)?.result;
   const running = !!job && ['running', 'queued'].includes(job.status);
-  if (!version) return <div className={s.emptyCard}><div className={s.emptyIcon}><Icon name="report" size={26} /></div><h2>先保存你的第一份策略</h2><p>完成范围分配并提交，随后查看与示例参考的结构差异。</p><button className={s.primaryButton} onClick={onEdit}>返回范围构建 <Icon name="arrow" size={16} /></button></div>;
+  if (!version) {
+    const currentReference = queries.latestReference(c);
+    const pending = c.jobs.find(j => j.policyRevisionId === null && j.spotRevisionId === c.spotRevisionId && ['queued', 'running'].includes(j.status));
+    return <div>{currentReference?.result?.reference ? <>
+      <ReferenceRange spot={c.spot} reference={currentReference.result.reference} weights={queries.weights()} heroCombo={queries.latestHeroPlan(c)?.combo} userChoices={c.draft.choices} />
+      <ReferenceFillButton c={c} jobId={currentReference.id} onComplete={onEdit} />
+    </> : <div className={s.emptyCard}><div className={s.emptyIcon}><Icon name="report" size={26} /></div><h2>不必先填完整个范围</h2><p>直接查看当前局面的合成参考；完整提交只用于评价你自己的范围方案。</p><button className={s.primaryButton} disabled={!!pending} onClick={() => void commands.requestReference(c.id)}>{pending ? '正在读取范围参考…' : '无需提交，运行范围参考'}</button></div>}</div>;
+  }
   const stats = policyStats(version.spot, queries.weights(), version.choices);
   const refStats = output?.reference ? policyStats(version.spot, queries.weights(), output.reference) : null;
   return <div className={s.feedbackLayout}><section className={s.feedbackMain}><div className={s.versionHeader}><div><span className={s.eyebrow}>SUBMITTED STRATEGY</span><h2>提交版本 <span className={s.versionPill}>V{version.number}</span></h2><p>{dateTime(version.createdAt)} · 输入已固定，后续编辑不会改变本版。</p></div><label className={s.versionSelect}>查看版本<select aria-label="查看提交版本" value={version.id} onChange={e => onVersion(e.target.value)}>{c.versions.map(v => <option key={v.id} value={v.id}>V{v.number}</option>)}</select></label></div><div className={s.versionContext}><Board cards={version.spot.board} small /><span>底池 {(version.spot.potMinor / version.spot.unitsPerBb).toFixed(1)} bb</span><code>{version.spotRevisionId}</code></div>
+    {version.assistance && <p className={s.assistanceNote}><Icon name="info" size={14} />这份提交包含参考辅助，不等同于独立作答。</p>}
     <div className={s.simulationBox}><div className={s.simulationIcon}>{running ? <span className={s.spinner} /> : <Icon name={job?.status === 'completed' ? 'check' : 'play'} size={22} />}</div><div><h3>{running ? '正在运行本地模拟' : job?.status === 'cancelled' ? '本次模拟已取消' : job?.status === 'interrupted' ? '上次模拟被刷新中断' : report ? '模拟反馈已生成' : '准备好比较你的策略了吗？'}</h3><p>{running ? job.stage : '使用预置合成参考，不执行真实扑克求解。'}</p></div>{running ? <button className={s.secondaryButton} onClick={() => commands.cancelJob(c.id, job.id)}>取消模拟</button> : <button className={s.primaryButton} onClick={() => void commands.requestSolve(c.id, version.id)}><Icon name="play" size={15} />{report ? '重新运行模拟' : '运行模拟分析'}</button>}</div>
     {running && <div className={s.progressTrack}><span /></div>}
     {!running && report && <><div className={s.reportHeading}><h2>范围结构反馈</h2><button className={s.textButton} onClick={() => setSource(true)}>查看来源与条件 <Icon name="info" size={14} /></button></div>{job?.status === 'cancelled' && <p className={s.muted}>以下保留的是上次完成的报告，本次取消未生成新结果。</p>}<div className={s.feedbackMetrics}><div><span>构建完整度</span><strong>100<small>%</small></strong><p>{stats.combos.length} 个组合 · 结构校验通过</p></div><div><span>参考频率差异</span><strong>{report.difference === null ? '—' : (report.difference * 100).toFixed(1)}{report.difference !== null && <small>%</small>}</strong><p>{report.difference === null ? '当前条件没有匹配参考' : '加权分配差异，越接近零越相似'}</p></div><div><span>固定对手 EV · 示例</span><strong>{report.sampleEv?.value.toFixed(2) ?? '未覆盖'}{report.sampleEv && <small>bb</small>}</strong><p>{report.sampleEv ? '仅绑定该预置策略的合成收益' : '不为任意自定义策略编造收益'}</p></div></div>
+    {output?.reference && <ReferenceRange spot={version.spot} reference={output.reference} weights={queries.weights()} userChoices={version.choices} userLabel={`你的 V${version.number}`} heroCombo={c.heroPlans.filter(p => p.spotRevisionId === version.spotRevisionId).at(-1)?.combo} />}
     {output?.availability === 'uncovered' ? <div className={s.uncoveredBox}><Icon name="info" /><div><h3>这组输入还没有演示结果</h3><p>{output.reason}</p><p>已提交策略与结构校验仍可查看。</p></div></div> : <section className={s.compareCard}><h3>整体行动分布</h3><FrequencyBar totals={stats.totals} label={`你的提交 · V${version.number}`} />{refStats && <FrequencyBar totals={refStats.totals} label="作者编写的示例参考" />}<div className={s.compareDivider} /><h3>差异最大的牌类</h3><p className={s.muted}>用于定位分配差异，不把差异直接判为错误。</p><div className={s.differenceRows}>{report.largestDifferences.map(d => <div key={d.label}><strong>{d.label}</strong><span><i style={{ width: percent(d.difference) }} /></span><b>{percent(d.difference)}</b></div>)}</div></section>}
+    {output?.reference && <ReferenceFillButton c={c} jobId={report.jobId} onComplete={onEdit} />}
     <div className={s.feedbackActions}><button className={s.primaryButton} onClick={onEdit}>返回当前草稿修改 <Icon name="arrow" size={15} /></button><button className={s.secondaryButton} onClick={() => { commands.restoreAsDraft(c.id, version.id); onEdit(); }}>从此版本建立草稿</button></div></>}
     {!running && !report && <div className={s.feedbackBlank}><Icon name="layers" size={34} /><h3>让你的分配变得可比较</h3><p>模拟完成后，会在这里展示整体频率、组合差异与报告条件。</p></div>}
   </section><aside className={s.feedbackAside}><section className={s.guideCard}><span className={s.eyebrow}>READ THE FEEDBACK</span><h3>三个不同的问题</h3><div className={s.explanation}><span>01</span><div><b>结构完整吗？</b><p>是否覆盖所有组合，频率是否有效。</p></div></div><div className={s.explanation}><span>02</span><div><b>与参考差多少？</b><p>比较行动分配，帮助定位构成差异。</p></div></div><div className={s.explanation}><span>03</span><div><b>真实收益如何？</b><p>本轮没有真实求值，收益仅展示绑定输入的合成示例。</p></div></div><div className={s.guideNote}><Icon name="info" size={15} />频率差异不等于 EV 损失，也不证明整体可利用性。</div></section></aside>

@@ -75,6 +75,8 @@
 - Exercise 固定输入、隐藏内容与评价约定；Attempt 固定独立/辅助状态。
 - Mission 固定任务目标、执行策略、预算及输入版本；轨迹引用真实输出 ID。
 
+用户反馈增量：Case 新增独立 HeroPlan 列表，绑定局面修订，记录具体手牌、当前行动与条件性后续计划；保存 HeroPlan 不创建 PolicyRevision，也不修改覆盖率。只读参考作业允许 policyRevisionId 为 null，直接固定局面输入；完整策略评价仍要求固定 PolicyRevision。显式参考补全的 assistance 来源随草稿、提交、恢复和导出保留。旧快照以默认空 HeroPlan 列表兼容加载。
+
 使用 ID 引用，避免树中互相复制大对象。选中节点、面板、hover 等属于瞬时 UI 状态，不写进不可变业务版本。
 
 ## 6. 必须保护的不变量

@@ -16,7 +16,7 @@ export function createMockSolver(waitMs = 650): SolverPort {
     await delay(waitMs / 2, signal);
     onStage('正在读取预置参考');
     await delay(waitMs, signal);
-    const input = spotSignature(version.spot) + canonicalPolicy(version.choices, activeCombos(version.spot, btnRange));
+    const input = spotSignature(version.spot) + canonicalPolicy(version.choices ?? {}, activeCombos(version.spot, btnRange));
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
     const inputFingerprint = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
     const matched = spotSignature(version.spot) === spotSignature(s01Spot);

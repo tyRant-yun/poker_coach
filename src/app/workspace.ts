@@ -1,7 +1,7 @@
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
-import { actions, activeCombos, canonicalPolicy, frequencyDifference, handByCombo, policyStats, validateSpot, validateSubmission } from '../modules/study/domain';
-import type { Allocation, AssessmentReport, Choices, PolicyRevision, Spot, StudyCase, WorkspaceSnapshot } from '../modules/study/domain';
+import { actions, activeCombos, canonicalPolicy, frequencyDifference, handByCombo, normalizeCombo, policyStats, validAllocation, validateHeroPlan, validateSpot, validateSubmission } from '../modules/study/domain';
+import type { Allocation, AssessmentReport, Choices, HeroPlanInput, PolicyRevision, SolveInput, Spot, StudyCase, WorkspaceSnapshot } from '../modules/study/domain';
 import { btnRange, bbRange, catalogue, fixtureVersion, referenceChoices, s01Spot } from '../fixtures/s01';
 import type { SolverPort, WorkspaceRepository } from '../ports';
 import { indexedDbRepository } from '../persistence/indexed-db';
@@ -63,6 +63,34 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
     replaceCase({ ...c, jobs: c.jobs.map(j => j.id === jobId ? { ...j, status, stage } : j) });
   }
 
+  async function runSolve(caseId: string, versionId: string | null): Promise<Result<string>> {
+    const c = getCase(caseId);
+    const version = c?.versions.find(v => v.id === versionId);
+    if (!c || (versionId !== null && !version)) return fail('请先提交一个完整的策略版本。');
+    const input: SolveInput = version
+      ? { spot: copy(version.spot), spotRevisionId: version.spotRevisionId, choices: copy(version.choices) }
+      : { spot: copy(c.spot), spotRevisionId: c.spotRevisionId };
+    if (c.jobs.some(j => j.policyRevisionId === versionId && j.spotRevisionId === input.spotRevisionId && ['queued', 'running'].includes(j.status))) return fail('相同输入已有模拟正在运行。');
+    const jobId = uid('job');
+    const controller = new AbortController();
+    controllers.set(jobId, controller);
+    replaceCase({ ...c, jobs: [...c.jobs, { id: jobId, policyRevisionId: versionId, spotRevisionId: input.spotRevisionId, status: 'queued', stage: '输入已固定，等待模拟', createdAt: now() }] });
+    try {
+      updateJob(caseId, jobId, 'running', '正在准备模拟分析');
+      const result = await solver.solve(input, stage => updateJob(caseId, jobId, 'running', stage), controller.signal);
+      const latest = getCase(caseId);
+      if (!latest || controller.signal.aborted || latest.jobs.find(j => j.id === jobId)?.status !== 'running') return { ok: false, message: '模拟已取消。' };
+      replaceCase({ ...latest, jobs: latest.jobs.map(j => j.id === jobId ? { ...j, status: 'completed', stage: '模拟完成', result } : j) });
+      if (versionId !== null) return commands.requestAssessment(caseId, jobId);
+      notice(result.reference ? '全范围示例参考已生成；你的推演与范围草稿保持独立。' : result.reason, 'info');
+      return { ok: true, value: jobId };
+    } catch (error) {
+      if (controller.signal.aborted) return { ok: false, message: '模拟已取消。' };
+      updateJob(caseId, jobId, 'failed', error instanceof Error ? error.message : '模拟执行失败');
+      return fail('模拟执行失败，已有内容已保留，可以重新运行。');
+    } finally { controllers.delete(jobId); }
+  }
+
   const commands = {
     initialize() {
       if (initializePromise) return initializePromise;
@@ -91,8 +119,8 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
       if (!store.getState().hydrated) return fail('工作区尚未载入。');
       const id = uid('case');
       replaceCase({ id, name: name.trim() || '未命名研究', scenarioId: 'S01', createdAt: now(), updatedAt: now(),
-        spotRevisionId: uid('spot'), spot: copy(s01Spot), draft: { editRevision: 0, choices: {} }, versions: [], jobs: [], reports: [], note: '' });
-      notice('研究案例已建立。先为你的范围分配行动。');
+        spotRevisionId: uid('spot'), spot: copy(s01Spot), draft: { editRevision: 0, choices: {} }, versions: [], jobs: [], reports: [], heroPlans: [], note: '' });
+      notice('研究案例已建立。可以先从 Hero 手牌开始推演。');
       return { ok: true, value: id };
     },
     editPolicy(caseId: string, comboIds: string[], allocation: Allocation, expectedRevision: number): Result {
@@ -104,7 +132,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
       if (!comboIds.length || comboIds.some(combo => !available.has(combo))) return fail('所选组合不在当前可用范围中。');
       const choices = { ...c.draft.choices };
       comboIds.forEach(combo => { choices[combo] = { ...allocation }; });
-      replaceCase({ ...c, draft: { choices, editRevision: c.draft.editRevision + 1 } });
+      replaceCase({ ...c, draft: { ...c.draft, choices, editRevision: c.draft.editRevision + 1 } });
       notice(`已更新 ${comboIds.length} 个组合。`);
       return { ok: true, value: undefined };
     },
@@ -118,7 +146,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
     loadExample(caseId: string): Result {
       const c = getCase(caseId);
       if (!c) return fail('案例不存在。');
-      replaceCase({ ...c, draft: { editRevision: c.draft.editRevision + 1, choices: referenceChoices(c.spot) } });
+      replaceCase({ ...c, draft: { editRevision: c.draft.editRevision + 1, choices: referenceChoices(c.spot), assistance: 'example' } });
       notice('已载入作者编写的示例分配；这不是 Solver 建议。', 'info');
       return { ok: true, value: undefined };
     },
@@ -135,12 +163,12 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
       const error = validateSubmission(c.spot, btnRange, c.draft.choices);
       if (error) return fail(error);
       const last = c.versions.at(-1);
-      if (last && JSON.stringify(last.spot) === JSON.stringify(c.spot) && canonicalPolicy(last.choices, activeCombos(last.spot, btnRange)) === canonicalPolicy(c.draft.choices, activeCombos(c.spot, btnRange))) {
+      if (last && last.assistance === c.draft.assistance && JSON.stringify(last.spot) === JSON.stringify(c.spot) && canonicalPolicy(last.choices, activeCombos(last.spot, btnRange)) === canonicalPolicy(c.draft.choices, activeCombos(c.spot, btnRange))) {
         notice(`与 V${last.number} 相同，已打开原提交。`, 'info');
         return { ok: true, value: last.id };
       }
       const id = uid('policy');
-      const version: PolicyRevision = { id, number: c.versions.length + 1, spotRevisionId: c.spotRevisionId, spot: copy(c.spot), choices: copy(c.draft.choices), createdAt: now() };
+      const version: PolicyRevision = { id, number: c.versions.length + 1, spotRevisionId: c.spotRevisionId, spot: copy(c.spot), choices: copy(c.draft.choices), assistance: c.draft.assistance, createdAt: now() };
       replaceCase({ ...c, versions: [...c.versions, version] });
       notice(`V${version.number} 已提交并固定，可以运行模拟分析。`);
       return { ok: true, value: id };
@@ -150,7 +178,7 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
       const v = c?.versions.find(v => v.id === versionId);
       if (!c || !v) return fail('版本不存在。');
       replaceCase({ ...c, spot: copy(v.spot), spotRevisionId: v.spotRevisionId,
-        draft: { editRevision: c.draft.editRevision + 1, choices: copy(v.choices) } });
+        draft: { editRevision: c.draft.editRevision + 1, choices: copy(v.choices), assistance: v.assistance } });
       notice(`已从 V${v.number} 建立可编辑草稿，原版本保持不变。`);
       return { ok: true, value: undefined };
     },
@@ -167,27 +195,45 @@ export function createWorkspace(repository: WorkspaceRepository, solver: SolverP
       const c = getCase(caseId);
       if (c) replaceCase({ ...c, note: note.slice(0, 4000) });
     },
-    async requestSolve(caseId: string, versionId: string): Promise<Result<string>> {
+    saveHeroPlan(caseId: string, input: HeroPlanInput, expectedSpotRevision: string): Result<string> {
       const c = getCase(caseId);
-      const version = c?.versions.find(v => v.id === versionId);
-      if (!c || !version) return fail('请先提交一个完整的策略版本。');
-      if (c.jobs.some(j => j.policyRevisionId === versionId && ['queued', 'running'].includes(j.status))) return fail('该版本已有模拟正在运行。');
-      const jobId = uid('job');
-      const controller = new AbortController();
-      controllers.set(jobId, controller);
-      replaceCase({ ...c, jobs: [...c.jobs, { id: jobId, policyRevisionId: version.id, spotRevisionId: version.spotRevisionId, status: 'queued', stage: '输入已固定，等待模拟', createdAt: now() }] });
-      try {
-        updateJob(caseId, jobId, 'running', '正在准备模拟分析');
-        const result = await solver.solve(copy(version), stage => updateJob(caseId, jobId, 'running', stage), controller.signal);
-        const latest = getCase(caseId);
-        if (!latest || controller.signal.aborted || latest.jobs.find(j => j.id === jobId)?.status !== 'running') return { ok: false, message: '模拟已取消。' };
-        replaceCase({ ...latest, jobs: latest.jobs.map(j => j.id === jobId ? { ...j, status: 'completed', stage: '模拟完成', result } : j) });
-        return commands.requestAssessment(caseId, jobId);
-      } catch (error) {
-        if (controller.signal.aborted) return { ok: false, message: '模拟已取消。' };
-        updateJob(caseId, jobId, 'failed', error instanceof Error ? error.message : '模拟执行失败');
-        return fail('模拟执行失败，策略已保留，可以重新运行。');
-      } finally { controllers.delete(jobId); }
+      if (!c || c.spotRevisionId !== expectedSpotRevision) return fail('局面已更新，请重新检查 Hero 推演。');
+      const error = validateHeroPlan(input, c.spot, btnRange);
+      if (error) return fail(error);
+      const id = uid('hero');
+      replaceCase({ ...c, heroPlans: [...c.heroPlans, { ...input, combo: normalizeCombo(input.combo)!, reason: input.reason.slice(0, 2000), turnPlan: input.turnPlan.slice(0, 2000), id, spotRevisionId: c.spotRevisionId, createdAt: now() }] });
+      notice('Hero 推演已保存。它不是完整范围作答，也未自动修改范围草稿。');
+      return { ok: true, value: id };
+    },
+    applyHeroAction(caseId: string, planId: string, scope: 'hero' | 'class', expectedRevision: number): Result {
+      const c = getCase(caseId);
+      const plan = c?.heroPlans.find(p => p.id === planId);
+      if (!c || !plan || plan.spotRevisionId !== c.spotRevisionId) return fail('该推演不属于当前局面，不能套用。');
+      const error = validateHeroPlan(plan, c.spot, btnRange);
+      if (error) return fail(error);
+      const target = scope === 'hero' ? [plan.combo] : activeCombos(c.spot, btnRange).filter(combo => handByCombo[combo] === handByCombo[plan.combo]);
+      return commands.editPolicy(caseId, target, { check: plan.action === 'check' ? 10000 : 0, bet33: plan.action === 'bet33' ? 10000 : 0, bet75: plan.action === 'bet75' ? 10000 : 0 }, expectedRevision);
+    },
+    fillFromReference(caseId: string, jobId: string, expectedRevision: number): Result {
+      const c = getCase(caseId);
+      const job = c?.jobs.find(j => j.id === jobId);
+      if (!c || c.draft.editRevision !== expectedRevision) return fail('草稿已更新，请重新检查补全范围。');
+      if (!job || job.status !== 'completed' || job.spotRevisionId !== c.spotRevisionId || !job.result?.reference || job.result.availability !== 'available') return fail('没有适用于当前局面的完整参考，不能补全。');
+      const reference = job.result.reference;
+      const combos = activeCombos(c.spot, btnRange);
+      if (combos.some(combo => !reference[combo] || !validAllocation(reference[combo]))) return fail('参考未完整覆盖当前范围，不能自动补全。');
+      const choices = { ...c.draft.choices };
+      let count = 0;
+      for (const combo of combos) if (!choices[combo]) { choices[combo] = copy(reference[combo]); count++; }
+      if (count) replaceCase({ ...c, draft: { choices, editRevision: c.draft.editRevision + 1, assistance: 'reference' } });
+      notice(`已用示例参考补全 ${count} 个未填写组合；已有分配未改动。这是一份辅助草稿。`, 'info');
+      return { ok: true, value: undefined };
+    },
+    requestSolve(caseId: string, versionId: string): Promise<Result<string>> {
+      return runSolve(caseId, versionId);
+    },
+    requestReference(caseId: string): Promise<Result<string>> {
+      return runSolve(caseId, null);
     },
     cancelJob(caseId: string, jobId: string) {
       controllers.get(jobId)?.abort();
@@ -237,4 +283,6 @@ export const queries = {
   weights: (player: 'BTN' | 'BB' = 'BTN') => player === 'BTN' ? btnRange : bbRange,
   stats: (c: StudyCase) => policyStats(c.spot, btnRange, c.draft.choices),
   snapshot: () => copy(workspace.store.getState().data),
+  latestReference: (c: StudyCase) => c.jobs.filter(j => j.status === 'completed' && j.spotRevisionId === c.spotRevisionId && j.result?.availability === 'available' && j.result.reference).at(-1),
+  latestHeroPlan: (c: StudyCase) => c.heroPlans.filter(p => p.spotRevisionId === c.spotRevisionId).at(-1),
 };
