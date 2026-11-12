@@ -9,6 +9,7 @@
 - `baseline/demo-v1-plan-v0.1`：已确认技术方向与待用户审阅的第一版详细任务方案；不代表批准开发。
 - 后续 `baseline/demo-v1-m1`、`baseline/demo-v1-m2`、`baseline/demo-v1-m3`、`baseline/demo-v1.0`：依次对应 D01、D02/D03、D04–D07、D08 的实际完成与验证，未完成时不提前创建。
 - `baseline/demo-v1-hero-v0.1`：Hero 与全范围反馈改进；`baseline/demo-v1-d02`：D02 范围编辑与版本能力。后者是任务检查点，不能替代需 D03 完成的 M2。
+- `baseline/demo-v1-plan-v0.2`：单次连续推进 D03–D08 的执行安排，记录牌面显示与研究体验反馈；只表示文档计划已更新，不表示功能完成，也不新设审批门。
 - 标签创建后不移动；修订使用新标签，例如 `baseline/design-v0.2`。
 - `main` 保存已记录的基线；`demo/development` 用于后续开发。设计基线不等于用户已验收产品。
 
