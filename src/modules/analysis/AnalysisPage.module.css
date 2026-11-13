@@ -188,8 +188,10 @@
   border-color: #bda47c;
   color: #f6e0bb;
 }
-.sidebar details {
+.sidebar > details:last-child {
   margin-top: auto;
+}
+.sidebar details {
   border-top: 1px solid #364554;
   padding-top: 15px;
   display: grid;

@@ -1,5 +1,7 @@
 # S1 MCP 与本地业务运行时合同 v0.3
 
+实施更新（2026-11-13）：SO01–SO09 的 S1 本地 Mock 实现已进入应用，实际范围、验证、已知限制与证据以 [S1 交付记录](solver-s1-delivery.md) 为准。本文 v0.1–v0.3 中“未实施/未测试”描述保留当时设计状态；不覆盖本次实际记录。R1–R3 仍未执行。
+
 日期：2026-11-12。状态：设计，未实现。对应 [约束映射](solver-s1-constraint-mapping.md)、[原任务修订](solver-s1-task-design.md)、[共享领域合同](solver-s1-contracts.md)。这是 S1 的必需交付，计算继续 Mock 不降低协议/状态/保存的真实性。
 
 ## 1. 唯一业务运行时
@@ -117,3 +119,13 @@ Mock worker 与界面、MCP 连接生命周期分离。analysis_start 只做持�
 ## 8. 官方协议依据
 
 2026-11-12 本次阅读：[Tools](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)、[Resources](https://modelcontextprotocol.io/specification/2025-11-25/server/resources)、[Transports](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)、[官方 TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)。采用标准 tools/resources 与 stdio；业务不变量、持久化、教学资格和分页预算由本产品合同定义，不能误认为 MCP 自动提供。
+
+## 2026-11-13 实施补充
+
+公开业务工具当前为 46 个，真实清单/schema 来自 `src/modules/analysis/domain.ts`，服务在 `runtime/service.ts`，MCP 仅代理到 `runtime/server.ts` 的同一服务。额外提供 `situation_fork`（从固定旧版本建独立假设）、`artifact_inspect`（固定元数据/策略聚合与组合页）、`review_extract`（从封存旧手牌提取行动前事实）和 `teaching_record_exposure`（登记旧版可能暴露）。启动与客户端配置见交付记录。
+
+版本号输入可使用 `id@version`，包括尚未归档的最新版本；实际版本/哈希不符时拒绝。UI 暂存首次编辑时的目标引用；提交时另校验目标版本，不能在读取最新工作区 revision 后静默覆盖对象。冲突可以保留输入、放弃，或从原版本创建分支。所有写操作仍须 requestId/expectedRevision。
+
+S1 独立题默认拒绝全部未列入允许清单的工具，避免新增写工具成为答案/未来信息入口。旧页面每次进入和定期检查权威服务，不能凭标签页存储决定是否检查。S1 暴露后的旧版未来作答采用保守辅助投影，不改原首次记录。原版旧业务没有在本轮全部迁成 MCP 工具；新 S1 没有浏览器第二工作区。
+
+工作区摘要最近 10 个作品（上限 20、可分页）、最近 10 个任务/解/实验及当前作品最近 20 个策略；全量解不进摘要。请求 1MiB、响应硬预算 120,000 字节（公开上限 128KiB）、组合页最多 200 项，制品块 64KiB，分块导入最多 64MiB。备份容器不再次嵌入此前生成的备份。超预算/不支持返回明确错误，不删树或替换输入。

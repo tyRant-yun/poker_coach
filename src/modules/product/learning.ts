@@ -1,3 +1,4 @@
+import { hasAuthorityExposure } from '../../shared/authorityExposure';
 import { actionsFor, activeCombos, canonicalPolicy, frequencyDifference, spotSignature, validateSubmission } from '../study/domain';
 import type { Choices, ScenarioId, SolveInput, WorkspaceSnapshot } from '../study/domain';
 import { copy, now, uid } from './context';
@@ -28,6 +29,7 @@ export function createLearningCommands(ctx:ProductContext) {
   function put(session:PracticeSession){const data=ctx.getData(),product=data.product??emptyProduct();ctx.replaceData({...data,product:{...product,sessions:{...product.sessions,[session.id]:session}}});}
   const api={
     startPractice(kind:ExerciseKind,scenarioId:ScenarioId='S01',sourceCaseId?:string,mode:'independent'|'assisted'='independent',fixedInput?:SolveInput):Result<string>{
+      if(hasAuthorityExposure())mode='assisted';
       if(!Object.keys(exerciseNames).includes(kind))return ctx.fail('题型未覆盖。');
       const c=sourceCaseId?ctx.getCase(sourceCaseId):undefined,scenario=scenarioFor(c?.scenarioId??scenarioId);
       const template=kind==='branch'&&!c?scenarioFor(scenarioId==='S03'?'S03':'S02')!.nodes.find(n=>n.id===(scenarioId==='S03'?'S03-turn':'S02-turn'))!:scenario?.nodes[0];
@@ -68,7 +70,7 @@ export function createLearningCommands(ctx:ProductContext) {
         const correct=snapshot.kind==='diagnosis'?snapshot.answer==='probability':snapshot.kind==='comparison'?snapshot.answer==='conditions':null;
         const attemptId=uid('attempt');
         const feedback=difference!==null?`已覆盖完整范围；与合成参考的加权分配差异 ${(difference*100).toFixed(1)}%。这不是 EV 损失或掌握度评分。`:correct!==null?(correct?'判断符合本题的结构/评价约定。':'请重新检查概率完整性或比较条件；反馈不代表真实 Solver 求值。'):'此固定输入没有匹配参考，保留作答，评价未覆盖；不计为零差异。';
-        put({...current,status:'feedback',revealed:true,attempts:[...current.attempts,{id:attemptId,createdAt:now(),choices:snapshot.choices,answer:snapshot.answer,reason:snapshot.reason,assisted:snapshot.mode==='assisted'||snapshot.hints>0||snapshot.revealed||current.hints>snapshot.hints,revealed:snapshot.revealed,difference,correct,feedback,fixtureVersion,inputFingerprint:[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('')}]});
+        put({...current,status:'feedback',revealed:true,attempts:[...current.attempts,{id:attemptId,createdAt:now(),choices:snapshot.choices,answer:snapshot.answer,reason:snapshot.reason,assisted:hasAuthorityExposure()||snapshot.mode==='assisted'||snapshot.hints>0||snapshot.revealed||current.hints>snapshot.hints,revealed:snapshot.revealed,difference,correct,feedback,fixtureVersion,inputFingerprint:[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('')}]});
         ctx.notice('作答已固定；反馈后修订作为新作答保留，首次记录不覆盖。');return {ok:true,value:attemptId};
       };
       const promise=perform().finally(()=>submitting.delete(id));submitting.set(id,promise);return promise;

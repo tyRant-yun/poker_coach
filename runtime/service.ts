@@ -55,7 +55,16 @@ const required = (value: string | undefined) => {
 };
 function lookup<T>(items: Record<string, T>, id: string | undefined): T {
   const key = required(id);
-  const value = Object.hasOwn(items, key) ? items[key] : undefined;
+  let value = Object.hasOwn(items, key) ? items[key] : undefined;
+  if (!value && key.includes("@")) {
+    const split = key.lastIndexOf("@"),
+      latest = items[key.slice(0, split)];
+    if (
+      latest &&
+      (latest as { ref?: Ref }).ref?.version === Number(key.slice(split + 1))
+    )
+      value = latest;
+  }
   if (!value) throw new Fault("NOT_FOUND", "对象或固定版本不存在");
   return value;
 }
@@ -79,6 +88,10 @@ const unique = <T extends { ref: Ref }>(items: Record<string, T>) =>
     .filter(([id]) => !id.includes("@"))
     .map(([, v]) => v);
 const sensitive = new Set<ToolName>([
+  "review_extract",
+  "teaching_record_exposure",
+  "workspace_import",
+  "policy_evaluate",
   "analysis_agent_run",
   "workspace_reset",
   "situation_tree",
@@ -120,7 +133,19 @@ export class AnalysisService {
     return this.store.state;
   }
   private allowed(state: RuntimeState, tool: ToolName) {
-    if (state.independent && sensitive.has(tool))
+    const independentAllowed = new Set<ToolName>([
+      "workspace_get",
+      "workspace_changes",
+      "solver_capabilities",
+      "analysis_get",
+      "analysis_cancel",
+      "teaching_attempt_submit",
+      "teaching_reveal",
+    ]);
+    if (
+      state.independent &&
+      (sensitive.has(tool) || !independentAllowed.has(tool))
+    )
       throw new Fault(
         "INFORMATION_RESTRICTED",
         "独立题期间不可读取参考、历史指标或答案资源。请提交作答，或明确登记辅助身份。",
@@ -130,6 +155,22 @@ export class AnalysisService {
     state.exposures = [...new Set([...state.exposures, ...keys])];
   }
   private node(s: Situation) {
+    if (s.review) {
+      return {
+        id: s.nodeId,
+        label: "复盘行动前事实（范围/树待补充）",
+        kind: "segment-end" as const,
+        actor: s.review.actor,
+        board: s.board,
+        pot: s.review.pot,
+        players: s.players,
+        history: s.review.history,
+        actions: [],
+        weights: {},
+        policies: {},
+        model: "own-action-reach" as const,
+      };
+    }
     return lookup(
       Object.fromEntries(nodesFor(s.preset).map((n) => [n.id, n])),
       s.nodeId,
@@ -266,11 +307,13 @@ export class AnalysisService {
       lock,
       treeHash: s.treeHash,
       tableFormat: s.format,
-      backgroundPlayerCount: s.format === "HU" ? 2 : 6,
+      backgroundPlayerCount:
+        s.format === "HU" ? 2 : s.format === "6-max" ? 6 : null,
+      participantsComplete: !s.review,
       activePlayerIds: s.players
         .filter((p) => p.status === "active")
         .map((p) => p.id),
-      analysisPlayerIds: s.players
+      analysisPlayerIds: (s.review ? [] : s.players)
         .filter((p) => p.status === "active")
         .map((p) => p.id),
       continuationValueModel: {
@@ -295,6 +338,20 @@ export class AnalysisService {
   private preflight(spec: Spec) {
     const s = spec.situation,
       n = this.node(s);
+    if (s.review)
+      return {
+        availability: "uncovered",
+        reason:
+          "复盘行动前事实已保留；桌型、范围、投入分解和行动树尚未确认，没有套用其他局面数值。",
+      };
+    if (
+      spec.engineVersion !== contentVersion ||
+      s.treeHash !== hash(nodesFor(s.preset))
+    )
+      return {
+        availability: "uncovered",
+        reason: "原内容/树版本当前不可重放；固定历史结果保留，未替换为新版本。",
+      };
     if (
       s.players.filter((p) => p.status === "active").length > 2 &&
       s.board.length
@@ -359,7 +416,9 @@ export class AnalysisService {
   }
   private saveSolution(state: RuntimeState, spec: Spec, incomplete = false) {
     const status = this.preflight(spec),
-      nodes = nodesFor(spec.situation.preset);
+      nodes = spec.situation.review
+        ? [this.node(spec.situation)]
+        : nodesFor(spec.situation.preset);
     const root = this.node(spec.situation);
     const related = (n: AnalysisNode): boolean =>
       n.id === root.id ||
@@ -576,6 +635,36 @@ export class AnalysisService {
           "REVISION_CONFLICT",
           "工作区已变化；请读取新版本后重新应用或建立分支",
         );
+      const verifyTarget = <T extends { ref: Ref }>(
+        collection: Record<string, T>,
+        id: string | undefined,
+      ) => {
+        if (!id) return;
+        const target = lookup(collection, id),
+          latest = collection[target.ref.id];
+        if (!latest || latest.ref.contentHash !== target.ref.contentHash)
+          throw new Fault(
+            "REVISION_CONFLICT",
+            "所编辑对象已更新，未应用输入保留；请核对新版本或从原版本建立分支。",
+          );
+      };
+      if (
+        ["situation_revise", "range_edit_batch", "policy_edit_batch"].includes(
+          tool,
+        )
+      )
+        verifyTarget(this.state.situations, input.situationId);
+      if (["range_edit_batch", "range_undo", "range_redo"].includes(tool))
+        verifyTarget(this.state.ranges, input.rangeId);
+      if (
+        [
+          "policy_edit_batch",
+          "policy_undo",
+          "policy_redo",
+          "policy_submit",
+        ].includes(tool)
+      )
+        verifyTarget(this.state.policies, input.policyId);
       const next = write ? structuredClone(this.state) : this.state;
       const refs: Ref[] = [];
       const data = this.dispatch(next, tool, input, refs);
@@ -739,12 +828,55 @@ export class AnalysisService {
             ? []
             : unique(state.experiments).slice(-10),
           attempts: state.independent ? [] : unique(state.attempts).slice(-10),
+          policies: state.independent
+            ? []
+            : unique(state.policies)
+                .filter(
+                  (p) =>
+                    !input.situationId ||
+                    p.situation.id === input.situationId.split("@")[0],
+                )
+                .slice(-20)
+                .map((p) => ({
+                  ref: p.ref,
+                  situation: p.situation,
+                  range: p.range,
+                  nodeId: p.nodeId,
+                  playerId: p.playerId,
+                  submitted: p.submitted,
+                  assisted: p.assisted,
+                  origin: p.origin,
+                })),
           independent: state.independent,
           exposures: state.exposures.length,
-          presets: presets.map(({ id, label, format }) => ({
-            id,
-            label,
-            format,
+          presets: presets.map((p) => ({
+            id: p.id,
+            label: p.label,
+            format: p.format,
+            positions: [
+              ...new Set(
+                p.line
+                  .filter(([, action]) => action !== "fold")
+                  .map(([player]) => player),
+              ),
+            ],
+            contexts:
+              p.id === "X-WALK"
+                ? ["收盲"]
+                : [
+                    "未开池",
+                    "面对开池",
+                    ...(p.line.filter(([, a]) => a === "raise").length >= 2
+                      ? ["面对3-bet"]
+                      : []),
+                    ...(p.line.filter(([, a]) => a === "raise").length >= 3
+                      ? ["面对4-bet"]
+                      : []),
+                    ...(p.id === "X-SQ" ? ["squeeze"] : []),
+                  ],
+            stack: 10000,
+            rake: 0,
+            sizing: 250,
           })),
           imports: Object.values(state.imports)
             .slice(-10)
@@ -805,7 +937,7 @@ export class AnalysisService {
         const s = lookup(state.situations, input.situationId);
         return {
           situation: s.ref,
-          nodes: nodesFor(s.preset).map(
+          nodes: (s.review ? [this.node(s)] : nodesFor(s.preset)).map(
             ({ weights: _, policies: __, ...n }) => n,
           ),
         };
@@ -829,10 +961,45 @@ export class AnalysisService {
             input.name,
           ),
         );
+      case "situation_fork": {
+        const source = lookup(state.situations, input.situationId);
+        const ranges = Object.fromEntries(
+          Object.entries(source.ranges).map(([player, reference]) => {
+            const old = fixed(state.ranges, reference);
+            return [
+              player,
+              this.recordRange(state, player, structuredClone(old.weights), {
+                range: old.ref,
+                nodeId: source.nodeId,
+                action: "research-branch",
+                model: "own-action-reach",
+              }).ref,
+            ];
+          }),
+        );
+        const payload = {
+          ...structuredClone(source),
+          ranges,
+          name: input.name ?? `${source.name} · 独立分支`,
+          origin: source.ref,
+          revision: 1,
+        };
+        const branch = {
+          ...payload,
+          ref: ref("situation", { ...payload, ref: undefined }),
+        };
+        keep(state.situations, branch);
+        return returnRef(branch);
+      }
       case "situation_revise": {
         const s = lookup(state.situations, input.situationId);
         let changes: Partial<Situation> = {};
-        if (input.nodeId) {
+        if (input.nodeId && s.review)
+          demand(
+            input.nodeId === s.nodeId,
+            "复盘尚无已确认的后续行动树，不发放预置未来牌",
+          );
+        if (input.nodeId && !s.review) {
           const node = lookup(
             Object.fromEntries(nodesFor(s.preset).map((n) => [n.id, n])),
             input.nodeId,
@@ -1034,9 +1201,7 @@ export class AnalysisService {
             range: r.ref,
             playerId: player,
             nodeId: n.id,
-            allocations: input.reveal
-              ? structuredClone(n.policies[player])
-              : {},
+            allocations: {},
             submitted: false,
             assisted: !!input.reveal,
             past: [],
@@ -1056,8 +1221,14 @@ export class AnalysisService {
           p.past.push(p.allocations);
           p.allocations = p.future.pop()!;
         } else {
-          const s = lookup(state.situations, p.situation.id),
+          const s = fixed(state.situations, p.situation),
             actions = this.node(s).actions.map((a) => a.id);
+          if (tool === "policy_edit_batch" && input.situationId)
+            demand(
+              lookup(state.situations, input.situationId).ref.contentHash ===
+                p.situation.contentHash,
+              "策略绑定旧输入；请从当前策略建立草稿后编辑。",
+            );
           for (const item of input.patch ?? []) {
             demand(
               allCombos.includes(item.combo) &&
@@ -1072,14 +1243,37 @@ export class AnalysisService {
           }
           p.past.push(structuredClone(p.allocations));
           p.future = [];
+          if (input.reveal) {
+            this.allowed(state, "solution_load");
+            const n = this.node(s);
+            demand(n.policies[p.playerId], "此节点没有该玩家参考");
+            for (const [combo, allocation] of Object.entries(
+              n.policies[p.playerId],
+            ))
+              if (!p.allocations[combo])
+                p.allocations[combo] = structuredClone(allocation);
+            p.assisted = true;
+            this.exposed(state, [`analysis:${s.preset}`]);
+          }
           for (const item of input.patch ?? [])
             p.allocations[item.combo] = item.allocation!;
         }
         const forked = tool === "policy_fork";
         if (forked) {
-          const current = lookup(state.situations, p.situation.id);
+          const current = lookup(
+            state.situations,
+            input.situationId ?? p.situation.id,
+          );
+          demand(
+            !!current.ranges[p.playerId] &&
+              this.node(current).actor === p.playerId &&
+              current.nodeId === p.nodeId,
+            "请先选择同一玩家的决策节点，再建立策略修订",
+          );
+          p.origin = p.ref;
           p.situation = current.ref;
           p.range = current.ranges[p.playerId];
+          p.nodeId = current.nodeId;
         }
         p.submitted = false;
         p.ref = ref(
@@ -1101,6 +1295,12 @@ export class AnalysisService {
           s = lookup(state.situations, old.situation.id),
           n = this.node(s),
           r = lookup(state.ranges, old.range.id);
+        if (old.submitted)
+          return returnRef({
+            ref: old.ref,
+            submitted: true,
+            assisted: old.assisted,
+          });
         demand(
           s.ref.contentHash === old.situation.contentHash &&
             r.ref.contentHash === old.range.contentHash,
@@ -1639,6 +1839,89 @@ export class AnalysisService {
               : "no-record",
         };
       }
+      case "teaching_record_exposure":
+        this.exposed(state, [
+          "legacy-reading:possible",
+          ...presets.map((p) => `analysis:${p.id}`),
+        ]);
+        return {
+          registered: true,
+          identity: "possible-exposure",
+          reason: "旧版阅读可能包含相关概念或参考；不获得未见身份。",
+        };
+      case "review_extract": {
+        const snapshot = snapshotSchema.parse(state.legacy),
+          hand = snapshot.product?.hands[required(input.handId)],
+          decision = hand?.decisions.find((d) => d.id === input.decisionId);
+        demand(hand?.confirmed && decision, "先选择已确认的行动前节点");
+        demand(
+          Number.isInteger(decision!.potMinor) &&
+            decision!.potMinor > 0 &&
+            Number.isInteger(decision!.stackMinor) &&
+            decision!.stackMinor > 0 &&
+            [0, 3, 4, 5].includes(decision!.board.length) &&
+            new Set(decision!.board).size === decision!.board.length &&
+            decision!.board.every((c) => /^[AKQJT2-9][shdc]$/.test(c)),
+          "行动前金额/牌面需要确认",
+        );
+        const source = Object.values(state.imports).find(
+          (i) => i.hash === hash(state.legacy),
+        )?.ref;
+        demand(source, "复盘来源尚未封存");
+        const actor = decision!.actor,
+          r = this.recordRange(state, actor, {}),
+          opponent = this.recordRange(state, "opponent-unknown", {});
+        const review = {
+          source: source!,
+          handId: hand!.id,
+          decisionId: decision!.id,
+          pot: decision!.potMinor,
+          actor,
+          history: [...decision!.actionHistory],
+          hero: decision!.hero,
+          unknownFields: [
+            "桌型/背景人数",
+            "对手位置与人数",
+            "双方输入范围",
+            "抽水/前注",
+            "行动尺度",
+            "投入分解",
+            "完整行动树",
+          ],
+        };
+        const payload = {
+          name: input.name ?? `复盘事实 · ${decision!.label}`,
+          preset: "review-snapshot",
+          format: "unknown" as const,
+          nodeId: `review-${decision!.id}`,
+          board: [...decision!.board],
+          stack: decision!.stackMinor,
+          rake: null,
+          sizing: null,
+          treeHash: hash({ review, coverage: "unknown" }),
+          stale: true,
+          players: [
+            {
+              id: actor,
+              position: actor,
+              initial: decision!.stackMinor,
+              remaining: decision!.stackMinor,
+              contribution: 0,
+              status: "active" as const,
+            },
+          ],
+          ranges: { [actor]: r.ref, "opponent-unknown": opponent.ref },
+          history: review.history,
+          review,
+        };
+        const value: Situation = {
+          ...payload,
+          ref: ref("situation", payload),
+          revision: 1,
+        };
+        keep(state.situations, value);
+        return returnRef(value);
+      }
       case "teaching_reveal": {
         demand(state.independent, "没有待揭示的题");
         this.exposed(state, state.independent!.keys);
@@ -1757,11 +2040,17 @@ export class AnalysisService {
         ]);
         const clean = structuredClone(state);
         clean.receipts = {};
+        // Generated backups are transport containers, not dependencies of product works.
+        clean.artifacts = Object.fromEntries(
+          Object.entries(clean.artifacts).filter(
+            ([, a]) => a.purpose !== "workspace-backup",
+          ),
+        );
         const blobs: Record<string, string> = {};
         for (const m of Object.values(state.solutions))
           for (const n of m.nodes)
             blobs[n.hash] = this.store.getBytes(n.hash).toString("base64");
-        for (const a of Object.values(state.artifacts)) {
+        for (const a of Object.values(clean.artifacts)) {
           blobs[a.hash] = this.store.getBytes(a.hash).toString("base64");
           if (a.indexHash) {
             blobs[a.indexHash] = this.store
@@ -1781,6 +2070,7 @@ export class AnalysisService {
         const artifact = this.store.artifact(
           Buffer.from(JSON.stringify({ checksum: hash(payload), payload })),
         );
+        artifact.purpose = "workspace-backup";
         state.artifacts[artifact.ref.id] = artifact;
         return returnRef({
           ref: artifact.ref,
@@ -1857,20 +2147,29 @@ export class AnalysisService {
                 return {
                   label: h.label,
                   mass,
-                  allocation: Object.fromEntries(
-                    actions.map((a) => [
-                      a.id,
-                      mass
-                        ? combos.reduce(
-                            (sum, c) =>
-                              sum +
-                              (r.weights[c] ?? 0) *
-                                (p.allocations[c]?.[a.id] ?? 0),
-                            0,
-                          ) / mass
-                        : 0,
-                    ]),
-                  ),
+                  filled: combos.filter(
+                    (c) => (r.weights[c] ?? 0) > 0 && p.allocations[c],
+                  ).length,
+                  targetCount: combos.filter((c) => (r.weights[c] ?? 0) > 0)
+                    .length,
+                  allocation: combos.every(
+                    (c) => !(r.weights[c] > 0) || p.allocations[c],
+                  )
+                    ? Object.fromEntries(
+                        actions.map((a) => [
+                          a.id,
+                          mass
+                            ? combos.reduce(
+                                (sum, c) =>
+                                  sum +
+                                  (r.weights[c] ?? 0) *
+                                    (p.allocations[c]?.[a.id] ?? 0),
+                                0,
+                              ) / mass
+                            : 0,
+                        ]),
+                      )
+                    : undefined,
                 };
               }),
               ...this.page(
@@ -2073,6 +2372,12 @@ export class AnalysisService {
         keys: ["legacy:unknown", ...presets.map((p) => `analysis:${p.id}`)],
       };
     const legacyRef = ref("legacy-import", { hash: digest });
+    state.objects[legacyRef.id] = {
+      ref: legacyRef,
+      original: blob.ref,
+      hash: digest,
+      identity: "legacy-readonly-unverified",
+    };
     state.imports[digest] = { hash: digest, ref: legacyRef };
     this.exposed(state, [
       "legacy:unknown",

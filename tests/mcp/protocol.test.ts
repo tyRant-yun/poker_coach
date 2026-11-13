@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { once } from "node:events";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
@@ -19,6 +19,12 @@ import type {
   ToolName,
 } from "../../src/modules/analysis/domain.ts";
 import { hash } from "../../runtime/store.ts";
+import {
+  handDecisions,
+  completeHandText,
+} from "../../src/fixtures/scenarios.ts";
+import { emptyProduct } from "../../src/modules/product/domain.ts";
+import { fixtureVersion } from "../../src/fixtures/s01.ts";
 
 test(
   "real MCP stdio: complete core tool manifest, shared runtime, fixed references, resources, jobs and teaching",
@@ -30,7 +36,8 @@ test(
     const port = (runtime.server.address() as { port: number }).port;
     const transport = new StdioClientTransport({
       command: process.execPath,
-      args: ["--import", "tsx", "runtime/mcp.ts"],
+      args: [resolve("scripts/mcp.mjs")],
+      cwd: tmpdir(),
       env: {
         ...Object.fromEntries(
           Object.entries(process.env).filter(
@@ -49,6 +56,7 @@ test(
     const evidence: {
       tool: string;
       ok: boolean;
+      code?: string;
       refs: Ref[];
       bytes: number;
     }[] = [];
@@ -71,6 +79,7 @@ test(
       evidence.push({
         tool,
         ok: reply.ok,
+        code: reply.ok ? undefined : reply.code,
         refs: reply.ok ? reply.artifactRefs : [],
         bytes: Buffer.byteLength(JSON.stringify(reply)),
       });
@@ -232,6 +241,11 @@ test(
         experimentId: experiment.ref.id,
         conclusion: "只保存合成观察，不推断真实收益",
       });
+      const branch = await call<Situation>("situation_fork", {
+        situationId: `${fresh.ref.id}@${fresh.ref.version}`,
+      });
+      assert.equal(branch.origin?.contentHash, fresh.ref.contentHash);
+      assert.notEqual(branch.ref.id, fresh.ref.id);
       const preflop = await call<Situation>("situation_create", {
         preset: "X-3BP",
         nodeId: "flop-deal",
@@ -280,6 +294,15 @@ test(
         JSON.parse((blocked.contents[0] as { text: string }).text).code,
         "INFORMATION_RESTRICTED",
       );
+      for (const [name, args] of [
+        ["situation_create", { preset: "H-SRP", nodeId: "r-oop" }],
+        ["workspace_import", { backup: {} }],
+        ["policy_evaluate", { policyId: "unknown" }],
+      ] as const) {
+        const denied = await raw(name, args);
+        assert.equal(denied.ok, false);
+        if (!denied.ok) assert.equal(denied.code, "INFORMATION_RESTRICTED");
+      }
       await call("teaching_reveal");
       await call("teaching_begin");
       const attempt = await call<{ ref: Ref }>("teaching_attempt_submit", {
@@ -291,6 +314,46 @@ test(
         solutionId: solution.ref.id,
       });
       await call("teaching_next", { attemptId: attempt.ref.id });
+      await call("teaching_record_exposure");
+      const legacy = {
+        schemaVersion: 1,
+        fixtureVersion,
+        cases: {},
+        product: {
+          ...emptyProduct(),
+          hands: {
+            "s1-source-hand": {
+              id: "s1-source-hand",
+              kind: "complete",
+              raw: completeHandText,
+              confirmed: true,
+              missing: [],
+              createdAt: new Date().toISOString(),
+              decisions: handDecisions,
+            },
+          },
+        },
+      };
+      await call("workspace_import", { backup: legacy });
+      const reviewed = await call<Situation>("review_extract", {
+        handId: "s1-source-hand",
+        decisionId: handDecisions[0].id,
+      });
+      assert.equal(reviewed.format, "unknown");
+      assert.deepEqual(reviewed.board, handDecisions[0].board);
+      assert.equal(reviewed.review!.pot, handDecisions[0].potMinor);
+      assert.ok(!JSON.stringify(reviewed).includes("opponent showdown"));
+      const reviewSpec = await call<{ ref: Ref }>("analysis_spec_create", {
+        situationId: reviewed.ref.id,
+      });
+      assert.equal(
+        (
+          await call<{ availability: string }>("analysis_preflight", {
+            specId: reviewSpec.ref.id,
+          })
+        ).availability,
+        "uncovered",
+      );
       const exported = await call<{ ref: Ref; pages: number }>(
         "workspace_export",
       );
@@ -347,6 +410,20 @@ test(
         }),
       );
     } finally {
+      mkdirSync(".artifacts/s1", { recursive: true });
+      writeFileSync(
+        ".artifacts/s1/mcp-protocol-evidence.json",
+        JSON.stringify(
+          {
+            recordedAt: new Date().toISOString(),
+            workspace: "ephemeral protocol fixture, removed after test",
+            called: [...called],
+            calls: evidence,
+          },
+          null,
+          2,
+        ),
+      );
       await client.close();
       await runtime.close();
       rmSync(directory, { recursive: true, force: true });

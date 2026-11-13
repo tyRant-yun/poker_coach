@@ -9,6 +9,7 @@ import type {
   AnalysisNode,
   Attempt,
   Experiment,
+  PolicyRecord,
   Input,
   Job,
   Ref,
@@ -29,8 +30,27 @@ type Summary = {
   experiments: Experiment[];
   attempts: Attempt[];
   independent?: { question: string; prompt?: string; options?: string[] };
-  presets: { id: string; label: string; format: string }[];
+  presets: {
+    id: string;
+    label: string;
+    format: string;
+    positions: string[];
+    contexts: string[];
+    stack: number;
+    rake: number;
+    sizing: number;
+  }[];
   imports: Ref[];
+  policies: Pick<
+    PolicyRecord,
+    | "ref"
+    | "situation"
+    | "range"
+    | "nodeId"
+    | "playerId"
+    | "submitted"
+    | "assisted"
+  >[];
 };
 type Row = {
   combo: string;
@@ -84,7 +104,9 @@ const colors = ["#79aee8", "#e6ad6b", "#b697e4"];
 export function AnalysisPage() {
   const [connection, setConnection] = useState<Connection>(),
     [summary, setSummary] = useState<Summary>(),
-    [selected, setSelected] = useState(""),
+    [selected, setSelected] = useState(
+      () => new URLSearchParams(window.location.search).get("case") ?? "",
+    ),
     [tree, setTree] = useState<Omit<AnalysisNode, "weights" | "policies">[]>(
       [],
     ),
@@ -97,6 +119,11 @@ export function AnalysisPage() {
     [busy, setBusy] = useState(false),
     [preset, setPreset] = useState("H-SRP"),
     [format, setFormat] = useState("all"),
+    [filterPosition, setFilterPosition] = useState("all"),
+    [filterContext, setFilterContext] = useState("all"),
+    [filterStack, setFilterStack] = useState(""),
+    [filterRake, setFilterRake] = useState(""),
+    [filterSizing, setFilterSizing] = useState(""),
     [player, setPlayer] = useState(""),
     [hand, setHand] = useState("AA"),
     [combo, setCombo] = useState("AhAd"),
@@ -125,6 +152,9 @@ export function AnalysisPage() {
     [board, setBoard] = useState(""),
     [mode, setMode] = useState<"reference" | "range" | "policy">("reference"),
     [policyView, setPolicyView] = useState<{
+      ref: Ref;
+      situation: Ref;
+      submitted: boolean;
       classes: Aggregate["classes"];
       filled: number;
       targetCount: number;
@@ -148,6 +178,63 @@ export function AnalysisPage() {
       current?.players.find((p) => p.status === "active")?.id ||
       "BTN",
     range = current?.ranges[activePlayer];
+  type EditScope = {
+    situation: Ref;
+    range?: Ref;
+    policyId?: string;
+    playerId: string;
+  };
+  const editScopes = useRef<
+    Partial<Record<"range" | "policy" | "conditions", EditScope>>
+  >({});
+  const [pending, setPending] = useState(false);
+  const touch = (group: "range" | "policy" | "conditions") => {
+    if (current && !editScopes.current[group])
+      editScopes.current[group] = {
+        situation: current.ref,
+        range,
+        policyId: policyId
+          ? policyView?.ref
+            ? `${policyView.ref.id}@${policyView.ref.version}`
+            : policyId
+          : undefined,
+        playerId: activePlayer,
+      };
+    setPending(true);
+  };
+  const clearScope = (group: "range" | "policy" | "conditions") => {
+    delete editScopes.current[group];
+    setPending(Object.keys(editScopes.current).length > 0);
+  };
+  const canLeave = () => {
+    if (pending) {
+      setMessage(
+        "还有未应用输入；请先应用，明确放弃，或从原版本建立独立分支。",
+      );
+      return false;
+    }
+    return true;
+  };
+  useEffect(() => {
+    const onClose = (event: BeforeUnloadEvent) => {
+      if (pending) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", onClose);
+    return () => window.removeEventListener("beforeunload", onClose);
+  }, [pending]);
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (selected) url.searchParams.set("case", selected);
+    else url.searchParams.delete("case");
+    window.history.replaceState(
+      window.history.state,
+      "",
+      url.pathname + url.search,
+    );
+  }, [selected]);
   const pageCursor = useRef<string | undefined>(undefined);
   const refresh = useCallback(async (c = conn.current) => {
     if (!c) return;
@@ -168,27 +255,39 @@ export function AnalysisPage() {
     setConnection({ ...c, revision: result.revision });
   }, []);
   useEffect(() => {
-    let alive = true;
-    void connectAnalysis()
-      .then((c) => {
+    let alive = true,
+      inFlight = false;
+    const sync = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        if (!conn.current) {
+          const c = await connectAnalysis();
+          if (!alive) return;
+          try {
+            sessionStorage.setItem("riverline-s1-workspace", c.workspaceId);
+          } catch {}
+          await refresh(c);
+          if (alive) setMessage("已连接本机运行时 · 编辑和 MCP 共用版本");
+        } else await refresh();
+      } catch (error) {
         if (alive) {
-          setConnection(c);
-          void refresh(c);
-          setMessage("已连接本机运行时 · 编辑和 MCP 共用版本");
+          conn.current = undefined;
+          setConnection(undefined);
+          setMessage(
+            `本地服务失联，正在重新连接；未应用输入保留。${String(error)}`,
+          );
         }
-      })
-      .catch((e) => setMessage(String(e)));
+      } finally {
+        inFlight = false;
+      }
+    };
+    void sync();
+    const timer = setInterval(() => void sync(), 1800);
     return () => {
       alive = false;
+      clearInterval(timer);
     };
-  }, [refresh]);
-  useEffect(() => {
-    const timer = setInterval(() => {
-      void refresh().catch(() =>
-        setMessage("本地服务失联。未提交输入保留；请重新连接后核对版本。"),
-      );
-    }, 1800);
-    return () => clearInterval(timer);
   }, [refresh]);
   useEffect(() => {
     if (!current || !connection) return;
@@ -198,10 +297,13 @@ export function AnalysisPage() {
     setAggregate(undefined);
     setSolutionId("");
     setPolicyId("");
-    setRake(String(current.rake * 100));
-    setStack(String(current.stack / 100));
-    setSizing(String(current.sizing / 100));
-    setBoard(current.board.join(" "));
+    if (!editScopes.current.conditions) {
+      setRake(current.rake === null ? "" : String(current.rake * 100));
+      setStack(String(current.stack / 100));
+      setSizing(current.sizing === null ? "" : String(current.sizing / 100));
+      setBoard(current.board.join(" "));
+    } else
+      setMessage("版本已变化，未应用的条件输入仍保留；保存时会检查原版本。");
     void callAnalysis<{ nodes: typeof tree }>(connection, "situation_tree", {
       situationId: current.ref.id,
     })
@@ -238,6 +340,9 @@ export function AnalysisPage() {
     }
     let alive = true;
     void callAnalysis<{
+      ref: Ref;
+      situation: Ref;
+      submitted: boolean;
       classes: Aggregate["classes"];
       filled: number;
       targetCount: number;
@@ -250,6 +355,19 @@ export function AnalysisPage() {
       alive = false;
     };
   }, [policyId, summary?.revision]);
+  useEffect(() => {
+    if (!policyId && current) {
+      const saved = summary?.policies
+        ?.filter(
+          (p) =>
+            p.situation.contentHash === current.ref.contentHash &&
+            p.nodeId === current.nodeId &&
+            p.playerId === activePlayer,
+        )
+        .at(-1);
+      if (saved) setPolicyId(saved.ref.id);
+    }
+  }, [summary?.revision, current?.ref.contentHash, activePlayer, policyId]);
   const perform = async <T,>(
     tool: ToolName,
     input: Partial<Input> = {},
@@ -265,7 +383,33 @@ export function AnalysisPage() {
       conn.current = { ...c, revision: result.revision };
       setConnection(conn.current);
       await refresh(conn.current);
-      setMessage("已完成并保存 · " + (result.refs[0]?.id ?? tool));
+      if (tool === "range_edit_batch" && input.patch?.length)
+        clearScope("range");
+      if (tool === "policy_edit_batch" && input.patch?.length)
+        clearScope("policy");
+      if (
+        tool === "situation_revise" &&
+        (input.stack !== undefined ||
+          input.rake !== undefined ||
+          input.sizing !== undefined ||
+          input.board !== undefined)
+      )
+        clearScope("conditions");
+      setMessage(
+        ([
+          "workspace_get",
+          "situation_tree",
+          "range_get",
+          "solution_node_strategy",
+          "solution_combo_metrics",
+          "solution_range_aggregate",
+          "artifact_inspect",
+          "artifact_page",
+          "analysis_get",
+        ].includes(tool)
+          ? "已读取固定内容 · "
+          : "已完成并保存 · ") + (result.refs[0]?.id ?? ""),
+      );
       return result.data;
     } catch (error) {
       setMessage(String(error));
@@ -275,6 +419,7 @@ export function AnalysisPage() {
     }
   };
   const create = async () => {
+    if (!canLeave()) return;
     const value = await perform<Situation>("situation_create", { preset });
     if (value) {
       setSelected(value.ref.id);
@@ -313,6 +458,7 @@ export function AnalysisPage() {
     if (stats) setAggregate(stats);
   };
   const changeNode = async (id: string) => {
+    if (!canLeave()) return;
     if (current) {
       await perform("situation_revise", {
         situationId: current.ref.id,
@@ -327,7 +473,8 @@ export function AnalysisPage() {
       combo,
     ];
     await perform("range_edit_batch", {
-      rangeId: range.id,
+      rangeId: `${(editScopes.current.range?.range ?? range).id}@${(editScopes.current.range?.range ?? range).version}`,
+      situationId: `${(editScopes.current.range?.situation ?? current!.ref).id}@${(editScopes.current.range?.situation ?? current!.ref).version}`,
       patch: targets.map((c) => ({
         combo: c,
         weight: Math.round(Number(weight) * 100),
@@ -345,9 +492,11 @@ export function AnalysisPage() {
       ]),
     );
     const p = await perform<{ ref: Ref }>("policy_edit_batch", {
-      situationId: current.ref.id,
-      playerId: activePlayer,
-      policyId: policyId || undefined,
+      situationId: `${(editScopes.current.policy?.situation ?? current.ref).id}@${(editScopes.current.policy?.situation ?? current.ref).version}`,
+      playerId: editScopes.current.policy?.playerId ?? activePlayer,
+      policyId: editScopes.current.policy
+        ? editScopes.current.policy.policyId
+        : policyId || undefined,
       patch: (handClasses.find((h) => h.label === hand)?.combos ?? [combo])
         .filter((c) => !current.board.some((b) => c.includes(b)))
         .map((c) => ({ combo: c, allocation })),
@@ -459,6 +608,16 @@ export function AnalysisPage() {
       db.close();
     }
   }
+  const filteredPresets =
+    summary?.presets.filter(
+      (p) =>
+        (format === "all" || p.format === format) &&
+        (filterPosition === "all" || p.positions.includes(filterPosition)) &&
+        (filterContext === "all" || p.contexts.includes(filterContext)) &&
+        (!filterStack || p.stack === Number(filterStack) * 100) &&
+        (!filterRake || p.rake === Number(filterRake) / 100) &&
+        (!filterSizing || p.sizing === Number(filterSizing) * 100),
+    ) ?? [];
   const groups = handClasses.map((h) => {
     const items = rows?.items.filter((r) => h.combos.includes(r.combo)) ?? [];
     const stats = (
@@ -469,16 +628,18 @@ export function AnalysisPage() {
         ? rangePage?.classes.find((c) => c.label === h.label)?.mass
         : stats?.mass) ?? items.reduce((n, r) => n + r.weight, 0);
     const allocation =
-      stats?.allocation ??
-      Object.fromEntries(
-        (node?.actions ?? []).map((a) => [
-          a.id,
-          items.reduce(
-            (n, r) => n + (r.allocation?.[a.id] ?? 0) * r.weight,
-            0,
-          ) / (items.reduce((n, r) => n + r.weight, 0) || 1),
-        ]),
-      );
+      (mode === "policy"
+        ? stats?.allocation
+        : (stats?.allocation ??
+          Object.fromEntries(
+            (node?.actions ?? []).map((a) => [
+              a.id,
+              items.reduce(
+                (n, r) => n + (r.allocation?.[a.id] ?? 0) * r.weight,
+                0,
+              ) / (items.reduce((n, r) => n + r.weight, 0) || 1),
+            ]),
+          ))) ?? {};
     return { ...h, mass, allocation };
   });
   return (
@@ -510,6 +671,73 @@ export function AnalysisPage() {
             <option>6-max</option>
           </select>
         </label>
+        <details>
+          <summary>筛选位置、回应与金额</summary>
+          <label>
+            位置筛选
+            <select
+              aria-label="位置筛选"
+              value={filterPosition}
+              onChange={(e) => setFilterPosition(e.target.value)}
+            >
+              {["all", "UTG", "HJ", "CO", "BTN", "SB", "BB"].map((p) => (
+                <option key={p} value={p}>
+                  {p === "all" ? "全部" : p}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            行动上下文
+            <select
+              aria-label="行动上下文"
+              value={filterContext}
+              onChange={(e) => setFilterContext(e.target.value)}
+            >
+              {[
+                "all",
+                "未开池",
+                "面对开池",
+                "面对3-bet",
+                "面对4-bet",
+                "squeeze",
+                "收盲",
+              ].map((p) => (
+                <option key={p} value={p}>
+                  {p === "all" ? "全部" : p}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            起始筹码 bb
+            <input
+              aria-label="筛选筹码"
+              value={filterStack}
+              onChange={(e) => setFilterStack(e.target.value)}
+            />
+          </label>
+          <label>
+            抽水 %
+            <input
+              aria-label="筛选抽水"
+              value={filterRake}
+              onChange={(e) => setFilterRake(e.target.value)}
+            />
+          </label>
+          <label>
+            开池加注至 bb
+            <input
+              aria-label="筛选尺寸"
+              value={filterSizing}
+              onChange={(e) => setFilterSizing(e.target.value)}
+            />
+          </label>
+          <p>仅精确筛选已有路径。自定义条件在作品中保存；不匹配时不套参考。</p>
+        </details>
+        {!filteredPresets.length && summary && (
+          <p>当前筛选未覆盖。已有作品和输入保留。</p>
+        )}
         <label>
           选择示例路径
           <select
@@ -517,18 +745,18 @@ export function AnalysisPage() {
             value={preset}
             onChange={(e) => setPreset(e.target.value)}
           >
-            {summary?.presets
-              .filter((p) => format === "all" || p.format === format)
-              .map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
+            {filteredPresets.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
           </select>
         </label>
         <button
           className={s.primary}
-          disabled={!connection || busy}
+          disabled={
+            !connection || busy || !filteredPresets.some((p) => p.id === preset)
+          }
           onClick={() => void create()}
         >
           创建分析作品 <Icon name="plus" />
@@ -543,6 +771,7 @@ export function AnalysisPage() {
               key={c.ref.id}
               className={selected === c.ref.id ? s.selected : ""}
               onClick={() => {
+                if (!canLeave()) return;
                 setSelected(c.ref.id);
                 setPlayer("");
               }}
@@ -621,6 +850,62 @@ export function AnalysisPage() {
         <div className={s.message} role="status">
           {message}
         </div>
+        {pending && (
+          <section className={s.message}>
+            <b>有未应用输入，当前内容尚未保存。</b>
+            <button
+              onClick={() => {
+                editScopes.current = {};
+                setPending(false);
+                if (current) {
+                  setRake(
+                    current.rake === null ? "" : String(current.rake * 100),
+                  );
+                  setStack(String(current.stack / 100));
+                  setSizing(
+                    current.sizing === null ? "" : String(current.sizing / 100),
+                  );
+                  setBoard(current.board.join(" "));
+                }
+              }}
+            >
+              放弃未应用输入
+            </button>
+            <button
+              disabled={busy}
+              onClick={async () => {
+                const context =
+                  editScopes.current.conditions ??
+                  editScopes.current.range ??
+                  editScopes.current.policy;
+                const source = context?.situation ?? current?.ref;
+                if (!source) return;
+                const branch = await perform<Situation>("situation_fork", {
+                  situationId: `${source.id}@${source.version}`,
+                });
+                if (branch) {
+                  for (const key of [
+                    "range",
+                    "policy",
+                    "conditions",
+                  ] as const) {
+                    const scope = editScopes.current[key];
+                    if (scope)
+                      editScopes.current[key] = {
+                        ...scope,
+                        situation: branch.ref,
+                        range: branch.ranges[scope.playerId],
+                        policyId: undefined,
+                      };
+                  }
+                  setSelected(branch.ref.id);
+                }
+              }}
+            >
+              从原版本建立独立分支
+            </button>
+          </section>
+        )}
         {summary?.independent ? (
           <section className={s.panel}>
             <h1>独立概念题进行中</h1>
@@ -701,9 +986,20 @@ export function AnalysisPage() {
                 </span>
                 <h1>{current.name}</h1>
                 <p>
-                  {current.format === "HU" ? "HU 桌" : "六人背景"} · 当前活跃{" "}
-                  {current.players.filter((p) => p.status === "active").length}{" "}
-                  人 · 局部/子博弈示例 · 未计算真实条件到达概率
+                  {current.review ? (
+                    "桌型/参与者未完整确认 · 行动前事实草稿"
+                  ) : (
+                    <>
+                      {current.format === "HU" ? "HU 桌" : "六人背景"} ·
+                      当前活跃{" "}
+                      {
+                        current.players.filter((p) => p.status === "active")
+                          .length
+                      }{" "}
+                      人 · 局部/子博弈示例
+                    </>
+                  )}{" "}
+                  · 未计算真实条件到达概率
                 </p>
               </div>
               <Board cards={current.board} />
@@ -789,6 +1085,24 @@ export function AnalysisPage() {
                     范围模型<b>自身路径权重</b>
                   </span>
                 </div>
+                {current.review && (
+                  <p className={s.note}>
+                    事实来自固定复盘节点；未确认：
+                    {current.review.unknownFields.join("、")}
+                    。未用预置范围填补未知。
+                    <button
+                      onClick={async () =>
+                        setFeedback(
+                          await perform("artifact_inspect", {
+                            artifactId: current.review!.source.id,
+                          }),
+                        )
+                      }
+                    >
+                      查看复盘来源
+                    </button>
+                  </p>
+                )}
                 <div className={s.players}>
                   {current.players.map((p) => (
                     <button
@@ -813,6 +1127,26 @@ export function AnalysisPage() {
                     </button>
                   ))}
                 </div>
+                {current.review && (
+                  <label>
+                    编辑范围槽位（对手尚未确认）
+                    <select
+                      aria-label="复盘范围槽位"
+                      value={activePlayer}
+                      onChange={(e) => {
+                        if (canLeave()) setPlayer(e.target.value);
+                      }}
+                    >
+                      {Object.keys(current.ranges).map((id) => (
+                        <option key={id} value={id}>
+                          {id === "opponent-unknown"
+                            ? "对手未知范围"
+                            : `${id} 行动者范围`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <div className={s.mode}>
                   <button
                     aria-pressed={mode === "reference"}
@@ -826,6 +1160,19 @@ export function AnalysisPage() {
                   >
                     输入范围
                   </button>
+                  <button
+                    aria-pressed={mode === "policy"}
+                    disabled={!policyView}
+                    onClick={() => setMode("policy")}
+                  >
+                    我的策略
+                  </button>
+                  {mode === "policy" && policyView && (
+                    <span>
+                      已填写 {policyView.filled} / {policyView.targetCount}{" "}
+                      个有效组合；未完整类别不显示行动频率。
+                    </span>
+                  )}
                   <span>169 类 / 1,326 组合 · 缺失不作零</span>
                 </div>
                 <div className={s.matrix} aria-label="全范围矩阵">
@@ -852,6 +1199,7 @@ export function AnalysisPage() {
                         style={{ background } as CSSProperties}
                         title={`${h.label} · 有效质量 ${h.mass}`}
                         onClick={() => {
+                          if (!canLeave()) return;
                           setHand(h.label);
                           setCombo(h.combos[0]);
                         }}
@@ -934,7 +1282,9 @@ export function AnalysisPage() {
                       <button
                         key={c}
                         aria-pressed={c === combo}
-                        onClick={() => setCombo(c)}
+                        onClick={() => {
+                          if (canLeave()) setCombo(c);
+                        }}
                       >
                         <ComboCards combo={c} />
                       </button>
@@ -948,7 +1298,10 @@ export function AnalysisPage() {
                     min="0"
                     max="100"
                     value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
+                    onChange={(e) => {
+                      touch("range");
+                      setWeight(e.target.value);
+                    }}
                   />
                 </label>
                 <button
@@ -1011,18 +1364,74 @@ export function AnalysisPage() {
                   <summary>构建我的策略</summary>
                   <p>与参考分开，提交后固定版本。</p>
                   <label>
+                    已保存策略
+                    <select
+                      aria-label="已保存策略"
+                      value={policyId}
+                      onChange={(e) => {
+                        if (canLeave()) setPolicyId(e.target.value);
+                      }}
+                    >
+                      <option value="">选择策略</option>
+                      {summary?.policies
+                        ?.filter(
+                          (p) =>
+                            p.situation.id === current.ref.id &&
+                            p.playerId === activePlayer &&
+                            p.nodeId === current.nodeId,
+                        )
+                        .map((p) => (
+                          <option key={p.ref.id} value={p.ref.id}>
+                            {p.submitted ? "已固定" : "草稿"} · {p.ref.id} v
+                            {p.ref.version}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <button
+                    disabled={busy || !policyId || pending}
+                    onClick={async () => {
+                      const p = await perform<PolicyRecord>("policy_fork", {
+                        policyId,
+                        situationId: current.ref.id,
+                      });
+                      if (p) setPolicyId(p.ref.id);
+                    }}
+                  >
+                    从当前策略建立草稿
+                  </button>
+                  <button
+                    disabled={
+                      busy || !policyId || pending || policyView?.submitted
+                    }
+                    onClick={() => void perform("policy_undo", { policyId })}
+                  >
+                    撤销策略编辑
+                  </button>
+                  <button
+                    disabled={
+                      busy || !policyId || pending || policyView?.submitted
+                    }
+                    onClick={() => void perform("policy_redo", { policyId })}
+                  >
+                    重做策略编辑
+                  </button>
+                  <label>
                     第一个行动频率（%）
                     <input
                       aria-label="策略频率"
                       value={frequency}
-                      onChange={(e) => setFrequency(e.target.value)}
+                      onChange={(e) => {
+                        touch("policy");
+                        setFrequency(e.target.value);
+                      }}
                     />
                   </label>
                   <button disabled={busy} onClick={() => void editPolicy()}>
                     应用混频到 {hand}
                   </button>
                   <button
-                    disabled={busy || !!summary?.independent}
+                    disabled={busy || pending || !!summary?.independent}
                     onClick={async () => {
                       const p = await perform<{ ref: Ref }>(
                         "policy_edit_batch",
@@ -1030,6 +1439,9 @@ export function AnalysisPage() {
                           situationId: current.ref.id,
                           playerId: activePlayer,
                           reveal: true,
+                          policyId: policyView?.submitted
+                            ? undefined
+                            : policyId || undefined,
                         },
                       );
                       if (p) setPolicyId(p.ref.id);
@@ -1038,7 +1450,9 @@ export function AnalysisPage() {
                     参考补全（记辅助）
                   </button>
                   <button
-                    disabled={busy || !policyId}
+                    disabled={
+                      busy || pending || !policyId || policyView?.submitted
+                    }
                     onClick={async () => {
                       const p = await perform<{ ref: Ref }>("policy_submit", {
                         policyId,
@@ -1092,7 +1506,10 @@ export function AnalysisPage() {
                   <input
                     aria-label="筹码"
                     value={stack}
-                    onChange={(e) => setStack(e.target.value)}
+                    onChange={(e) => {
+                      touch("conditions");
+                      setStack(e.target.value);
+                    }}
                   />
                 </label>
                 <label>
@@ -1100,7 +1517,10 @@ export function AnalysisPage() {
                   <input
                     aria-label="抽水"
                     value={rake}
-                    onChange={(e) => setRake(e.target.value)}
+                    onChange={(e) => {
+                      touch("conditions");
+                      setRake(e.target.value);
+                    }}
                   />
                 </label>
                 <label>
@@ -1108,7 +1528,10 @@ export function AnalysisPage() {
                   <input
                     aria-label="开池尺度"
                     value={sizing}
-                    onChange={(e) => setSizing(e.target.value)}
+                    onChange={(e) => {
+                      touch("conditions");
+                      setSizing(e.target.value);
+                    }}
                   />
                 </label>
                 <label>
@@ -1116,7 +1539,10 @@ export function AnalysisPage() {
                   <input
                     aria-label="公共牌"
                     value={board}
-                    onChange={(e) => setBoard(e.target.value)}
+                    onChange={(e) => {
+                      touch("conditions");
+                      setBoard(e.target.value);
+                    }}
                   />
                 </label>
               </div>
@@ -1124,10 +1550,12 @@ export function AnalysisPage() {
                 disabled={busy}
                 onClick={() =>
                   void perform("situation_revise", {
-                    situationId: current.ref.id,
+                    situationId: `${(editScopes.current.conditions?.situation ?? current.ref).id}@${(editScopes.current.conditions?.situation ?? current.ref).version}`,
                     stack: Math.round(Number(stack) * 100),
-                    rake: Number(rake) / 100,
-                    sizing: Math.round(Number(sizing) * 100),
+                    rake: rake.trim() ? Number(rake) / 100 : undefined,
+                    sizing: sizing.trim()
+                      ? Math.round(Number(sizing) * 100)
+                      : undefined,
                     board: board.trim() ? board.trim().split(/\s+/) : [],
                   })
                 }
@@ -1216,7 +1644,7 @@ export function AnalysisPage() {
                 <h2>固定作答，再请求证据。</h2>
                 <p>HU 与六人背景的 BTN 对 BB，能否直接共用一张无条件范围表？</p>
                 <button
-                  disabled={busy || !!summary?.independent}
+                  disabled={busy || pending || !!summary?.independent}
                   onClick={() => void perform("teaching_begin")}
                 >
                   开始独立概念题

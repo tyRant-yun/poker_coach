@@ -46,11 +46,11 @@ export type Situation = {
   revision: number;
   name: string;
   preset: string;
-  format: "HU" | "6-max";
+  format: "HU" | "6-max" | "unknown";
   board: string[];
   stack: number;
-  rake: number;
-  sizing: number;
+  rake: number | null;
+  sizing: number | null;
   nodeId: string;
   players: Player[];
   history: string[];
@@ -59,6 +59,16 @@ export type Situation = {
   stale: boolean;
   origin?: Ref;
   hypothesis?: string;
+  review?: {
+    source: Ref;
+    handId: string;
+    decisionId: string;
+    pot: number;
+    actor: string;
+    history: string[];
+    hero: string;
+    unknownFields: string[];
+  };
 };
 export type RangeRecord = {
   ref: Ref;
@@ -88,6 +98,7 @@ export type PolicyRecord = {
   assisted: boolean;
   past: Policy[];
   future: Policy[];
+  origin?: Ref;
 };
 export type Spec = {
   ref: Ref;
@@ -112,8 +123,9 @@ export type Spec = {
   algorithmVersion: string;
   engineVersion: string;
   treeHash: string;
-  tableFormat: "HU" | "6-max";
-  backgroundPlayerCount: number;
+  tableFormat: "HU" | "6-max" | "unknown";
+  backgroundPlayerCount: number | null;
+  participantsComplete: boolean;
   activePlayerIds: string[];
   analysisPlayerIds: string[];
   continuationValueModel: { kind: "synthetic"; version: string };
@@ -200,6 +212,7 @@ export type Attempt = {
   next?: Ref;
 };
 export type Artifact = {
+  purpose?: "workspace-backup";
   ref: Ref;
   hash: string;
   bytes: number;
@@ -261,6 +274,8 @@ const id = z.string().min(1),
   allocation = z.record(z.string(), z.number().int().min(0).max(10000));
 const fields = {
   situationId: id.optional(),
+  handId: id.optional(),
+  decisionId: id.optional(),
   rangeId: id.optional(),
   policyId: id.optional(),
   specId: id.optional(),
@@ -332,6 +347,7 @@ export const tools = {
   workspace_changes: "按序查询工作区变更引用",
   situation_tree: "读取局面行动树结构和覆盖，不返回策略答案",
   situation_create: "从声明的 HU/6-max 示例新建局面与范围",
+  situation_fork: "从固定局面与范围创建独立研究分支，保留来源且不覆盖原作品",
   situation_revise: "修订局面、节点或自定义条件，保留旧版本",
   solver_capabilities: "查询五类分析能力、示例覆盖和资源边界",
   analysis_spec_create: "固定分析规格与范围/策略/约束",
@@ -371,6 +387,9 @@ export const tools = {
   workspace_import: "预检并导入本应用备份或旧库快照",
   artifact_page: "受控分页读取制品",
   artifact_inspect: "读取固定制品、规格和来源引用；大范围/策略只返回摘要",
+  review_extract: "从已封存旧复盘的行动前快照提取 S1 草稿，未知范围和树不补造",
+  teaching_record_exposure:
+    "在共享账本登记旧版阅读可能暴露，不能清除历史或授予未见身份",
 } as const;
 export type ToolName = keyof typeof tools;
 export const mutations = new Set<ToolName>(

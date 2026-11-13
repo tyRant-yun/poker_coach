@@ -1,9 +1,11 @@
+import { hasAuthorityExposure } from '../../shared/authorityExposure';
 import type { WorkspaceSnapshot } from '../study/domain';
 import { contentHash, packageKey, questionExposureKeys } from './domain';
 import type { Question, TeachingState, TheoryClaim, TheoryContext } from './domain';
 import { lesson, teachingBundle, teachingQuestion, validateTeachingBundle } from './content';
 
 export function exposureStatus(t:TeachingState,keys:string[]):'no-record'|'seen'|'possible'|'unknown-history'{
+  if(hasAuthorityExposure())return 'possible';
   if(t.continuity!=='complete')return 'unknown-history';
   const hits=t.exposures.filter(e=>e.keys.some(k=>keys.includes(k)));
   return hits.some(e=>e.kind==='seen'||e.kind==='hint')?'seen':hits.length?'possible':'no-record';

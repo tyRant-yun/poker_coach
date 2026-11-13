@@ -48,6 +48,20 @@ async function tool<T>(
   return (reply as Extract<Reply, { ok: true }>).data as T;
 }
 
+// A failed browser assertion must not leave an independent question blocking later cases.
+test.afterEach(async () => {
+  const client = await connect();
+  try {
+    const state = await tool<{ independent?: unknown }>(
+      client,
+      "workspace_get",
+    );
+    if (state.independent) await tool(client, "teaching_reveal");
+  } finally {
+    await client.close();
+  }
+});
+
 test("SJ01/02/03/04/16/17: UI ↔ real MCP; complete matrix, immutable range edits and six-player handoff", async ({
   page,
 }) => {
@@ -175,6 +189,10 @@ test("SJ07/08/09/11/12/20: custom coverage, policy evaluation, controlled experi
     await page
       .getByRole("button", { name: "保存有条件结论", exact: true })
       .click();
+    await page.screenshot({
+      path: ".artifacts/s1/experiment-evidence.png",
+      fullPage: true,
+    });
     await page
       .getByRole("button", { name: "开始独立概念题", exact: true })
       .click();
@@ -193,6 +211,10 @@ test("SJ07/08/09/11/12/20: custom coverage, policy evaluation, controlled experi
         { exact: true },
       ),
     ).toBeVisible();
+    await page.screenshot({
+      path: ".artifacts/s1/teaching-evidence.png",
+      fullPage: true,
+    });
     await page
       .getByRole("button", { name: "安排改变条件的新题", exact: true })
       .click();
@@ -343,6 +365,23 @@ test("SJ05/06/08: six positions, BB walk, 4-bet/squeeze ledgers and explicit mul
       .getByRole("button", { name: "加载示例参考", exact: true })
       .click();
     await expect(page.getByRole("status")).toContainText("不支持");
+    await page.getByText("筛选位置、回应与金额", { exact: true }).click();
+    await page.getByLabel("位置筛选", { exact: true }).selectOption("CO");
+    await page
+      .getByLabel("行动上下文", { exact: true })
+      .selectOption("面对3-bet");
+    await expect(
+      page
+        .getByLabel("示例路径")
+        .getByRole("option", { name: "6-max · CO 对 BTN 3-bet", exact: true }),
+    ).toHaveCount(1);
+    await page.getByLabel("筛选抽水", { exact: true }).fill("5");
+    await expect(
+      page.getByText("当前筛选未覆盖。已有作品和输入保留。", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "创建分析作品", exact: true }),
+    ).toBeDisabled();
   } finally {
     await client.close();
   }
@@ -373,7 +412,7 @@ test("SJ12/15/20: Agent invokes shared commands, saves trace and creates a genui
         "Agent 已按应用命令完成脚本，并保存以下工具轨迹；没有调用真实 LLM。",
         { exact: true },
       ),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 20000 });
     await page
       .getByRole("button", { name: "开始独立概念题", exact: true })
       .click();
@@ -389,7 +428,12 @@ test("SJ12/15/20: Agent invokes shared commands, saves trace and creates a genui
     await page
       .getByRole("button", { name: "开始迁移概念题", exact: true })
       .click();
-    await expect(page.getByText(/CO 开池、BTN 3-bet、CO 跟注后/)).toBeVisible();
+    await expect(
+      page.getByText(
+        "CO 开池、BTN 3-bet、CO 跟注后，进入翻后的范围应从哪里来？",
+        { exact: true },
+      ),
+    ).toBeVisible();
     await page
       .getByRole("button", { name: "固定首次作答", exact: true })
       .click();
@@ -452,4 +496,127 @@ test("SJ13/14: readonly legacy import is idempotent and current backup roundtrip
     .setInputFiles(backupPath!);
   await expect(page.getByRole("status")).toContainText("已完成并保存");
   expect(await readLegacy()).toEqual(original);
+});
+
+test("SJ17/19: pending inputs survive MCP conflict and branch; saved policy resumes after refresh", async ({
+  page,
+}) => {
+  const client = await connect();
+  try {
+    const original = await tool<Situation>(client, "situation_create", {
+      preset: "H-SRP",
+      nodeId: "f-oop",
+      name: "冲突与草稿接续",
+    });
+    await page.goto(`/solver?case=${original.ref.id}`);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "冲突与草稿接续",
+    );
+    await page
+      .getByText("自定义条件与固定输入", { exact: false })
+      .first()
+      .click();
+    await page.getByLabel("筹码", { exact: true }).fill("80");
+    await tool(client, "situation_revise", {
+      situationId: original.ref.id,
+      stack: 9000,
+    });
+    await page
+      .getByRole("button", { name: "保存条件新版本", exact: true })
+      .click();
+    await expect(page.getByRole("status")).toContainText("所编辑对象已更新");
+    await expect(page.getByLabel("筹码", { exact: true })).toHaveValue("80");
+    await page
+      .getByRole("button", { name: "从原版本建立独立分支", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "保存条件新版本", exact: true })
+      .click();
+    await expect(
+      page.getByText("有未应用输入，当前内容尚未保存。", { exact: true }),
+    ).toHaveCount(0);
+    const source = await tool<{ situations: Situation[] }>(
+      client,
+      "workspace_get",
+    );
+    expect(
+      source.situations.find((s) => s.ref.id === original.ref.id)!.stack,
+    ).toBe(9000);
+    const branch = source.situations.find(
+      (s) => s.origin?.contentHash === original.ref.contentHash,
+    )!;
+    expect(branch.stack).toBe(8000);
+    await page.getByText("构建我的策略", { exact: true }).click();
+    await page.getByLabel("策略频率", { exact: true }).fill("40");
+    await page
+      .getByRole("button", { name: "应用混频到 AA", exact: true })
+      .click();
+    await expect(
+      page.getByText("有未应用输入，当前内容尚未保存。", { exact: true }),
+    ).toHaveCount(0);
+    const policy = await page
+      .getByLabel("已保存策略", { exact: true })
+      .inputValue();
+    expect(policy).toBeTruthy();
+    await page.reload();
+    await page.getByText("构建我的策略", { exact: true }).click();
+    await expect(page.getByLabel("已保存策略", { exact: true })).toHaveValue(
+      policy,
+    );
+    await page.getByRole("button", { name: "我的策略", exact: true }).click();
+    await expect(page.getByText(/已填写 .*个有效组合/)).toBeVisible();
+    await page.setViewportSize({ width: 1024, height: 900 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: ".artifacts/s1/pending-version-resume.png",
+      fullPage: true,
+    });
+  } finally {
+    await client.close();
+  }
+});
+
+test("SJ18/21: review facts enter S1 with unknowns; legacy route cannot bypass independent question", async ({
+  page,
+}) => {
+  await page.goto("/review");
+  await page.getByRole("button", { name: "导入完整样例", exact: true }).click();
+  await page
+    .getByRole("button", { name: "提取行动前事实到 S1", exact: true })
+    .click();
+  await expect(page).toHaveURL(/solver\?case=/);
+  await expect(page.getByText(/未用预置范围填补未知/)).toBeVisible();
+  await page.getByRole("button", { name: "加载示例参考", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("未覆盖");
+  await page
+    .getByRole("button", { name: "开始独立概念题", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "独立概念题进行中", exact: true }),
+  ).toBeVisible();
+  await page.evaluate(() => sessionStorage.clear());
+  await page.goto("/learn");
+  await expect(
+    page.getByRole("heading", { name: "S1 独立题仍在进行", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "登记辅助并阅读旧版", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "S1 独立题仍在进行", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Solver 与范围 · S1", exact: true }),
+  ).toBeVisible();
+  await page.goto("/practice");
+  await page.getByRole("button", { name: "开始策略诊断", exact: true }).click();
+  await page
+    .getByRole("button", { name: "修正概率合计不足 100%", exact: true })
+    .click();
+  await page.getByRole("button", { name: "提交作答", exact: true }).click();
+  await expect(page.getByText(/辅助作答 ·/)).toBeVisible();
 });

@@ -1,5 +1,7 @@
 # S1 Solver 与范围领域合同 v0.3
 
+实施更新（2026-11-13）：SO01–SO09 的 S1 本地 Mock 实现已进入应用，实际范围、验证、已知限制与证据以 [S1 交付记录](solver-s1-delivery.md) 为准。本文 v0.1–v0.3 中“未实施/未测试”描述保留当时设计状态；不覆盖本次实际记录。R1–R3 仍未执行。
+
 日期：2026-11-12。状态：设计，非现有 API；配合 [任务包](solver-s1-task-design.md)、[产品/内容](solver-s1-product-content.md)、[MCP/运行时](solver-s1-mcp-runtime.md) 使用。沿用 TypeScript strict、应用命令、Zod 与异步适配器；v0.3 新工作区使用唯一本地业务运行时，旧 IndexedDB 保留迁移来源。
 
 v0.2 依据 [实际源码与复用方案](solver-reuse-research.md) 补充适配要求：优先复用完整引擎，保留公共产品语义；S1 仍不接真实计算。

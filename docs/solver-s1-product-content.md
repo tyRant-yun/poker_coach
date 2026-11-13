@@ -1,5 +1,7 @@
 # S1 Solver 产品、内容与验收旅程 v0.3
 
+实施更新（2026-11-13）：SO01–SO09 的 S1 本地 Mock 实现已进入应用，实际范围、验证、已知限制与证据以 [S1 交付记录](solver-s1-delivery.md) 为准。本文 v0.1–v0.3 中“未实施/未测试”描述保留当时设计状态；不覆盖本次实际记录。R1–R3 仍未执行。
+
 日期：2026-11-12。状态：设计，资产未编写。与 [任务包](solver-s1-task-design.md)、[领域合同](solver-s1-contracts.md) 共同构成 S1 开发入口。
 
 v0.3 按 [新增约束映射](solver-s1-constraint-mapping.md) 补充真实 MCP、双入口、长任务/大结果和完整教学消费；运行边界与工具合同见 [MCP/运行时](solver-s1-mcp-runtime.md)。原 SJ01–SJ15 保留，新增 SJ16–SJ21。

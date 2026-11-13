@@ -314,6 +314,9 @@ describe("S1 authored range contracts and durable authority", () => {
     ok(call("situation_create"));
     const backup = ok<{ ref: Ref }>(call("workspace_export"));
     const a = service.state.artifacts[backup.ref.id];
+    const second = ok<{ ref: Ref }>(call("workspace_export"));
+    const secondArtifact = service.state.artifacts[second.ref.id];
+    expect(secondArtifact.bytes).toBeLessThan(a.bytes * 1.1);
     const document = JSON.parse(service.store.getBytes(a.hash).toString()) as {
       checksum: string;
       payload: { blobs: Record<string, string>; state: unknown };
@@ -344,5 +347,32 @@ describe("S1 authored range contracts and durable authority", () => {
     await new Promise((r) => setTimeout(r, 250));
     expect(service.state.jobs[j.ref.id].status).toBe("cancelled");
     expect(service.state.jobs[j.ref.id].result).toBeUndefined();
+  });
+  it("rejects stale target versions while allowing a branch from the original fixed situation", () => {
+    const { call, service } = setup();
+    const original = ok<Situation>(call("situation_create"));
+    ok(call("situation_revise", { situationId: original.ref.id, stack: 9000 }));
+    expect(
+      call("situation_revise", {
+        situationId: `${original.ref.id}@${original.ref.version}`,
+        stack: 8000,
+      }),
+    ).toMatchObject({ ok: false, code: "REVISION_CONFLICT" });
+    const branch = ok<Situation>(
+      call("situation_fork", {
+        situationId: `${original.ref.id}@${original.ref.version}`,
+      }),
+    );
+    expect(branch.stack).toBe(original.stack);
+    expect(branch.origin).toEqual(original.ref);
+    expect(branch.ref.id).not.toBe(original.ref.id);
+    const edited = ok<Situation>(
+      call("situation_revise", {
+        situationId: `${branch.ref.id}@${branch.ref.version}`,
+        stack: 8000,
+      }),
+    );
+    expect(edited.stack).toBe(8000);
+    expect(service.state.situations[original.ref.id].stack).toBe(9000);
   });
 });

@@ -1,12 +1,12 @@
 # Riverline Poker Coach — Product Demo
 
-最新开发：S1 Solver 与范围已进入连续实施，访问 [新工作台](http://127.0.0.1:5173/solver)；实际实现、验证与待办见 [S1 开发记录](docs/solver-s1-delivery.md)。本地运行时与真实 MCP 协议可用，数值继续为合成示例，整轮验收尚未完成。
+S1 本地 Mock 开发与自动验收已完成（2026-11-13）：[Solver 与范围](http://127.0.0.1:5173/solver) 提供 HU/六人路径、版本编辑、固定分析、实验、教学证据与恢复；UI 和真实 MCP 共用唯一本机服务。105 项状态测试、46 工具实际调用、44 条浏览器旅程及构建通过，详见 [S1 交付记录](docs/solver-s1-delivery.md)。R1–R3 真实引擎未执行。
 
 当前版本：T1 教学升级已完成本地 Demo 验收；原第一版本地 stub/mock Demo 已完成 D01–D08。研究、连续节点、Agent、训练、复盘、备份恢复已连通；扑克数值和推理均为明确标记的合成示例。
 
-最新设计：[S1 Solver 与范围开发任务包](docs/solver-s1-task-design.md)，配套 [产品/内容与验收](docs/solver-s1-product-content.md)、[领域合同](docs/solver-s1-contracts.md)。HU、6-max 翻前范围与单挑翻后交接纳入下一批 Demo 设计；SO01–SO09 尚未开发，R1–R3 真实求解验证单列为后续范围，不改变当前运行版本。
+最新设计：[S1 Solver 与范围开发任务包](docs/solver-s1-task-design.md)，配套 [产品/内容与验收](docs/solver-s1-product-content.md)、[领域合同](docs/solver-s1-contracts.md)。历史任务设计覆盖 HU、6-max 翻前范围与单挑翻后交接；SO01–SO09 的当前实现以交付记录为准，R1–R3 真实求解验证仍为后续范围。
 
-S1 v0.3：[新增约束映射](docs/solver-s1-constraint-mapping.md)、[MCP 与本地运行时合同](docs/solver-s1-mcp-runtime.md)。设计增加实际 MCP 双入口、唯一本地业务状态、独立任务/制品仓与 SJ16–SJ21；尚未实现，也未改变当前浏览器运行方式。
+S1 v0.3：[新增约束映射](docs/solver-s1-constraint-mapping.md)、[MCP 与本地运行时合同](docs/solver-s1-mcp-runtime.md)。设计增加实际 MCP 双入口、唯一本地业务状态、独立任务/制品仓与 SJ16–SJ21；当时为设计，现已按合同实现；新 S1 通过本机 Node 服务保存，原版旧 Demo 保留。
 
 新增 [Solver 理解与复用方案](docs/solver-reuse-research.md)：已核对候选源码和固定版本，任务包更新 v0.2，优先复用完整引擎与薄适配；未编译、运行或引入第三方求解器。
 

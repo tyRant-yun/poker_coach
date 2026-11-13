@@ -335,7 +335,16 @@ export function derive(
     ]),
   );
 }
+const authoredTrees = new Map<string, AnalysisNode[]>();
 export function nodesFor(presetId: string): AnalysisNode[] {
+  let tree = authoredTrees.get(presetId);
+  if (!tree) {
+    tree = buildNodes(presetId);
+    authoredTrees.set(presetId, tree);
+  }
+  return structuredClone(tree);
+}
+function buildNodes(presetId: string): AnalysisNode[] {
   const preset = presets.find((p) => p.id === presetId);
   if (!preset) throw Error("未找到预置树");
   let players = initialPlayers(preset.format),

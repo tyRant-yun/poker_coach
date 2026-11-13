@@ -66,8 +66,8 @@ export function validateBackupState(value: unknown): RuntimeState {
   for (const s of Object.values(state.situations)) {
     z.object({
       stack: z.number().int().positive(),
-      rake: z.number().min(0).max(1),
-      format: z.enum(["HU", "6-max"]),
+      rake: z.number().min(0).max(1).nullable(),
+      format: z.enum(["HU", "6-max", "unknown"]),
       board: z.array(z.string()),
       ranges: z.record(z.string(), refSchema),
       players: z.array(
