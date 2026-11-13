@@ -4,7 +4,7 @@ const children = [];
 try {
   let online = false;
   try {
-    const health = await fetch("http://127.0.0.1:5174/api/analysis/health");
+    const health = await fetch("http://127.0.0.1:5174/api/analysis/health", {signal:AbortSignal.timeout(1000)});
     online = health.ok;
   } catch {}
   if (!online) {
@@ -14,10 +14,10 @@ try {
         windowsHide: true,
       }),
     );
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 400; i++) {
       await wait(150);
       try {
-        if ((await fetch("http://127.0.0.1:5174/api/analysis/health")).ok) {
+        if ((await fetch("http://127.0.0.1:5174/api/analysis/health", {signal:AbortSignal.timeout(1000)})).ok) {
           online = true;
           break;
         }
