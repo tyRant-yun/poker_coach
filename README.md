@@ -58,7 +58,7 @@ npm run e2e
 
 T1 应用提交 `3503f07`；`baseline/teaching-t1-m1` 保存首个已验证教学闭环，`baseline/teaching-t1.0` 保存整轮交付。旧设计标签与第一版标签保持不动。
 
-无远程、无推送、无部署；本地 Git 不代替独立备份。回看与无损恢复见 [Git 工作流](docs/git-workflow.md)。
+GitHub 私有仓库：[tyRant-yun/poker_coach](https://github.com/tyRant-yun/poker_coach)。本次归档保存所有本地分支、历史与既有基线标签，并另存源码 ZIP 和完整 Git bundle；没有部署应用。基线清单与恢复说明见 [归档记录](docs/repository-archive-2026-11-13.md) 和 [Git 工作流](docs/git-workflow.md)。
 
 ## 资料
 

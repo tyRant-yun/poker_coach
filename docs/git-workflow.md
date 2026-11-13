@@ -1,6 +1,6 @@
 # Git 基线与恢复
 
-工作区：`E:\poker_coach`。这是本地独立仓库；尚未配置远程。
+工作区：`E:\poker_coach`。这是独立 Demo 仓库；2026-11-13 按用户指令创建 GitHub 私有远程 `https://github.com/tyRant-yun/poker_coach`，远程名为 `origin`。
 
 ## 基线约定
 
@@ -62,7 +62,7 @@ git revert <需要撤销的普通提交SHA>
 
 若发生冲突，解决后执行 `git revert --continue`；放弃本次回滚可执行 `git revert --abort`。
 
-默认不使用 `reset --hard`、`clean -fd` 或强制移动基线标签。Git 只保护已经提交的内容，也不替代独立备份。未推送到远程意味着当前副本仍只保存在本机。
+默认不使用 `reset --hard`、`clean -fd` 或强制移动基线标签。Git 只保护已经提交的内容，也不替代独立备份。历史上的“无远程/未推送”描述保留当时语境；本次归档和基线清单见 [归档记录](repository-archive-2026-11-13.md)。GitHub 远程与独立 bundle 共同保存提交历史；运行中的本地数据不在源码归档范围内。
 
 ## 第一版完整 Demo 的实际记录
 
