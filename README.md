@@ -1,6 +1,14 @@
 # Riverline Poker Coach — Product Demo
 
+最新开发：S1 Solver 与范围已进入连续实施，访问 [新工作台](http://127.0.0.1:5173/solver)；实际实现、验证与待办见 [S1 开发记录](docs/solver-s1-delivery.md)。本地运行时与真实 MCP 协议可用，数值继续为合成示例，整轮验收尚未完成。
+
 当前版本：T1 教学升级已完成本地 Demo 验收；原第一版本地 stub/mock Demo 已完成 D01–D08。研究、连续节点、Agent、训练、复盘、备份恢复已连通；扑克数值和推理均为明确标记的合成示例。
+
+最新设计：[S1 Solver 与范围开发任务包](docs/solver-s1-task-design.md)，配套 [产品/内容与验收](docs/solver-s1-product-content.md)、[领域合同](docs/solver-s1-contracts.md)。HU、6-max 翻前范围与单挑翻后交接纳入下一批 Demo 设计；SO01–SO09 尚未开发，R1–R3 真实求解验证单列为后续范围，不改变当前运行版本。
+
+S1 v0.3：[新增约束映射](docs/solver-s1-constraint-mapping.md)、[MCP 与本地运行时合同](docs/solver-s1-mcp-runtime.md)。设计增加实际 MCP 双入口、唯一本地业务状态、独立任务/制品仓与 SJ16–SJ21；尚未实现，也未改变当前浏览器运行方式。
+
+新增 [Solver 理解与复用方案](docs/solver-reuse-research.md)：已核对候选源码和固定版本，任务包更新 v0.2，优先复用完整引擎与薄适配；未编译、运行或引入第三方求解器。
 
 实际范围、演示路线、截图、验证和限制见 [第一版交付记录](docs/demo-v1-delivery.md)。这是独立的新 Demo 工作区，旧项目与参考产品仅用于研究。
 
