@@ -1,5 +1,7 @@
 # Riverline Poker Coach — Product Demo
 
+2026-11-18 真实 Solver 开发设计入口：[R1–R3 任务包](docs/solver-real-task-design.md)、[代码库方案](docs/solver-real-codebase-design.md)、[工程规范与验证](docs/solver-real-engineering-standard.md)。计划复用完整 Rust 引擎，以本地进程接入现有 Node/MCP 服务，先独立验证 HU 河牌，再转牌、翻牌；翻前/六人另验。本次仅设计，真实引擎和同构预解库仍未实现。
+
 换设备/换聊天续接：[真实 Solver 开发交接（2026-11-13）](docs/solver-real-engine-handoff-2026-11-13.md)。最新目标已明确转向真实引擎复用与验证；当前真实引擎仍未接入，S1 仅完成 Mock 产品层。
 S1 本地 Mock 开发与自动验收已完成（2026-11-13）：[Solver 与范围](http://127.0.0.1:5173/solver) 提供 HU/六人路径、版本编辑、固定分析、实验、教学证据与恢复；UI 和真实 MCP 共用唯一本机服务。105 项状态测试、46 工具实际调用、44 条浏览器旅程及构建通过，详见 [S1 交付记录](docs/solver-s1-delivery.md)。R1–R3 真实引擎未执行。
 

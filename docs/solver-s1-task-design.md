@@ -1,5 +1,7 @@
 # S1 Solver 与范围开发任务包 v0.3
 
+真实开发细化（2026-11-18）：R1–R3 编号与约束保留，执行设计见 [真实任务包](solver-real-task-design.md)、[代码库方案](solver-real-codebase-design.md)、[工程规范](solver-real-engineering-standard.md)。新设计尚未实施；本文 SO01–SO09 继续以 S1 交付记录为准。
+
 实施更新（2026-11-13）：SO01–SO09 的 S1 本地 Mock 实现已进入应用，实际范围、验证、已知限制与证据以 [S1 交付记录](solver-s1-delivery.md) 为准。本文 v0.1–v0.3 中“未实施/未测试”描述保留当时设计状态；不覆盖本次实际记录。R1–R3 仍未执行。
 
 日期：2026-11-12（Asia/Shanghai）。状态：设计交付，未实施。用户本次要求“设计开发任务包”；本文件不把旧 D01–D08、T1 授权延伸为真实引擎接入授权。

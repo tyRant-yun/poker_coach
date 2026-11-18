@@ -1,5 +1,7 @@
 # Demo 开发计划与当前状态
 
+最新入口（2026-11-18）：用户准备进入真实 Solver 开发，本次要求先完成设计。已形成 [R1–R3 真实任务包](solver-real-task-design.md)、[代码库方案](solver-real-codebase-design.md)、[工程规范与验证](solver-real-engineering-standard.md)。R1 优先验证完整成熟引擎；R2 保留现有 Node/MCP 权威并薄适配 Rust 进程，先河牌后扩街；R3 独立处理翻前和六人。同构预解库列为 R2-I。以上均为待实施设计，未编译、运行或接入真实引擎。
+
 S1 已完成本地 Mock 开发与自动验收（2026-11-13）：SO01–SO09 连续实施完成，105 项状态/运行时测试、46 工具的实际 MCP 调用、44 条浏览器旅程（原 35＋新增 9）、类型检查与构建通过。当前能力、证据、限制和本地基线见 [S1 交付记录](solver-s1-delivery.md)。R1–R3 未实施；下文 S1“未实施”是 2026-11-12 的历史设计记录。
 
 最新约束修订（2026-11-12）：用户要求先映射新增九组约束，再更新既有任务。已完成 [v0.3 映射](solver-s1-constraint-mapping.md)，修订 SO01–SO09、R1–R3 并新增 [MCP/本地运行时合同](solver-s1-mcp-runtime.md)：唯一活动工作区、真实 stdio client/server、独立 Mock 任务/解制品、SJ01–SJ21 及完整教学消费。原 browser 新分析库/双写设计被替代，当前应用代码和启动方式未变；未运行 MCP、应用或引擎验收。
