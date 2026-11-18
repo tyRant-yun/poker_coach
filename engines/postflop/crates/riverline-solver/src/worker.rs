@@ -1,5 +1,5 @@
 //! Bounded process protocol. Only the parent publishes business artifacts.
-use riverline_solver::{run, RiverInput, ENGINE_COMMIT};
+use riverline_solver::{query, run, RiverInput, ENGINE_COMMIT};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs;
@@ -170,7 +170,25 @@ pub fn serve(directory: &Path) -> Result<(), String> {
                 return emit("cancelled", Some(&identity), seq, serde_json::json!({}));
             }
             postflop_solver::save_data_to_file(&game, "riverline-engine/1", &native_path, None)?;
+            let (mut loaded, _): (postflop_solver::PostFlopGame, String) =
+                postflop_solver::load_data_from_file(&native_path, Some(2 * 1024 * 1024 * 1024))?;
+            // This supported model has exactly six nodes. Keep each projection separate;
+            // a general/multistreet tree must use a separate on-demand native reader.
+            let paths = [vec![], vec![0], vec![0, 0], vec![1], vec![1, 0], vec![1, 1]];
+            let mut pages = vec![];
+            for (index, path) in paths.iter().enumerate() {
+                let node = query(&mut loaded, path)?;
+                let filename = format!("node-{index}.json");
+                let output = directory.join(&filename);
+                if fs::symlink_metadata(&output).is_ok() {
+                    return Err("artifact-error: node output exists".into());
+                }
+                let bytes = serde_json::to_vec(&node).map_err(|e| e.to_string())?;
+                fs::write(output, &bytes).map_err(|e| e.to_string())?;
+                pages.push(serde_json::json!({"path":path,"file":filename,"hash":format!("{:x}",Sha256::digest(&bytes)),"bytes":bytes.len()}));
+            }
             let mut summary = serde_json::to_value(report).map_err(|e| e.to_string())?;
+            summary["nodes"] = pages.into();
             summary["identity"] = serde_json::to_value(&identity).map_err(|e| e.to_string())?;
             fs::write(
                 &summary_path,

@@ -3,12 +3,28 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 import {
+  realContract,
+  realSchemas,
+} from "../../src/modules/analysis/real-domain.ts";
+import {
   engineCommandSchema,
   engineEventSchema,
   riverInputSchema,
 } from "../../contracts/solver/engine.ts";
 
 test("versioned JSON schemas match TS and the golden Rust command", () => {
+  assert.deepEqual(
+    {
+      contractVersion: realContract,
+      tools: Object.fromEntries(
+        Object.entries(realSchemas).map(([name, schema]) => [
+          name,
+          z.toJSONSchema(schema),
+        ]),
+      ),
+    },
+    JSON.parse(readFileSync("contracts/solver/business.schema.json", "utf8")),
+  );
   for (const [name, schema] of Object.entries({
     command: engineCommandSchema,
     event: engineEventSchema,

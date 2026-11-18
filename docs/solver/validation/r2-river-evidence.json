@@ -1,0 +1,360 @@
+{
+  "date": "2026-11-18",
+  "checkpoint": "R2-A/B/C restricted HU river product integration",
+  "parentCommit": "0d91513",
+  "engineCommit": "9d1509fe5077d019825f833eed04b16d342dfda1",
+  "engineKernelPatches": [],
+  "license": "AGPL-3.0-or-later",
+  "node": "v24.15.0",
+  "rust": "1.85.1",
+  "platform": {
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "cpu": "Intel(R) Core(TM) i7-14700HX",
+    "physicalMemoryBytes": 16873545728
+  },
+  "binarySha256": "07a101e2517523c57f4c640cb964faf61dac7ad4ef23b4644531fc2952c537e8",
+  "cargoLockSha256": "03a223d822f39affd18c1278cbc954ce34f94c2bdac2922a821fec052173070e",
+  "contract": "riverline-real-analysis/1",
+  "support": {
+    "huPreflop": "unsupported",
+    "huPostflop": "restricted-river-only",
+    "sixMaxPreflop": "unsupported",
+    "sixMaxBackgroundHuPostflop": "unsupported-real-handoff",
+    "multiwayPostflop": "unsupported"
+  },
+  "model": {
+    "players": 2,
+    "street": "river",
+    "oopActions": [
+      "check",
+      "one-explicit-pot-percent-bet"
+    ],
+    "ipAfterCheck": [
+      "check"
+    ],
+    "ipFacingBet": [
+      "fold",
+      "call"
+    ],
+    "rake": false,
+    "bunching": false,
+    "maxPositiveCombosPerPlayer": 200,
+    "maxIterations": 100000,
+    "engineTimeBudgetMs": 120000,
+    "engineEstimatedBytesLimit": 268435456,
+    "hardRssIsolation": false,
+    "solveSlots": 1,
+    "maxUnfinishedJobs": 4
+  },
+  "verification": {
+    "rustPassed": 7,
+    "statePassed": 105,
+    "applicationContractProcessPassed": 9,
+    "actualMcpSuitesPassed": 5,
+    "advertisedTools": 60,
+    "legacyToolsExercised": 46,
+    "newToolsExercised": 14,
+    "browserJourneysPassed": 48,
+    "browserProjectBreakdown": {
+      "legacy": 35,
+      "s1": 9,
+      "real": 4
+    },
+    "independentCasesPassed": 4,
+    "oracleSelfTestsPassed": 2,
+    "format": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "diffCheck": "passed"
+  },
+  "mcp": {
+    "tools": [
+      "real_capabilities",
+      "real_case_create",
+      "real_workspace_get",
+      "real_case_revise",
+      "real_spec_create",
+      "real_preflight",
+      "real_analysis_start",
+      "real_analysis_get",
+      "real_solution_load",
+      "real_solution_query",
+      "real_range_aggregate",
+      "real_range_derive",
+      "real_analysis_cancel",
+      "real_analysis_retry"
+    ],
+    "recordedCalls": 32,
+    "maxRecordedRealTestResponseBytes": 5966,
+    "case": {
+      "id": "real-case-c487e6d1-6076-48b1-9dca-ac1c9b8a2c73",
+      "version": 1,
+      "kind": "real-case",
+      "contentHash": "9872ab1f8717255b9189273d4f1144a80b019d7c29873f1af9d4f59205be36a1"
+    },
+    "spec": {
+      "id": "real-spec-86d29c6f-91e3-4d10-bfbc-8f40e2a91963",
+      "version": 1,
+      "kind": "real-spec",
+      "contentHash": "a559073f5768553447fe804f6df46db062081e345d53f56a55225db916249223"
+    },
+    "result": {
+      "id": "real-solution-4e5288df-b279-47bd-a4b8-3cb3d415439a",
+      "version": 1,
+      "kind": "real-solution",
+      "contentHash": "fe2fd16cdfbd09b112e1141ee30df2c4abc161d77127e3cf6e1746a76affe974"
+    },
+    "independentDeniedCalls": [
+      {
+        "tool": "real_solution_query",
+        "ok": false,
+        "bytes": 184
+      }
+    ]
+  },
+  "actualServerRecovery": {
+    "kind": "actual-server-process-termination",
+    "spec": {
+      "id": "real-spec-48191470-092d-4dcc-8d31-f2b1b53538d9",
+      "version": 1,
+      "kind": "real-spec",
+      "contentHash": "e69df56565bc9e9ce3d2ea792fff91b9cb48e581751c127b904352736e806f7c"
+    },
+    "inputHash": "b13d8a9fe0716989628619168c52039dda55e17e6ae901b5e1cfcaf724d24106",
+    "originalJob": {
+      "id": "real-job-d1fd4a63-8127-449a-976a-c0e3657bbac0",
+      "version": 1,
+      "kind": "real-job",
+      "contentHash": "c30fd191091486396f1e4c22a1f23472f177d2a1c2c6429f2532fc5a0c120870"
+    },
+    "recoveredStatus": "interrupted",
+    "retry": {
+      "id": "real-job-9c3cf5db-7672-409a-883f-616f0a2d13b8",
+      "version": 1,
+      "kind": "real-job",
+      "contentHash": "8da9fa9ef0ba8579838923c109e267eb21dffa23a964e59f29cc2ba1f4b1bc08"
+    },
+    "attempt": 2,
+    "result": {
+      "id": "real-solution-dce97289-bd60-472c-b5be-f228d38ce328",
+      "version": 1,
+      "kind": "real-solution",
+      "contentHash": "edc481d53923d537c4a1feadb6c8349d82a733d86f9cc37953c60448ac8ca3da"
+    },
+    "engineCommit": "9d1509fe5077d019825f833eed04b16d342dfda1",
+    "iterations": 100000,
+    "quality": "budget-exhausted"
+  },
+  "browserJourney": {
+    "url": "http://127.0.0.1:5173/solver/real?case=real-case-f0a39312-c6de-42b4-ba9b-3509977b7250",
+    "case": {
+      "id": "real-case-f0a39312-c6de-42b4-ba9b-3509977b7250",
+      "version": 1,
+      "kind": "real-case",
+      "contentHash": "6ee5bae63cad2d011de21beeb1d9748f288c2b2ad1dc1f2babde3f0244d419e0"
+    },
+    "solution": {
+      "id": "real-solution-a913cef3-867c-464f-8e83-ddf018b73385",
+      "version": 1,
+      "kind": "real-solution",
+      "contentHash": "5387a8b534501f98b95a41b14bdb7687577753163c18950405fb9b10eadd2ee8"
+    },
+    "spec": {
+      "id": "real-spec-8bd7ac88-f591-4cf8-a6a0-af9643dab889",
+      "version": 1,
+      "kind": "real-spec",
+      "contentHash": "a69f6015ed8e134627e7ca22cee57b57e27d72fa18b01ad601f47085acc6bb8b"
+    },
+    "engineCommit": "9d1509fe5077d019825f833eed04b16d342dfda1",
+    "binaryHash": "07a101e2517523c57f4c640cb964faf61dac7ad4ef23b4644531fc2952c537e8",
+    "native": {
+      "id": "artifact-f16e7b01-a0b8-47c4-9e51-aca13e577b24",
+      "version": 1,
+      "kind": "artifact",
+      "contentHash": "f742116b7b173315d15f7a8dec9d29cc288256597df8cce3e0b22b2d7a17c91e"
+    },
+    "tests": [
+      "real-input",
+      "hero",
+      "169-matrix",
+      "derived-range",
+      "refresh",
+      "backup"
+    ]
+  },
+  "independentNumericRecheck": {
+    "oracle": "stdlib-7card-enumeration+scipy-highs-normal-form-lp+pure-br/v1",
+    "thresholds": {
+      "frequencySum": 0.00001,
+      "terminalEvBb": 0.00001,
+      "nashConvPotFraction": 0.001,
+      "valuePotFraction": 0.001
+    },
+    "results": [
+      {
+        "caseId": "river-polar-pot",
+        "pass": true,
+        "lpValueOopBb": 7.5,
+        "actualValueOopBb": 7.49999999412962,
+        "nashConvBb": 0.00024282499595518203,
+        "terminalMaxErrorBb": 3.7087547433145573e-7,
+        "actionMaxErrorBb": 4.662999991268506e-7,
+        "equityMaxError": 0,
+        "iterations": 100000,
+        "elapsedMs": 121,
+        "stopReason": "iteration-limit",
+        "engineTargetMet": false,
+        "estimatedEngineBytes": 144776,
+        "inputSha256": "069105141cb1466132d3eeb184f90fed9bffddfa56a9d5252e78879822f35aa7"
+      },
+      {
+        "caseId": "river-asymmetric-half",
+        "pass": true,
+        "lpValueOopBb": 8.717948717948708,
+        "actualValueOopBb": 8.717948369240624,
+        "nashConvBb": 0.00001833333333500775,
+        "terminalMaxErrorBb": 0.0000010666670231529451,
+        "actionMaxErrorBb": 8.028975224798462e-7,
+        "equityMaxError": 3.666666664736695e-8,
+        "iterations": 15950,
+        "elapsedMs": 20,
+        "stopReason": "quality-target",
+        "engineTargetMet": true,
+        "estimatedEngineBytes": 144804,
+        "inputSha256": "09dcf92369efaa3d9c49a831974699bbe8a41d5cca43d23f055bbbcce1004622"
+      },
+      {
+        "caseId": "river-blockers",
+        "pass": true,
+        "lpValueOopBb": 9.528571428571432,
+        "actualValueOopBb": 9.528572352816358,
+        "nashConvBb": 0.000007226499999291036,
+        "terminalMaxErrorBb": 6.103515600000001e-7,
+        "actionMaxErrorBb": 7.400000026080988e-7,
+        "equityMaxError": 2.9802322e-8,
+        "iterations": 2070,
+        "elapsedMs": 5,
+        "stopReason": "quality-target",
+        "engineTargetMet": true,
+        "estimatedEngineBytes": 144844,
+        "inputSha256": "30454ca9dc76e91d85b22ed087770fe13f0c7ba816011d35b563795f4d778d70"
+      },
+      {
+        "caseId": "river-board-tie",
+        "pass": true,
+        "lpValueOopBb": 5.000000000000001,
+        "actualValueOopBb": 5.000000000000001,
+        "nashConvBb": 0,
+        "terminalMaxErrorBb": 0,
+        "actionMaxErrorBb": 8.881784197001252e-16,
+        "equityMaxError": 0,
+        "iterations": 10,
+        "elapsedMs": 0,
+        "stopReason": "quality-target",
+        "engineTargetMet": true,
+        "estimatedEngineBytes": 144776,
+        "inputSha256": "159d86fde18806c0ebaa02840925350ec869a727c368fffaf5e3692d3b6777d3"
+      }
+    ]
+  },
+  "resourceMeasurements": {
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "cpu": "Intel(R) Core(TM) i7-14700HX",
+    "physicalMemoryBytes": 16873545728,
+    "threads": 1,
+    "compression": false,
+    "memoryMethod": "Windows process PeakWorkingSet64 polled every 5ms while alive; null if unobserved; one solver process incl serialization/query",
+    "runs": [
+      {
+        "caseId": "river-polar-pot",
+        "wallMs": 178.612,
+        "observedPeakWorkingSetBytes": 4874240,
+        "binarySha256": "07a101e2517523c57f4c640cb964faf61dac7ad4ef23b4644531fc2952c537e8",
+        "inputSha256": "10044d67ccd62a686efe4c3a9a0a8b4d62a6e08597c8b4ee10dec2a153839fa2",
+        "outputSha256": "efed76f14f41d494f993053f807ca9e2d5ca025fff51187671ef93f88bc37a47",
+        "stdout": "{\"ok\":true,\"iterations\":100000,\"exploitability\":0.012191772}"
+      },
+      {
+        "caseId": "river-asymmetric-half",
+        "wallMs": 63.0085,
+        "observedPeakWorkingSetBytes": 4886528,
+        "binarySha256": "07a101e2517523c57f4c640cb964faf61dac7ad4ef23b4644531fc2952c537e8",
+        "inputSha256": "c0d27f32d9e7f4b4e4fc8f880684b9f87c8448471ab501f980d2e10103ff2cb0",
+        "outputSha256": "59a3f301be838b902290c0c1922aa9e14529d86c0b4c493281910828c1cff076",
+        "stdout": "{\"ok\":true,\"iterations\":15950,\"exploitability\":0.00093078613}"
+      },
+      {
+        "caseId": "river-blockers",
+        "wallMs": 41.8948,
+        "observedPeakWorkingSetBytes": 4878336,
+        "binarySha256": "07a101e2517523c57f4c640cb964faf61dac7ad4ef23b4644531fc2952c537e8",
+        "inputSha256": "9c6415304b21a9751f388929cc5f0242c9f75cafa1fc2cd3672fb5b59ff2c6c2",
+        "outputSha256": "389242ab5931eb091f0d82a11f746bc5288a28e5e1cdf564df9566d79d345c6f",
+        "stdout": "{\"ok\":true,\"iterations\":2070,\"exploitability\":0.00036621094}"
+      },
+      {
+        "caseId": "river-board-tie",
+        "wallMs": 44.6199,
+        "observedPeakWorkingSetBytes": 4182016,
+        "binarySha256": "07a101e2517523c57f4c640cb964faf61dac7ad4ef23b4644531fc2952c537e8",
+        "inputSha256": "6f2b0d4154614e2eaf5f5ed1981d983092613ad72090d669bc7a0e73ec9cd3fd",
+        "outputSha256": "a85c4908513582940b9c43401a7517601cb6b826c60e7caf62f7d202231e0c33",
+        "stdout": "{\"ok\":true,\"iterations\":10,\"exploitability\":0}"
+      }
+    ]
+  },
+  "localEvidence": {
+    ".artifacts/solver/r2/stable-full.log": {
+      "sha256": "8950594513d23c277967478bff9bdb5c2ca8653e48eb0d3e97bb33616a30837c"
+    },
+    ".artifacts/solver/r2/final-checks.log": {
+      "sha256": "2c392047816695df6715d53ff288c6236b92f2d77bb3d169b0245e11ce0380b9"
+    },
+    ".artifacts/solver/r2/final-runtime-checks.log": {
+      "sha256": "d10c4734471299a2a8ac352d5d51a53f2608f50d2bd470261b3a3c51bdd54440"
+    },
+    ".artifacts/solver/r2/final-typecheck.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    ".artifacts/solver/r2/independent-recheck.log": {
+      "sha256": "0cc3fb12ff66150ea90e6f1eb7e5285de066b58d8f6d53de8c60558608f4c342"
+    },
+    ".artifacts/solver/r2/real-river-desktop.png": {
+      "sha256": "a0fc12c4eeab3305e724f072826d38a06a092c38cf93ccc35d4216ae86c30f63"
+    }
+  },
+  "intermediateFailures": [
+    {
+      "kind": "generated-report-hot-reload",
+      "resolution": "Vite ignores generated artifacts and native/data directories"
+    },
+    {
+      "kind": "Windows-Node24-Vite-fast-fail",
+      "exit": "0xC0000409",
+      "rootCause": "unproven",
+      "workaround": "Vite child only: --no-sparkplug --no-maglev --no-turbofan; retain Wasm",
+      "optOut": "RIVERLINE_VITE_JIT=1",
+      "verification": "48 browser journeys passed with compatibility mode"
+    },
+    {
+      "kind": "legacy-disk-integration-timeout",
+      "initialTimeoutMs": 5000,
+      "observedApproxMs": [
+        5781,
+        6336
+      ],
+      "resolution": "two full-range disk integration tests use 15000ms; assertions and solver budgets unchanged",
+      "final": "105 passed"
+    }
+  ],
+  "next": [
+    "general-river-tree independent benchmarks and contracts",
+    "R2-D turn",
+    "R2-E flop",
+    "R2-F controlled evaluation/locking",
+    "R2-G teaching evidence consumption",
+    "R2-I suit-isomorphic library",
+    "R3 preflop and six-max independent validation"
+  ],
+  "artifactPolicy": "Only fixed references and summary tracked. Local evidence logs/workspaces/native blobs are not Git data; copy backups separately or rerun on a new device."
+}

@@ -1,0 +1,262 @@
+.page {
+  background: #101923;
+  color: #dbe4ef;
+  min-height: 100vh;
+  padding: 28px;
+  font:
+    14px/1.6 Inter,
+    "Microsoft YaHei",
+    sans-serif;
+}
+.page * {
+  box-sizing: border-box;
+}
+.page a {
+  color: #87c5ff;
+}
+.page h1 {
+  font-size: 26px;
+  margin: 5px 0;
+}
+.page h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.page h3 {
+  font-size: 14px;
+  margin: 22px 0 8px;
+}
+.page p {
+  margin: 10px 0;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+.header nav,
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.notice {
+  background: #1c2c3c;
+  border-left: 3px solid #78b8e9;
+  padding: 13px 18px;
+  margin: 18px 0;
+  overflow-wrap: anywhere;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.panel {
+  padding: 22px;
+  border: 1px solid #314254;
+  border-radius: 12px;
+  background: #16222f;
+}
+.content {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+}
+.page label {
+  display: block;
+  font-size: 12px;
+  color: #b5c9d9;
+  margin: 12px 0;
+}
+.page input,
+.page textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  background: #0e1823;
+  color: #e4edf5;
+  border: 1px solid #3c5268;
+  border-radius: 6px;
+  padding: 9px;
+  font: 14px/1.5 inherit;
+}
+.page textarea {
+  font-family: Consolas, monospace;
+  resize: vertical;
+}
+.page button {
+  border: 1px solid #41596f;
+  background: #203447;
+  color: #e4eef6;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font: inherit;
+}
+.page button:hover {
+  border-color: #91b7d3;
+}
+.page button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.page .primary {
+  width: 100%;
+  background: #277760;
+  border-color: #359d7f;
+  margin-bottom: 12px;
+}
+.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.muted {
+  font-size: 12px;
+  color: #98afc1;
+}
+.warning {
+  background: #493c20;
+  color: #f4d394;
+  padding: 10px;
+  border-radius: 5px;
+}
+.error {
+  color: #f4a3a3;
+  max-width: 600px;
+  overflow-wrap: anywhere;
+}
+.work {
+  width: 100%;
+  display: block;
+  text-align: left;
+  margin: 8px 0;
+}
+.work small,
+.job small {
+  display: block;
+  color: #9fb5c8;
+  font-size: 11px;
+}
+.job {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid #304153;
+}
+.badge {
+  background: #23483c;
+  color: #92ddbc;
+  padding: 5px 10px;
+  border-radius: 16px;
+  font-size: 11px;
+}
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  background: #21384a;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+.matrix {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(25px, 1fr));
+  gap: 3px;
+  margin: 18px 0;
+}
+.matrix button {
+  font-size: 11px;
+  padding: 6px 0;
+  border-color: #344a60;
+  border-radius: 3px;
+}
+.matrix .chosen {
+  outline: 2px solid #f5d18b;
+}
+.stat {
+  background: #1b3442;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 5px;
+}
+.page table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+  font-size: 12px;
+}
+.page th {
+  text-align: left;
+  color: #a4bacd;
+}
+.page td,
+.page th {
+  padding: 9px 7px;
+  border-bottom: 1px solid #2c4052;
+}
+.page tbody tr {
+  cursor: pointer;
+}
+.page tbody tr:hover {
+  background: #213344;
+}
+.page details {
+  margin-top: 20px;
+  color: #a7bfce;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.protected {
+  min-height: 100vh;
+  background: #101923;
+  color: #e4edf5;
+  padding: 60px;
+}
+.protected a {
+  color: #9bc9f4;
+}
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+  .page {
+    padding: 18px;
+  }
+  .panel {
+    padding: 16px;
+  }
+}
+@media (max-width: 800px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .header {
+    flex-direction: column;
+  }
+  .matrix button {
+    font-size: 10px;
+  }
+  .page table {
+    font-size: 10px;
+  }
+  .job {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

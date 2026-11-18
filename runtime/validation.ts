@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { contractVersion, refSchema } from "../src/modules/analysis/domain.ts";
 import type { RuntimeState } from "../src/modules/analysis/domain.ts";
+import { realStateSchema } from "../src/modules/analysis/real-domain.ts";
+import { validateRealState } from "./analysis/real-validation.ts";
 const record = z.record(z.string(), z.unknown()),
   weights = z.record(z.string(), z.number().min(0).max(10000));
 const stateShape = z
@@ -19,6 +21,7 @@ const stateShape = z
     attempts: record,
     artifacts: record,
     objects: record,
+    real: realStateSchema.optional(),
     legacy: z.unknown().optional(),
     exposures: z.array(z.string()),
     imports: record,
@@ -161,5 +164,6 @@ export function validateBackupState(value: unknown): RuntimeState {
       bytes: z.number().int().nonnegative(),
       mediaType: z.string(),
     }).parse(a);
+  validateRealState(state);
   return state;
 }

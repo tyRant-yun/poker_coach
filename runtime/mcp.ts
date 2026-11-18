@@ -8,6 +8,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { toolInput, tools } from "../src/modules/analysis/domain.ts";
+import { realSchemas, realTools } from "../src/modules/analysis/real-domain.ts";
 const address = process.env.RIVERLINE_RUNTIME ?? "http://127.0.0.1:5174";
 if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(address))
   throw Error("只允许连接本机分析运行时");
@@ -36,18 +37,27 @@ async function request(path: string, body: unknown) {
   }
 }
 const server = new Server(
-  { name: "riverline-analysis", version: "0.3.0" },
+  { name: "riverline-analysis", version: "0.4.0" },
   { capabilities: { tools: {}, resources: {} } },
 );
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: Object.entries(tools).map(([name, description]) => ({
-    name,
-    description,
-    inputSchema: z.toJSONSchema(toolInput) as {
-      type: "object";
-      [key: string]: unknown;
-    },
-  })),
+  tools: [
+    ...Object.entries(tools).map(([name, description]) => ({
+      name,
+      description,
+      inputSchema: z.toJSONSchema(toolInput) as {
+        type: "object";
+        [key: string]: unknown;
+      },
+    })),
+    ...Object.entries(realTools).map(([name, description]) => ({
+      name,
+      description,
+      inputSchema: z.toJSONSchema(
+        realSchemas[name as keyof typeof realSchemas],
+      ) as { type: "object"; [key: string]: unknown },
+    })),
+  ],
 }));
 server.setRequestHandler(CallToolRequestSchema, async ({ params }) => {
   const result = await request("call", {

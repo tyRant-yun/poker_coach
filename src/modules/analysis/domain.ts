@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { RealState } from "./real-domain.ts";
 
 export const contractVersion = "riverline-analysis/1" as const;
 export const refSchema = z.object({
@@ -76,6 +77,7 @@ export type RangeRecord = {
   weights: Weights;
   origin: "input" | "derived" | "user-hypothesis";
   source?: {
+    solution?: Ref;
     path?: string[];
     range: Ref;
     policy?: Ref;
@@ -239,6 +241,7 @@ export type Reply =
       fieldErrors?: unknown;
     };
 export type RuntimeState = {
+  real?: RealState;
   schemaVersion: 1;
   contractVersion: typeof contractVersion;
   workspaceId: string;

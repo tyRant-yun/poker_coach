@@ -4,6 +4,20 @@ mod worker;
 
 fn execute() -> Result<(), String> {
     let args: Vec<String> = env::args().collect();
+    if args.len() == 3 && args[1] == "preflight-river" {
+        let bytes = fs::read(&args[2]).map_err(|e| e.to_string())?;
+        if bytes.len() > 1024 * 1024 {
+            return Err("input >1MiB".into());
+        }
+        let input: RiverInput = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+        let game = riverline_solver::build(&input)?;
+        let memory = game.memory_usage().0;
+        if memory > input.limits.max_memory_bytes {
+            return Err("budget-exceeded: memory".into());
+        }
+        println!("{{\"ok\":true,\"estimatedBytes\":{memory}}}");
+        return Ok(());
+    }
     if args.len() == 3 && args[1] == "worker" {
         return worker::serve(std::path::Path::new(&args[2]));
     }

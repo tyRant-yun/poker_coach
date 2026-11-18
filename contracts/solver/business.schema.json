@@ -1,0 +1,664 @@
+{
+  "contractVersion": "riverline-real-analysis/1",
+  "tools": {
+    "real_capabilities": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "workspaceId"
+      ],
+      "additionalProperties": false
+    },
+    "real_workspace_get": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "caseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "solutionId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "workspaceId"
+      ],
+      "additionalProperties": false
+    },
+    "real_case_create": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "board": {
+          "minItems": 5,
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[2-9TJQKA][cdhs]$"
+          }
+        },
+        "pot": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "description": "根底池，整数 centibb；100=1bb"
+        },
+        "stack": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "description": "当前根节点双方有效后手，整数 centibb；历史投入不计入后手"
+        },
+        "betPercent": {
+          "type": "string",
+          "maxLength": 8,
+          "pattern": "^\\d+(?:\\.\\d+)?$"
+        },
+        "ranges": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "description": "具体组合的输入权重，万分比单位；10000=100%，不是行动频率"
+            },
+            {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "description": "具体组合的输入权重，万分比单位；10000=100%，不是行动频率"
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "workspaceId",
+        "requestId",
+        "expectedRevision",
+        "name",
+        "board",
+        "pot",
+        "stack",
+        "betPercent",
+        "ranges"
+      ],
+      "additionalProperties": false
+    },
+    "real_case_revise": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "caseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "board": {
+          "minItems": 5,
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[2-9TJQKA][cdhs]$"
+          }
+        },
+        "pot": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "description": "根底池，整数 centibb；100=1bb"
+        },
+        "stack": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "description": "当前根节点双方有效后手，整数 centibb；历史投入不计入后手"
+        },
+        "betPercent": {
+          "type": "string",
+          "maxLength": 8,
+          "pattern": "^\\d+(?:\\.\\d+)?$"
+        },
+        "rangeIds": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "string",
+              "minLength": 1
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "ranges": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "description": "具体组合的输入权重，万分比单位；10000=100%，不是行动频率"
+            },
+            {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "description": "具体组合的输入权重，万分比单位；10000=100%，不是行动频率"
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "workspaceId",
+        "requestId",
+        "expectedRevision",
+        "caseId"
+      ],
+      "additionalProperties": false
+    },
+    "real_spec_create": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "caseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "targetNashConvPotFraction": {
+          "default": 0.001,
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 0.1
+        },
+        "maxIterations": {
+          "default": 100000,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000
+        }
+      },
+      "required": [
+        "workspaceId",
+        "requestId",
+        "expectedRevision",
+        "caseId",
+        "targetNashConvPotFraction",
+        "maxIterations"
+      ],
+      "additionalProperties": false
+    },
+    "real_preflight": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "specId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "workspaceId",
+        "specId"
+      ],
+      "additionalProperties": false
+    },
+    "real_analysis_start": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "specId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "workspaceId",
+        "requestId",
+        "expectedRevision",
+        "specId"
+      ],
+      "additionalProperties": false
+    },
+    "real_analysis_get": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "jobId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "workspaceId",
+        "jobId"
+      ],
+      "additionalProperties": false
+    },
+    "real_analysis_cancel": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "jobId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "workspaceId",
+        "requestId",
+        "expectedRevision",
+        "jobId"
+      ],
+      "additionalProperties": false
+    },
+    "real_analysis_retry": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "jobId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "workspaceId",
+        "requestId",
+        "expectedRevision",
+        "jobId"
+      ],
+      "additionalProperties": false
+    },
+    "real_solution_load": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "solutionId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "workspaceId",
+        "requestId",
+        "expectedRevision",
+        "solutionId"
+      ],
+      "additionalProperties": false
+    },
+    "real_solution_query": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "solutionId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "default": [],
+          "maxItems": 2,
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "player": {
+          "default": 0,
+          "anyOf": [
+            {
+              "type": "number",
+              "const": 0
+            },
+            {
+              "type": "number",
+              "const": 1
+            }
+          ]
+        },
+        "offset": {
+          "default": 0,
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "limit": {
+          "default": 100,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "combos": {
+          "maxItems": 200,
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "hand": {
+          "type": "string"
+        },
+        "inRangeOnly": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "workspaceId",
+        "solutionId",
+        "path",
+        "player",
+        "offset",
+        "limit",
+        "inRangeOnly"
+      ],
+      "additionalProperties": false
+    },
+    "real_range_aggregate": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "solutionId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "default": [],
+          "maxItems": 2,
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "player": {
+          "default": 0,
+          "anyOf": [
+            {
+              "type": "number",
+              "const": 0
+            },
+            {
+              "type": "number",
+              "const": 1
+            }
+          ]
+        }
+      },
+      "required": [
+        "workspaceId",
+        "solutionId",
+        "path",
+        "player"
+      ],
+      "additionalProperties": false
+    },
+    "real_range_derive": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "workspaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "solutionId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "default": [],
+          "maxItems": 1,
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "action": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "workspaceId",
+        "requestId",
+        "expectedRevision",
+        "solutionId",
+        "path",
+        "action"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

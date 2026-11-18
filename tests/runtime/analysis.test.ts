@@ -188,53 +188,58 @@ describe("S1 authored range contracts and durable authority", () => {
       ok(call("analysis_preflight", { specId: ms.ref.id })),
     ).toHaveProperty("availability", "unsupported");
   });
-  it("separates frequency evaluation, lock constraints, immutable results and hypotheses", () => {
-    const { call, service } = setup();
-    const s = ok<Situation>(
-      call("situation_create", { preset: "X-BB", nodeId: "f-oop" }),
-    );
-    const p = ok<{ ref: Ref }>(
-      call("policy_edit_batch", { situationId: s.ref.id, reveal: true }),
-    );
-    const fixed = ok<{ ref: Ref }>(
-      call("policy_submit", { policyId: p.ref.id }),
-    );
-    expect(
-      ok<{ distance: number; evLoss: null }>(
-        call("policy_evaluate", { policyId: fixed.ref.id }),
-      ),
-    ).toMatchObject({ distance: 0, evLoss: null });
-    expect(
-      call("policy_edit_batch", { policyId: p.ref.id, patch: [] }),
-    ).toMatchObject({ ok: false });
-    const spec = ok<Spec>(
-      call("analysis_spec_create", { situationId: s.ref.id }),
-    );
-    const solution = ok<SolutionManifest>(
-      call("solution_load", { specId: spec.ref.id }),
-    );
-    const e = ok<{ ref: Ref; variant: Ref }>(
-      call("experiment_create", {
-        baselineId: solution.ref.id,
-        combos: ["AhAd"],
-        allocation: { check: 8000, bet: 2000 },
-        hypothesis: "对手倾向变化",
-      }),
-    );
-    expect(service.state.solutions[e.variant.id].availability).toBe(
-      "uncovered",
-    );
-    expect(
-      ok(call("experiment_compare", { experimentId: e.ref.id })),
-    ).toHaveProperty("eligible", false);
-    ok(
-      call("experiment_conclude", {
-        experimentId: e.ref.id,
-        conclusion: "当前证据不足",
-      }),
-    );
-    expect(service.state.solutions[solution.ref.id]).toEqual(solution);
-  });
+  // Multiple persisted full-range projections can exceed 5s on Windows storage.
+  it(
+    "separates frequency evaluation, lock constraints, immutable results and hypotheses",
+    { timeout: 15000 },
+    () => {
+      const { call, service } = setup();
+      const s = ok<Situation>(
+        call("situation_create", { preset: "X-BB", nodeId: "f-oop" }),
+      );
+      const p = ok<{ ref: Ref }>(
+        call("policy_edit_batch", { situationId: s.ref.id, reveal: true }),
+      );
+      const fixed = ok<{ ref: Ref }>(
+        call("policy_submit", { policyId: p.ref.id }),
+      );
+      expect(
+        ok<{ distance: number; evLoss: null }>(
+          call("policy_evaluate", { policyId: fixed.ref.id }),
+        ),
+      ).toMatchObject({ distance: 0, evLoss: null });
+      expect(
+        call("policy_edit_batch", { policyId: p.ref.id, patch: [] }),
+      ).toMatchObject({ ok: false });
+      const spec = ok<Spec>(
+        call("analysis_spec_create", { situationId: s.ref.id }),
+      );
+      const solution = ok<SolutionManifest>(
+        call("solution_load", { specId: spec.ref.id }),
+      );
+      const e = ok<{ ref: Ref; variant: Ref }>(
+        call("experiment_create", {
+          baselineId: solution.ref.id,
+          combos: ["AhAd"],
+          allocation: { check: 8000, bet: 2000 },
+          hypothesis: "对手倾向变化",
+        }),
+      );
+      expect(service.state.solutions[e.variant.id].availability).toBe(
+        "uncovered",
+      );
+      expect(
+        ok(call("experiment_compare", { experimentId: e.ref.id })),
+      ).toHaveProperty("eligible", false);
+      ok(
+        call("experiment_conclude", {
+          experimentId: e.ref.id,
+          conclusion: "当前证据不足",
+        }),
+      );
+      expect(service.state.solutions[solution.ref.id]).toEqual(solution);
+    },
+  );
   it("blocks tools and old resource URI during independent attempt, preserves exposure and feedback provenance", () => {
     const { call, service } = setup();
     const s = ok<Situation>(call("situation_create", { nodeId: "f-oop" }));

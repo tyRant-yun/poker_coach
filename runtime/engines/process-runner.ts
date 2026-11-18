@@ -32,6 +32,7 @@ export type EngineRunResult = {
   error?: string;
   native?: { path: string; hash: string; bytes: number };
   summary?: { path: string; hash: string; bytes: number };
+  nodes?: { path: string; hash: string; bytes: number; history: number[] }[];
   cancelLatencyMs?: number;
 };
 
@@ -228,6 +229,12 @@ export function startEngine(
         const report = JSON.parse(readFileSync(summary.path, "utf8")) as {
           engineCommit?: string;
           identity?: unknown;
+          nodes?: {
+            path: number[];
+            file: string;
+            hash: string;
+            bytes: number;
+          }[];
         };
         if (
           report.engineCommit !== engineCommit ||
@@ -235,7 +242,21 @@ export function startEngine(
             JSON.stringify(identity)
         )
           throw Error("artifact identity mismatch");
-        resolveResult({ ...base, status: "completed", native, summary });
+        const paths = [[], [0], [0, 0], [1], [1, 0], [1, 1]];
+        if (!Array.isArray(report.nodes) || report.nodes.length !== 6)
+          throw Error("node index incomplete");
+        const nodes = report.nodes.map((node, index) => {
+          if (
+            node.file !== `node-${index}.json` ||
+            JSON.stringify(node.path) !== JSON.stringify(paths[index])
+          )
+            throw Error("node index mismatch");
+          const page = inspect(node.file);
+          if (page.hash !== node.hash || page.bytes !== node.bytes)
+            throw Error("node hash mismatch");
+          return { ...page, history: node.path };
+        });
+        resolveResult({ ...base, status: "completed", native, summary, nodes });
       } catch (error) {
         resolveResult({ ...base, status: "failed", error: String(error) });
       }

@@ -43,7 +43,13 @@ test(
       const summary = JSON.parse(
         readFileSync(result.summary!.path, "utf8"),
       ) as { nodes: unknown[]; stopReason: string; input: unknown };
-      assert.deepEqual(summary.nodes, []); // Full tree never travels in progress or summary.
+      assert.equal(summary.nodes.length, 6); // Index only; node data lives in independent files.
+      assert.ok(
+        summary.nodes.every(
+          (node) => !Object.hasOwn(node as object, "strategy"),
+        ),
+      );
+      assert.equal(result.nodes?.length, 6);
       assert.equal(summary.stopReason, "iteration-limit");
       // bincode varint u32 marker precedes the logical 0x09f15790 magic.
       assert.deepEqual(

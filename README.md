@@ -1,10 +1,12 @@
 # Riverline Poker Coach — Product Demo
 
-2026-11-18 开发进展：已真实运行固定版本完整引擎，受限 HU 河牌通过 4 个独立数值基准；已实现 Node↔Rust 进程协议并实测取消/中断。UI/MCP 尚未接入真实计算，现有页面仍为 Mock。[实际验证与限制](docs/solver/validation/r1-river-2026-11-18.md)、[运行基准](benchmarks/solver/README.md)、[R2 进程边界](contracts/solver/README.md)。
+真实河牌新入口：`http://127.0.0.1:5173/solver/real`。受限 HU 河牌已完成真实引擎、同一工作区和 MCP 的产品闭环，整版 48 条浏览器旅程通过；见 [R2 实际范围、验收与运行方法](docs/solver/validation/r2-river-delivery-2026-11-18.md)。首次使用真实计算先运行 `npm run solver:build`；原 `/solver` 仍是合成示例工作台。当前只支持 OOP 一个下注尺寸、IP fold/call 的河牌模型；一般河牌树、转牌、翻牌、六人、实验和教学真实消费仍待开发。
+
+2026-11-18 R1 历史检查点：固定版本完整引擎的受限 HU 河牌通过 4 个独立数值基准，完成 Node↔Rust 进程协议与取消/中断验证。当时 UI/MCP 未接入，现已以上方 R2 交付更新。[独立验证与限制](docs/solver/validation/r1-river-2026-11-18.md)、[运行基准](benchmarks/solver/README.md)、[R2 进程边界](contracts/solver/README.md)。
 
 2026-11-18 执行前设计入口：[R1–R3 任务包](docs/solver-real-task-design.md)、[代码库方案](docs/solver-real-codebase-design.md)、[工程规范与验证](docs/solver-real-engineering-standard.md)。复用完整 Rust 引擎，以本地进程接入现有 Node/MCP 服务，先独立验证 HU 河牌，再转牌、翻牌；翻前/六人另验。设计时尚未实施，当前状态以上方实际进展为准。
 
-换设备/换聊天续接：[真实 Solver 开发交接（2026-11-13）](docs/solver-real-engine-handoff-2026-11-13.md)。最新目标已明确转向真实引擎复用与验证；当前真实引擎仍未接入，S1 仅完成 Mock 产品层。
+换设备/换聊天续接：[真实 Solver 开发交接（含 2026-11-18 更新）](docs/solver-real-engine-handoff-2026-11-13.md)。最新实际状态以上方 R2 记录为准；下文 S1/T1/D 系列均为历史 Mock 批次。
 S1 本地 Mock 开发与自动验收已完成（2026-11-13）：[Solver 与范围](http://127.0.0.1:5173/solver) 提供 HU/六人路径、版本编辑、固定分析、实验、教学证据与恢复；UI 和真实 MCP 共用唯一本机服务。105 项状态测试、46 工具实际调用、44 条浏览器旅程及构建通过，详见 [S1 交付记录](docs/solver-s1-delivery.md)。R1–R3 真实引擎未执行。
 
 当前版本：T1 教学升级已完成本地 Demo 验收；原第一版本地 stub/mock Demo 已完成 D01–D08。研究、连续节点、Agent、训练、复盘、备份恢复已连通；扑克数值和推理均为明确标记的合成示例。
@@ -34,7 +36,7 @@ S1 v0.3：[新增约束映射](docs/solver-s1-constraint-mapping.md)、[MCP 与�
 - 手牌行动前复盘、缺失字段确认、提取研究/练习；翻前、三人底池、MTT/ICM 可操作预览。
 - IndexedDB 保存、JSON/Markdown 导出、校验后导入新副本、损坏原件下载、本应用重置与重播。
 
-自定义输入没有配对示例时保留输入并明确未覆盖。无真实 Solver、LLM、规则引擎、支付、认证、云同步或牌桌；无需 API Key。Hero 自定义合法尺度与混合频率按用户要求暂缓，现有范围混频保留。
+旧 Demo 页面中的自定义输入没有配对示例时保留输入并明确未覆盖；求解和推理仍为合成示例。真实 Solver 只按上方 `/solver/real` 已验证范围提供，不以旧六人/教学示例补足能力。没有接入真实 LLM、支付、认证、云同步或牌桌；无需 API Key。旧 Demo Hero 自定义尺度与混频仍按历史范围处理。
 
 ## 运行
 

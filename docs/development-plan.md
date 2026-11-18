@@ -1,5 +1,7 @@
 # Demo 开发计划与当前状态
 
+R2 受限河牌已交付（2026-11-18）：真实计算已接入同一 Node 服务、界面 `/solver/real`、14 个逐业务 MCP 工具及共同范围/备份。固定规格、真实作业、按需组合/聚合、派生范围和恢复闭环已完成，整版 48 条浏览器旅程通过。实际范围、全部检查与下一项见 [R2 交付](solver/validation/r2-river-delivery-2026-11-18.md)。仅支持一个 OOP 下注尺寸、IP fold/call 的 HU 河牌；一般河牌树/转牌/翻牌、六人或教学实验未完成。下文“UI/MCP 未接入”等保留先前检查点。
+
 最新实际进展（2026-11-18）：按序执行已开始。R1 固定成熟引擎与受限 HU 河牌的四个独立数值基准通过，R2-A 进程合同/Node 运行器已实现并实际验证完成、取消和中断。产品 UI/MCP 尚未接真引擎，真实业务规格/发布/恢复仍待 R2-A/B/C；一般 HU 树、转牌/翻牌及 R3 未完成。见 [实际验证记录](solver/validation/r1-river-2026-11-18.md)、[进程边界与续接](../contracts/solver/README.md)。下文“尚未实施”为此前设计时状态。
 
 最新入口（2026-11-18）：用户准备进入真实 Solver 开发，本次要求先完成设计。已形成 [R1–R3 真实任务包](solver-real-task-design.md)、[代码库方案](solver-real-codebase-design.md)、[工程规范与验证](solver-real-engineering-standard.md)。R1 优先验证完整成熟引擎；R2 保留现有 Node/MCP 权威并薄适配 Rust 进程，先河牌后扩街；R3 独立处理翻前和六人。同构预解库列为 R2-I。以上均为待实施设计，未编译、运行或接入真实引擎。

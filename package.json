@@ -19,7 +19,7 @@
     "test:mcp": "node --import tsx --test tests/mcp/*.test.ts",
     "solver:build": "node scripts/solver-tool.mjs build",
     "solver:check": "npm run format:solver:check && node scripts/solver-tool.mjs fmt && node scripts/solver-tool.mjs clippy && node scripts/solver-tool.mjs test",
-    "format:solver:check": "prettier --check contracts/solver/engine.ts runtime/engines/*.ts scripts/solver-tool.mjs scripts/solver-benchmark.mjs scripts/solver-contract.ts tests/solver/*.test.ts",
+    "format:solver:check": "prettier --check contracts/solver/engine.ts src/modules/analysis/real-domain.ts src/modules/analysis/RealAnalysisPage.tsx src/modules/analysis/RealAnalysisPage.module.css runtime/analysis/*.ts runtime/engines/*.ts runtime/mcp.ts scripts/solver-*.mjs scripts/solver-contract.ts tests/solver/*.test.ts tests/mcp/real-*.test.ts tests/journeys/real-solver.spec.ts",
     "test:solver": "node --import tsx --test tests/solver/*.test.ts",
     "solver:contract": "node --import tsx scripts/solver-contract.ts",
     "benchmark:solver:small": "node scripts/solver-benchmark.mjs"

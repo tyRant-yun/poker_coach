@@ -71,6 +71,7 @@ export function App() {
       <Link to="/" className={s.brand}><img src="/riverline.svg" alt="" /><span>riverline<span className={s.brandSub}>POKER STUDY LAB</span></span></Link>
       <div className={s.workspaceLabel}>个人工作空间<span className={s.localBadge}>LOCAL</span></div>
       <nav className={s.nav} aria-label="主导航">
+        <NavLink to="/solver/real" className={({isActive})=>isActive?s.navActive:''}><Icon name="sliders"/>真实 HU 河牌</NavLink>
         <NavLink to="/solver" className={({isActive})=>isActive?s.navActive:''}><Icon name="sliders"/>Solver 与范围 · S1</NavLink>
         <NavLink to="/" end className={({ isActive }) => isActive ? s.navActive : ''}><Icon name="home" />工作台</NavLink>
         <NavLink to="/library" className={({ isActive }) => isActive ? s.navActive : ''}><Icon name="grid" />局面库<span className={s.navCount}>{queries.catalogue().length}</span></NavLink>

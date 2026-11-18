@@ -3,10 +3,12 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { App } from "./app/App";
 import { AnalysisPage } from "./modules/analysis/AnalysisPage";
+import { RealAnalysisPage } from "./modules/analysis/RealAnalysisPage";
 import { LegacyGate } from "./modules/analysis/LegacyGate";
 import "./styles/global.css";
 
 const router = createBrowserRouter([
+  { path: "/solver/real", element: <RealAnalysisPage /> },
   { path: "/solver", element: <AnalysisPage /> },
   {
     path: "*",

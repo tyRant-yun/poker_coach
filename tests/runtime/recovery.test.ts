@@ -113,71 +113,77 @@ it("recovers a torn uncommitted log tail, but refuses corruption in a committed 
     rmSync(directory, { recursive: true, force: true });
   }
 });
-it("caps output, rejects incompatible cursors and cannot pretend an arbitrary lock is a preset", () => {
-  const directory = mkdtempSync(join(tmpdir(), "riverline-constraint-")),
-    service = new AnalysisService(new DiskStore(directory));
-  let n = 0;
-  const call = (tool: string, input: Record<string, unknown> = {}) =>
-    service.execute(tool, {
-      workspaceId: "local",
-      requestId: String(++n),
-      expectedRevision: service.state.revision,
-      ...input,
-    });
-  try {
-    const s = data<Situation>(
-        call("situation_create", { preset: "X-BB", nodeId: "f-response" }),
-      ),
-      spec = data<Spec>(
-        call("analysis_spec_create", { situationId: s.ref.id }),
-      ),
-      m = data<SolutionManifest>(
-        call("solution_load", { specId: spec.ref.id }),
+// This integration case creates multiple persisted full-range projections.
+// Allow filesystem variance without changing its assertions or solver budgets.
+it(
+  "caps output, rejects incompatible cursors and cannot pretend an arbitrary lock is a preset",
+  { timeout: 15000 },
+  () => {
+    const directory = mkdtempSync(join(tmpdir(), "riverline-constraint-")),
+      service = new AnalysisService(new DiskStore(directory));
+    let n = 0;
+    const call = (tool: string, input: Record<string, unknown> = {}) =>
+      service.execute(tool, {
+        workspaceId: "local",
+        requestId: String(++n),
+        expectedRevision: service.state.revision,
+        ...input,
+      });
+    try {
+      const s = data<Situation>(
+          call("situation_create", { preset: "X-BB", nodeId: "f-response" }),
+        ),
+        spec = data<Spec>(
+          call("analysis_spec_create", { situationId: s.ref.id }),
+        ),
+        m = data<SolutionManifest>(
+          call("solution_load", { specId: spec.ref.id }),
+        );
+      const e = data<{ variant: { id: string } }>(
+        call("experiment_create", {
+          baselineId: m.ref.id,
+          preset: "overfold",
+          playerId: "BB",
+          combos: ["AhAd"],
+          allocation: { fold: 1234, call: 8766 },
+        }),
       );
-    const e = data<{ variant: { id: string } }>(
-      call("experiment_create", {
-        baselineId: m.ref.id,
-        preset: "overfold",
-        playerId: "BB",
-        combos: ["AhAd"],
-        allocation: { fold: 1234, call: 8766 },
-      }),
-    );
-    expect(service.state.solutions[e.variant.id].availability).toBe(
-      "uncovered",
-    );
-    const known = data<{ variant: { id: string } }>(
-      call("experiment_create", {
-        baselineId: m.ref.id,
-        preset: "overfold",
-        playerId: "BB",
-        combos: ["AhAd"],
-        allocation: { fold: 8000, call: 2000 },
-      }),
-    );
-    expect(service.state.solutions[known.variant.id].availability).toBe(
-      "available",
-    );
-    const rows = data<{ nextCursor: string }>(
-      call("solution_node_strategy", {
-        solutionId: m.ref.id,
-        nodeId: "f-response",
-        limit: 10,
-      }),
-    );
-    expect(
-      call("solution_node_strategy", {
-        solutionId: m.ref.id,
-        nodeId: "f-response",
-        playerId: "BTN",
-        limit: 10,
-        cursor: rows.nextCursor,
-      }),
-    ).toMatchObject({ ok: false });
-    const raw = service.store.getBytes(m.nodes[0].hash);
-    expect(hash(raw)).toBe(m.nodes[0].hash);
-  } finally {
-    service.close();
-    rmSync(directory, { recursive: true, force: true });
-  }
-});
+      expect(service.state.solutions[e.variant.id].availability).toBe(
+        "uncovered",
+      );
+      const known = data<{ variant: { id: string } }>(
+        call("experiment_create", {
+          baselineId: m.ref.id,
+          preset: "overfold",
+          playerId: "BB",
+          combos: ["AhAd"],
+          allocation: { fold: 8000, call: 2000 },
+        }),
+      );
+      expect(service.state.solutions[known.variant.id].availability).toBe(
+        "available",
+      );
+      const rows = data<{ nextCursor: string }>(
+        call("solution_node_strategy", {
+          solutionId: m.ref.id,
+          nodeId: "f-response",
+          limit: 10,
+        }),
+      );
+      expect(
+        call("solution_node_strategy", {
+          solutionId: m.ref.id,
+          nodeId: "f-response",
+          playerId: "BTN",
+          limit: 10,
+          cursor: rows.nextCursor,
+        }),
+      ).toMatchObject({ ok: false });
+      const raw = service.store.getBytes(m.nodes[0].hash);
+      expect(hash(raw)).toBe(m.nodes[0].hash);
+    } finally {
+      service.close();
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);

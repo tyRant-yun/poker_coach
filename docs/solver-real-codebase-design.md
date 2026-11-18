@@ -2,7 +2,7 @@
 
 日期：2026-11-18。状态：待实施架构决策。配套 [任务包](solver-real-task-design.md)、[工程规范](solver-real-engineering-standard.md)。
 
-执行更新：`engines/postflop`、`runtime/engines/process-runner.ts`、`contracts/solver` 及独立基准已落地；采用、精度和环境见 [实际验证](solver/validation/r1-river-2026-11-18.md)。其余目录与产品接入仍为计划，不能把下文布局当作全已实现。
+执行更新：`engines/postflop`、`runtime/engines/process-runner.ts`、`contracts/solver`、`runtime/analysis` 和真实河牌页面已落地，与原 Node 服务共享工作区。受限模型的实际采用、环境、UI/MCP 和恢复证据见 [R2 交付](solver/validation/r2-river-delivery-2026-11-18.md)。下文更广泛的目录布局仍为计划，不等于全已实现。
 
 ## 1. 采用方式
 

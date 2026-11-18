@@ -3,6 +3,10 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { DiskStore, canonical, hash, ref, emptyState } from "./store.ts";
 import { validateBackupState } from "./validation.ts";
+import { RealAnalysisService } from "./analysis/real-service.ts";
+import { validateRealArtifacts } from "./analysis/native-projection.ts";
+import { realTools } from "../src/modules/analysis/real-domain.ts";
+import type { RealTool } from "../src/modules/analysis/real-domain.ts";
 import { snapshotSchema } from "../src/persistence/schema.ts";
 import {
   allCombos,
@@ -108,6 +112,7 @@ const sensitive = new Set<ToolName>([
   "workspace_export",
 ]);
 export class AnalysisService {
+  readonly real: RealAnalysisService;
   store: DiskStore;
   private workers = new Map<string, ChildProcess>();
   private stopped = false;
@@ -128,6 +133,7 @@ export class AnalysisService {
         changed = true;
       }
     if (changed) store.commit(next);
+    this.real = new RealAnalysisService(store);
   }
   get state() {
     return this.store.state;
@@ -598,6 +604,8 @@ export class AnalysisService {
     worker.send({ outcome: job.outcome, attempt: job.attempt });
   }
   execute(name: string, raw: unknown): Reply {
+    if (Object.hasOwn(realTools, name))
+      return this.real.execute(name as RealTool, raw);
     try {
       if (!Object.hasOwn(tools, name))
         throw new Fault("NOT_FOUND", "未知业务工具");
@@ -614,6 +622,20 @@ export class AnalysisService {
       const input = parsed.data;
       demand(input.workspaceId === this.state.workspaceId, "工作区不匹配");
       this.allowed(this.state, tool);
+      if (tool === "artifact_inspect" && input.artifactId) {
+        const match = /^(.*?)(?:@(\d+))?$/.exec(input.artifactId)!;
+        const realSolution = this.state.real?.solutions[match[1]];
+        if (
+          realSolution &&
+          (!match[2] || realSolution.ref.version === Number(match[2]))
+        )
+          return this.real.execute("real_solution_load", {
+            workspaceId: input.workspaceId,
+            requestId: input.requestId ?? randomUUID(),
+            expectedRevision: input.expectedRevision ?? this.state.revision,
+            solutionId: realSolution.ref.id,
+          });
+      }
       const write = mutations.has(tool);
       if (write) {
         demand(input.requestId, "写操作必须提供 requestId");
@@ -666,8 +688,20 @@ export class AnalysisService {
       )
         verifyTarget(this.state.policies, input.policyId);
       const next = write ? structuredClone(this.state) : this.state;
+      if (
+        ["workspace_import", "workspace_reset"].includes(tool) &&
+        this.real.busy()
+      )
+        throw new Fault(
+          "RESOURCE_LIMIT",
+          "请先取消并确认真实作业停止，再导入或重置工作区",
+        );
       const refs: Ref[] = [];
       const data = this.dispatch(next, tool, input, refs);
+      if (write) {
+        this.real.followRanges(next);
+        if (tool === "workspace_import") this.real.recover(next);
+      }
       const reply: Reply = {
         ok: true,
         contractVersion,
@@ -789,6 +823,7 @@ export class AnalysisService {
           receipts: state.receipts,
           changes: state.changes,
         };
+        delete state.real;
         Object.assign(state, emptyState(state.workspaceId), preserved, {
           exposures: ["reset:unknown"],
         });
@@ -892,6 +927,7 @@ export class AnalysisService {
         };
       case "solver_capabilities":
         return {
+          realEngine: this.real.capabilities(),
           contractVersion,
           dataKind: "synthetic",
           capabilities: [
@@ -2093,6 +2129,9 @@ export class AnalysisService {
           state.attempts,
           state.artifacts,
           state.objects,
+          state.real?.cases ?? {},
+          state.real?.specs ?? {},
+          state.real?.jobs ?? {},
         ]) {
           const key = Object.hasOwn(collection, id)
             ? id
@@ -2328,6 +2367,16 @@ export class AnalysisService {
           );
         }
       }
+      validateRealArtifacts(incoming, (reference) => {
+        const artifact = incoming.artifacts[reference.id];
+        demand(
+          artifact?.ref.contentHash === reference.contentHash,
+          "真实制品引用不匹配",
+        );
+        const bytes = payload.blobs[artifact.hash];
+        demand(bytes !== undefined, "备份缺真实制品");
+        return Buffer.from(bytes, "base64");
+      });
       for (const [digest, bytes] of Object.entries(payload.blobs)) {
         demand(
           this.store.putBytes(Buffer.from(bytes, "base64")).hash === digest,
@@ -2346,6 +2395,7 @@ export class AnalysisService {
           "backup:possible",
         ]),
       ];
+      if (!incoming.real) delete state.real;
       Object.assign(state, incoming, receiptState, {
         exposures,
         independent: undefined,
@@ -2394,15 +2444,40 @@ export class AnalysisService {
   }
   resources(): { uri: string; name: string; mimeType: string }[] {
     if (this.state.independent) return [];
-    return unique(this.state.solutions).map((s) => ({
-      uri: `riverline://${this.state.workspaceId}/solutions/${s.ref.id}/${s.ref.version}/manifest`,
-      name: `${s.ref.id} · 合成结果清单`,
-      mimeType: "application/json",
-    }));
+    return [
+      ...unique(this.state.solutions).map((s) => ({
+        uri: `riverline://${this.state.workspaceId}/solutions/${s.ref.id}/${s.ref.version}/manifest`,
+        name: `${s.ref.id} · 合成结果清单`,
+        mimeType: "application/json",
+      })),
+      ...Object.values(this.state.real?.solutions ?? {}).map((s) => ({
+        uri: `riverline://${this.state.workspaceId}/real-solutions/${s.ref.id}/${s.ref.version}/manifest`,
+        name: `${s.ref.id} · 真实河牌解清单`,
+        mimeType: "application/json",
+      })),
+    ];
   }
   readResource(uri: string): Reply {
     try {
       this.allowed(this.state, "solution_node_strategy");
+      const realMatch =
+        /^riverline:\/\/([^/]+)\/real-solutions\/([^/]+)\/(\d+)\/manifest$/.exec(
+          uri,
+        );
+      if (realMatch) {
+        demand(
+          realMatch[1] === this.state.workspaceId &&
+            this.state.real?.solutions[realMatch[2]]?.ref.version ===
+              Number(realMatch[3]),
+          "无效真实资源引用",
+        );
+        return this.real.execute("real_solution_load", {
+          workspaceId: this.state.workspaceId,
+          requestId: randomUUID(),
+          expectedRevision: this.state.revision,
+          solutionId: realMatch[2],
+        });
+      }
       const match =
         /^riverline:\/\/([^/]+)\/solutions\/([^/]+)\/(\d+)\/manifest$/.exec(
           uri,
@@ -2430,6 +2505,7 @@ export class AnalysisService {
   }
   close() {
     this.stopped = true;
+    this.real.close();
     for (const worker of this.workers.values()) worker.kill();
     this.store.close();
   }

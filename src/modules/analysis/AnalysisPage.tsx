@@ -644,6 +644,21 @@ export function AnalysisPage() {
   });
   return (
     <div className={s.shell}>
+      <a
+        href="/solver/real"
+        style={{
+          position: "fixed",
+          right: 24,
+          top: 10,
+          zIndex: 10,
+          color: "#9de4c3",
+          background: "#203b35",
+          padding: "6px 12px",
+          borderRadius: 6,
+        }}
+      >
+        真实 HU 河牌研究 →
+      </a>
       <aside className={s.sidebar}>
         <a className={s.brand} href="/solver">
           <img src="/riverline.svg" alt="" />

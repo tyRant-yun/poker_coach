@@ -6,6 +6,8 @@
 
 ## 当前开发门
 
+R2 受限河牌交付（2026-11-18）：用户已要求“按计划继续推进”。R2-A/B/C 在 OOP 一个下注尺寸、IP fold/call 的 HU 河牌模型中完成真实应用闭环：`runtime/analysis`、`RealAnalysisPage.tsx`、14 个 `real_*` MCP 工具与可选 `RuntimeState.real`，与 S1 共享唯一服务/范围/版本/制品仓。整版 48 条浏览器旅程通过，实际数值仍按四个独立河牌基准验证；证据、最终检查和限制见 `docs/solver/validation/r2-river-delivery-2026-11-18.md`。Windows Node 24 的 Vite 子进程使用局部兼容启动参数，另排除生成报告/数据/原生目录监听；不能把观察到的退出归因于已证明的上游根因。不要重复实现 R1 或改回 Mock；下一步补齐一般河牌树独立基准/合同，再按依赖推进转牌、翻牌、策略实验、教学消费、同构库及 R3。下方“UI/MCP 未接入”等是先前检查点。
+
 最新执行（2026-11-18）：用户已要求“开始按序执行”，R1→R2→R3 按依赖推进已获授权，不重复询问启动。本批真实复用固定 postflop-solver，R1 对受限 HU 河牌取得四个独立 LP/终局/BR 基准通过证据；R2-A 已实现版本化 Node↔Rust 合同和进程运行器，实际完成/取消/中断已测。UI/MCP 真实业务接入、作业持久化、一般 HU 树、扩街及六人仍未完成；现有产品页面继续为 Mock。实际证据 `docs/solver/validation/r1-river-2026-11-18.md`，协议和续接 `contracts/solver/README.md`。Rust 1.85.1、单线程、bincode rc.3 固定；不要以根目录 cargo 的默认工具链绕过脚本。下一步完成 R2-A 应用层真实规格/错误与逐工具合同，再接 R2-B/C，不重复进行本批基准研究或扩充 Mock。
 
 执行前设计记录（2026-11-18）：用户要求“准备进入真实solver开发。先设计任务，代码库方案以及代码规范方法”。当时仅完成设计，入口为 `docs/solver-real-task-design.md`、`docs/solver-real-codebase-design.md`、`docs/solver-real-engineering-standard.md`。保留 R1–R3，优先完整 postflop-solver 固定版本＋Rust sidecar，现有 Node 服务仍是唯一业务权威；先 R1 独立河牌基准，再 R2 河牌→转牌→翻牌，R3 翻前/六人独立验证，同构预解库为 R2-I。设计时全部真实子任务尚未实施；当前执行状态以上方最新记录为准。

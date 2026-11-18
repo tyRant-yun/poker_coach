@@ -2,7 +2,7 @@
 
 日期：2026-11-18。状态：计划采用，检查命令尚未全部配置。配套 [任务包](solver-real-task-design.md)、[代码库方案](solver-real-codebase-design.md)。
 
-执行更新：Rust 工具链/lock/rustfmt/clippy、独立数值基准、进程真实测试已落地；新增 TS/脚本固定 Prettier 3.6.2 并通过 strict 类型检查。ESLint 及应用层真实合同仍待 R2-A 后续，不能把下文所有拟增脚本当成已经存在。
+执行更新：Rust 工具链/lock/rustfmt/clippy、独立数值基准、真实进程与应用测试、14 个严格业务 MCP 合同和 48 条浏览器旅程已落地；TS/脚本固定 Prettier 3.6.2，通过 strict 类型检查。ESLint 尚未配置，更广的合同、硬资源隔离和扩街测试仍按后续能力推进。实际检查和局限见 [R2 交付](solver/validation/r2-river-delivery-2026-11-18.md)。
 
 ## 1. 每项能力的开发方法
 
