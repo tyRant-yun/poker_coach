@@ -1,26 +1,30 @@
-param([string]$OutputDirectory = '.artifacts/solver/r1')
+param(
+    [string]$OutputDirectory = '.artifacts/solver/r1',
+    [ValidateSet('river-cases.json', 'river-tree-cases.json')][string]$Manifest = 'river-cases.json',
+    [ValidateSet('validate-river', 'validate-river-tree')][string]$Command = 'validate-river'
+)
 $ErrorActionPreference = 'Stop'
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $output = [IO.Path]::GetFullPath((Join-Path $repository $OutputDirectory))
 if (-not $output.StartsWith($repository + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Output must stay inside repository' }
 [IO.Directory]::CreateDirectory($output) | Out-Null
-$manifest = Get-Content (Join-Path $PSScriptRoot 'river-cases.json') -Raw | ConvertFrom-Json
+$caseManifest = Get-Content (Join-Path $PSScriptRoot $Manifest) -Raw | ConvertFrom-Json
 $binary = Join-Path $repository 'engines/postflop/target/release/riverline-solver.exe'
 if (-not (Test-Path -LiteralPath $binary)) { throw 'Build the pinned solver first' }
 $measurements = @()
-foreach ($case in $manifest.cases) {
+foreach ($case in $caseManifest.cases) {
     $inputPath = Join-Path $output ($case.caseId + '.input.json')
     $outputPath = Join-Path $output ($case.caseId + '.output.json')
-    $inputValue = [ordered]@{ schemaVersion = 1 }
+    $inputValue = [ordered]@{ schemaVersion = $caseManifest.schemaVersion }
     foreach ($property in $case.PSObject.Properties) { $inputValue[$property.Name] = $property.Value }
-    $inputValue['limits'] = $manifest.limits
+    $inputValue['limits'] = $caseManifest.limits
     [IO.File]::WriteAllText($inputPath, ($inputValue | ConvertTo-Json -Depth 20))
     $start = [Diagnostics.ProcessStartInfo]::new($binary)
     $start.CreateNoWindow = $true
     $start.UseShellExecute = $false
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
-    foreach ($argument in @('validate-river', $inputPath, $outputPath)) { $start.ArgumentList.Add($argument) }
+    foreach ($argument in @($Command, $inputPath, $outputPath)) { $start.ArgumentList.Add($argument) }
     $process = [Diagnostics.Process]::Start($start)
     $stdout = $process.StandardOutput.ReadToEndAsync()
     $stderr = $process.StandardError.ReadToEndAsync()
@@ -29,7 +33,7 @@ foreach ($case in $manifest.cases) {
     while (-not $process.WaitForExit(5)) {
         $process.Refresh()
         try { $sample = $process.PeakWorkingSet64; if ($sample -gt 0 -and ($null -eq $peak -or $sample -gt $peak)) { $peak = $sample } } catch { }
-        if ($watch.Elapsed.TotalSeconds -gt 610 -or ($null -ne $peak -and $peak -gt 2147483648)) { $process.Kill($true); throw 'Process exceeded R1 time/RSS budget' }
+        if ($watch.Elapsed.TotalSeconds -gt ($caseManifest.limits.maxSeconds + 10) -or ($null -ne $peak -and $peak -gt $caseManifest.limits.maxMemoryBytes)) { $process.Kill($true); throw 'Process exceeded declared benchmark time/RSS budget' }
     }
     $watch.Stop()
     $text = $stdout.GetAwaiter().GetResult()

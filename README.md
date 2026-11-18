@@ -1,5 +1,7 @@
 # Riverline Poker Coach — Product Demo
 
+2026-11-18 后续进展：[一般河牌树独立验证与查询基础](docs/solver/validation/r2-river-tree-2026-11-18.md) 已完成，覆盖双方下注、多尺寸、再加注、全下与锁定的 6 个独立数值问题，提供原生按节点分页读取。当前为内部真实引擎能力，**尚未接入产品 UI/MCP**；下方真实页面仍按单下注受限模型开放。下一项继续接入一般树产品合同与作业服务。
+
 真实河牌新入口：`http://127.0.0.1:5173/solver/real`。受限 HU 河牌已完成真实引擎、同一工作区和 MCP 的产品闭环，整版 48 条浏览器旅程通过；见 [R2 实际范围、验收与运行方法](docs/solver/validation/r2-river-delivery-2026-11-18.md)。首次使用真实计算先运行 `npm run solver:build`；原 `/solver` 仍是合成示例工作台。当前只支持 OOP 一个下注尺寸、IP fold/call 的河牌模型；一般河牌树、转牌、翻牌、六人、实验和教学真实消费仍待开发。
 
 2026-11-18 R1 历史检查点：固定版本完整引擎的受限 HU 河牌通过 4 个独立数值基准，完成 Node↔Rust 进程协议与取消/中断验证。当时 UI/MCP 未接入，现已以上方 R2 交付更新。[独立验证与限制](docs/solver/validation/r1-river-2026-11-18.md)、[运行基准](benchmarks/solver/README.md)、[R2 进程边界](contracts/solver/README.md)。

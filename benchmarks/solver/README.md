@@ -1,5 +1,7 @@
 # R1 独立河牌基准
 
+2026-11-18 扩展：[一般河牌树独立验证与原生查询](../../docs/solver/validation/r2-river-tree-2026-11-18.md)。`npm run benchmark:solver:tree` 运行新增六个固定问题和五项 oracle 自测；`npm run benchmark:solver:small` 保持下文原四个受限问题及两项自测。两套门槛与输入独立保存，一般树尚未开放给 UI/MCP。
+
 固定模型：两名玩家、完整五张公共牌、给定范围的独立权重乘积在合法不重叠私牌上条件化；OOP check 或一个显式下注，IP 面对下注 fold/call，check 后双方摊牌。无抽水、无 raise、无后续价值近似。不能由这些测试宣称全 HU 翻后/翻前/六人已通过。
 
 `river-cases.json` 在第一次基准运行前登记输入、预算与验收门槛。上游算法不修改；Rust 外壳拒绝未覆盖树、非法卡牌、重复组合以及不能精确表示为整数 centibb 的下注。

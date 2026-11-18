@@ -1,5 +1,7 @@
 # R2-A 真实引擎进程边界
 
+一般河牌前置更新（2026-11-18）：新增 `river-tree.ts` 的显式树 schema 2 与原生分页请求/响应 schema，支持内部 `validate-river-tree`/`query-river-tree` 研究命令；六个独立质量问题通过，未改变原 worker、业务 `real-analysis/1` 或产品能力。语义、预算与下一步见 [一般河牌验证](../../docs/solver/validation/r2-river-tree-2026-11-18.md)。生成 schema 由同一 `npm run solver:contract` 更新并测试。
+
 2026-11-18：本目录的 `riverline-engine/1` 已实现并实际调用。公开业务协议仍是 `riverline-analysis/1`，现有 46 个工具仍按 Mock 语义工作；没有将内部引擎操作直接注册成产品 MCP 工具。
 
 R2 产品更新：新增独立 `riverline-real-analysis/1` 业务合同与 `business.schema.json`，由 `src/modules/analysis/real-domain.ts` 生成，14 个逐业务工具通过同一 Node 服务与工作区接入。原 46 工具保留原义，MCP 共公布 60 工具；受限河牌 UI/MCP 与恢复的实际证据见 [R2 交付](../../docs/solver/validation/r2-river-delivery-2026-11-18.md)。引擎控制帧没有直接暴露为产品接口。

@@ -1,0 +1,454 @@
+{
+  "date": "2026-11-18",
+  "parentCommit": "780ff56",
+  "scope": "explicit-HU-river-native-validation-and-node-query-foundation",
+  "status": {
+    "nativeExplicitRiver": "six-independent-cases-verified",
+    "nativeNodeReader": "48-paged-queries-verified",
+    "productGeneralRiver": "not-integrated",
+    "productOriginalRestrictedRiver": "regression-passed",
+    "turn": "not-implemented",
+    "flop": "not-implemented",
+    "preflop": "not-implemented",
+    "sixMax": "not-implemented",
+    "productExperiments": "not-implemented"
+  },
+  "engineCommit": "9d1509fe5077d019825f833eed04b16d342dfda1",
+  "kernelPatches": [],
+  "license": "AGPL-3.0-or-later",
+  "node": "v24.15.0",
+  "rust": "1.85.1",
+  "binarySha256": "3f3a3dafbc0cffe957e1e472c63376cc32e7b02374f24805d45eb350f22bcab6",
+  "cargoLockSha256": "03a223d822f39affd18c1278cbc954ce34f94c2bdac2922a821fec052173070e",
+  "frozenManifestSha256": "6f2587af9412c204174c38ca5cf8f7ac2265cb274aac9696ec35859e38d2e331",
+  "contractHashes": {
+    "river-tree": "707c2cdc3345c5c54fa5f62402b6dffcbd2bb85e481fa8c0fce099b9740aeba4",
+    "native-query": "4f7ab51dd0c5881d090ce11fc63149f7065b5596572b6b6223020b0b53431d3a",
+    "native-page": "08a26339c2ec81ccd4c19f2639c63645574d7ad6a5f802ff55389d65b68ff18b"
+  },
+  "oracleSha256": "b95ff8a595765404514a806f67757284fdece8156e835b7b3528b92c59ab0803",
+  "limits": {
+    "schemaVersion": 2,
+    "maxTreeLines": 128,
+    "maxDepth": 16,
+    "maxIterations": 100000,
+    "maxSeconds": 120,
+    "maxEstimatedEngineBytes": 268435456,
+    "hardRssIsolation": false,
+    "maxPageRows": 100,
+    "maxPageBytes": 1048576,
+    "independentSampleCombosPerPlayer": [
+      2,
+      3
+    ],
+    "normalFormOracleMaxPurePlansPerPlayer": 4096,
+    "normalFormOracleMaxMatrixEntries": 2000000
+  },
+  "verification": {
+    "rustPassed": 10,
+    "nodeApplicationContractProcessCliPassed": 11,
+    "statePassed": 105,
+    "actualMcpSuitesPassed": 5,
+    "productAdvertisedToolsUnchanged": 60,
+    "browserRealJourneysPassed": 4,
+    "full48BrowserSuite": "not-rerun-this-batch-see-parent",
+    "newIndependentCasesPassed": 6,
+    "newOracleSelfTestsPassed": 5,
+    "originalIndependentCasesPassed": 4,
+    "originalOracleSelfTestsPassed": 2,
+    "typecheck": "passed",
+    "build": "passed",
+    "formatClippy": "passed",
+    "diffCheck": "passed"
+  },
+  "summary": {
+    "oracle": "independent-tree+stdlib-hand-enumeration+constrained-normal-form-HiGHS/v1",
+    "thresholds": {
+      "frequencySum": 0.00001,
+      "evBb": 0.00001,
+      "metricBb": 0.00001,
+      "nashConvPotFraction": 0.001,
+      "valuePotFraction": 0.001
+    },
+    "results": [
+      {
+        "caseId": "river-two-sizes-ip-bet",
+        "pass": true,
+        "nodes": 12,
+        "purePlanCounts": [
+          36,
+          64
+        ],
+        "lpValueOopBb": 7.5,
+        "actualValueOopBb": 7.4999999249881935,
+        "constrainedNashConvBb": 0.000019774999980626262,
+        "unconstrainedNashConvBb": 0.000019774999980626262,
+        "locks": 0,
+        "errors": {
+          "ev": 7.000000010748408e-7,
+          "actionEv": 6.99999999298484e-7,
+          "equity": 2.9802322e-8,
+          "conditionalWeights": 1.3332172699165312e-8
+        },
+        "checkedComboNodes": 28,
+        "iterations": 46670,
+        "stopReason": "quality-target",
+        "elapsedMs": 138,
+        "estimatedEngineBytes": 145384
+      },
+      {
+        "caseId": "river-raise-reraise",
+        "pass": true,
+        "nodes": 12,
+        "purePlanCounts": [
+          36,
+          36
+        ],
+        "lpValueOopBb": 6.666666666666668,
+        "actualValueOopBb": 6.666666766646869,
+        "constrainedNashConvBb": 0.000017983332766036142,
+        "unconstrainedNashConvBb": 0.000017983332766036142,
+        "locks": 0,
+        "errors": {
+          "ev": 6.103515600000001e-7,
+          "actionEv": 8.510415403225488e-8,
+          "equity": 8.74774233605713e-9,
+          "conditionalWeights": 9.37054378535862e-9
+        },
+        "checkedComboNodes": 22,
+        "iterations": 35050,
+        "stopReason": "quality-target",
+        "elapsedMs": 129,
+        "estimatedEngineBytes": 145400
+      },
+      {
+        "caseId": "river-ip-bet-blockers",
+        "pass": true,
+        "nodes": 9,
+        "purePlanCounts": [
+          64,
+          16
+        ],
+        "lpValueOopBb": 8.448275862068964,
+        "actualValueOopBb": 8.448276571736745,
+        "constrainedNashConvBb": 0.000013671724422792408,
+        "unconstrainedNashConvBb": 0.000013671724422792408,
+        "locks": 0,
+        "errors": {
+          "ev": 0.0000013600000023927805,
+          "actionEv": 0.000002000000000279556,
+          "equity": 4.714290890994732e-8,
+          "conditionalWeights": 1.9886454094564243e-8
+        },
+        "checkedComboNodes": 30,
+        "iterations": 16190,
+        "stopReason": "quality-target",
+        "elapsedMs": 94,
+        "estimatedEngineBytes": 145180
+      },
+      {
+        "caseId": "river-short-allin-tie",
+        "pass": true,
+        "nodes": 9,
+        "purePlanCounts": [
+          16,
+          9
+        ],
+        "lpValueOopBb": 5.000000000000001,
+        "actualValueOopBb": 5.000000000000001,
+        "constrainedNashConvBb": 0,
+        "unconstrainedNashConvBb": 0,
+        "locks": 0,
+        "errors": {
+          "ev": 0,
+          "actionEv": 0,
+          "equity": 5.551115123125783e-17,
+          "conditionalWeights": 1.1102230246251565e-16
+        },
+        "checkedComboNodes": 12,
+        "iterations": 10,
+        "stopReason": "quality-target",
+        "elapsedMs": 0,
+        "estimatedEngineBytes": 145136
+      },
+      {
+        "caseId": "river-root-mixed-lock",
+        "pass": true,
+        "nodes": 9,
+        "purePlanCounts": [
+          16,
+          16
+        ],
+        "lpValueOopBb": 5.416666666666666,
+        "actualValueOopBb": 5.416666991547762,
+        "constrainedNashConvBb": 0.000011125000000333785,
+        "unconstrainedNashConvBb": 1.2500198124999997,
+        "locks": 1,
+        "errors": {
+          "ev": 8.749999995671942e-7,
+          "actionEv": 5.302729999446008e-7,
+          "equity": 4.007925796800649e-8,
+          "conditionalWeights": 1.124976856115012e-8
+        },
+        "checkedComboNodes": 24,
+        "iterations": 2380,
+        "stopReason": "quality-target",
+        "elapsedMs": 8,
+        "estimatedEngineBytes": 145136
+      },
+      {
+        "caseId": "river-interior-mixed-lock",
+        "pass": true,
+        "nodes": 12,
+        "purePlanCounts": [
+          36,
+          36
+        ],
+        "lpValueOopBb": 6.666666666666667,
+        "actualValueOopBb": 6.666666933307422,
+        "constrainedNashConvBb": 0.00001963333358467878,
+        "unconstrainedNashConvBb": 0.00001963333358467878,
+        "locks": 1,
+        "errors": {
+          "ev": 0.0000011999999998124622,
+          "actionEv": 0.0000011999999998124622,
+          "equity": 1.3750819011226767e-8,
+          "conditionalWeights": 5.6250119007117405e-9
+        },
+        "checkedComboNodes": 22,
+        "iterations": 46550,
+        "stopReason": "quality-target",
+        "elapsedMs": 160,
+        "estimatedEngineBytes": 145400
+      }
+    ]
+  },
+  "query": {
+    "queries": 48,
+    "maxBytes": 482,
+    "unreachableRowsWithNullMetrics": 26,
+    "nativeSha256": "09e6a89789fb7cf0dcd3005f62dc16d4d96e60261dd16c32523c0b20ef9e0edb",
+    "inputSha256": "29dc7df59422dcea54536bc3094cec5210c7901e7843e1153fb312c23118e350"
+  },
+  "execution": {
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "cpu": "Intel(R) Core(TM) i7-14700HX",
+    "physicalMemoryBytes": 16873545728,
+    "threads": 1,
+    "compression": false,
+    "memoryMethod": "Windows process PeakWorkingSet64 polled every 5ms while alive; null if unobserved; one solver process incl serialization/query",
+    "runs": [
+      {
+        "caseId": "river-two-sizes-ip-bet",
+        "wallMs": 177.5771,
+        "observedPeakWorkingSetBytes": 4976640,
+        "binarySha256": "3f3a3dafbc0cffe957e1e472c63376cc32e7b02374f24805d45eb350f22bcab6",
+        "inputSha256": "1ba64734cad8873c88a3967cc9e0e077362eb6cabdc8cef5827545900faacf11",
+        "outputSha256": "d883dd7a0d3dda3885fdd1b13830c352b4d28a2f2c481bf4049cd5522204f99f",
+        "stdout": "{\"ok\":true,\"iterations\":46670,\"nodes\":12}"
+      },
+      {
+        "caseId": "river-raise-reraise",
+        "wallMs": 174.2019,
+        "observedPeakWorkingSetBytes": 4984832,
+        "binarySha256": "3f3a3dafbc0cffe957e1e472c63376cc32e7b02374f24805d45eb350f22bcab6",
+        "inputSha256": "c69e20af935cdff9157943dc062596a2359c2b32e5c3ca76b367c35392b983e4",
+        "outputSha256": "987105eddc9a832465234f318142496bdbe44b40ae6664adfa61d9b1ed679cd7",
+        "stdout": "{\"ok\":true,\"iterations\":35050,\"nodes\":12}"
+      },
+      {
+        "caseId": "river-ip-bet-blockers",
+        "wallMs": 138.1316,
+        "observedPeakWorkingSetBytes": 4976640,
+        "binarySha256": "3f3a3dafbc0cffe957e1e472c63376cc32e7b02374f24805d45eb350f22bcab6",
+        "inputSha256": "92892729ff54fc362f21a73c14563fcce4d966b42c20885a4625f88fc0044377",
+        "outputSha256": "29f64ffa42dd96365121bf49dcb2ff890e11361d352a1dd2d4665cff40eb5373",
+        "stdout": "{\"ok\":true,\"iterations\":16190,\"nodes\":9}"
+      },
+      {
+        "caseId": "river-short-allin-tie",
+        "wallMs": 33.4273,
+        "observedPeakWorkingSetBytes": 2875392,
+        "binarySha256": "3f3a3dafbc0cffe957e1e472c63376cc32e7b02374f24805d45eb350f22bcab6",
+        "inputSha256": "9f9be0dff3ba5f047196632074cead4b0090e25307a090201cd122c669568d4e",
+        "outputSha256": "f2666dfaf811543bedd5004ae99e7e8f28b26b096b6d1c7b8be1236874cd7526",
+        "stdout": "{\"ok\":true,\"iterations\":10,\"nodes\":9}"
+      },
+      {
+        "caseId": "river-root-mixed-lock",
+        "wallMs": 40.9386,
+        "observedPeakWorkingSetBytes": 4993024,
+        "binarySha256": "3f3a3dafbc0cffe957e1e472c63376cc32e7b02374f24805d45eb350f22bcab6",
+        "inputSha256": "1e0722f9d97f93965cd00f8c7bd7fe9d3a4c03872b51d462bd439b37ebb1526d",
+        "outputSha256": "70f5f4b802537a5fc9499ad2d3a4a990d4eed250e470cfedfe5887d92d02d85a",
+        "stdout": "{\"ok\":true,\"iterations\":2380,\"nodes\":9}"
+      },
+      {
+        "caseId": "river-interior-mixed-lock",
+        "wallMs": 194.4344,
+        "observedPeakWorkingSetBytes": 4997120,
+        "binarySha256": "3f3a3dafbc0cffe957e1e472c63376cc32e7b02374f24805d45eb350f22bcab6",
+        "inputSha256": "715bea18858a232fa6587c1af64167e6d7c0dee68fb5cd42e9e413d19bffc782",
+        "outputSha256": "bb2b41420d3d1e8ab8cff25137475d0869389c284d087afc28623badd333ecf7",
+        "stdout": "{\"ok\":true,\"iterations\":46550,\"nodes\":12}"
+      }
+    ]
+  },
+  "originalIndependentRecheck": {
+    "oracle": "stdlib-7card-enumeration+scipy-highs-normal-form-lp+pure-br/v1",
+    "thresholds": {
+      "frequencySum": 0.00001,
+      "terminalEvBb": 0.00001,
+      "nashConvPotFraction": 0.001,
+      "valuePotFraction": 0.001
+    },
+    "results": [
+      {
+        "caseId": "river-polar-pot",
+        "pass": true,
+        "lpValueOopBb": 7.5,
+        "actualValueOopBb": 7.49999999412962,
+        "nashConvBb": 0.00024282499595518203,
+        "terminalMaxErrorBb": 3.7087547433145573e-7,
+        "actionMaxErrorBb": 4.662999991268506e-7,
+        "equityMaxError": 0,
+        "iterations": 100000,
+        "elapsedMs": 123,
+        "stopReason": "iteration-limit",
+        "engineTargetMet": false,
+        "estimatedEngineBytes": 144776,
+        "inputSha256": "069105141cb1466132d3eeb184f90fed9bffddfa56a9d5252e78879822f35aa7"
+      },
+      {
+        "caseId": "river-asymmetric-half",
+        "pass": true,
+        "lpValueOopBb": 8.717948717948708,
+        "actualValueOopBb": 8.717948369240624,
+        "nashConvBb": 0.00001833333333500775,
+        "terminalMaxErrorBb": 0.0000010666670231529451,
+        "actionMaxErrorBb": 8.028975224798462e-7,
+        "equityMaxError": 3.666666664736695e-8,
+        "iterations": 15950,
+        "elapsedMs": 20,
+        "stopReason": "quality-target",
+        "engineTargetMet": true,
+        "estimatedEngineBytes": 144804,
+        "inputSha256": "09dcf92369efaa3d9c49a831974699bbe8a41d5cca43d23f055bbbcce1004622"
+      },
+      {
+        "caseId": "river-blockers",
+        "pass": true,
+        "lpValueOopBb": 9.528571428571432,
+        "actualValueOopBb": 9.528572352816358,
+        "nashConvBb": 0.000007226499999291036,
+        "terminalMaxErrorBb": 6.103515600000001e-7,
+        "actionMaxErrorBb": 7.400000026080988e-7,
+        "equityMaxError": 2.9802322e-8,
+        "iterations": 2070,
+        "elapsedMs": 5,
+        "stopReason": "quality-target",
+        "engineTargetMet": true,
+        "estimatedEngineBytes": 144844,
+        "inputSha256": "30454ca9dc76e91d85b22ed087770fe13f0c7ba816011d35b563795f4d778d70"
+      },
+      {
+        "caseId": "river-board-tie",
+        "pass": true,
+        "lpValueOopBb": 5.000000000000001,
+        "actualValueOopBb": 5.000000000000001,
+        "nashConvBb": 0,
+        "terminalMaxErrorBb": 0,
+        "actionMaxErrorBb": 8.881784197001252e-16,
+        "equityMaxError": 0,
+        "iterations": 10,
+        "elapsedMs": 0,
+        "stopReason": "quality-target",
+        "engineTargetMet": true,
+        "estimatedEngineBytes": 144776,
+        "inputSha256": "159d86fde18806c0ebaa02840925350ec869a727c368fffaf5e3692d3b6777d3"
+      }
+    ]
+  },
+  "browserRegression": {
+    "url": "http://127.0.0.1:5173/solver/real?case=real-case-69abedb9-5794-42f7-b266-404c4c0e1bcb",
+    "case": {
+      "id": "real-case-69abedb9-5794-42f7-b266-404c4c0e1bcb",
+      "version": 1,
+      "kind": "real-case",
+      "contentHash": "231cc6fbffe087feb7425c3554165b39255e59b5e3a0e26edd768d0c2291e4e8"
+    },
+    "solution": {
+      "id": "real-solution-5e741a38-75ee-49c9-9f41-6b71e281e453",
+      "version": 1,
+      "kind": "real-solution",
+      "contentHash": "f2526430e7358718bc5d569d619aaacf79665961f24c20e159596c102c02bc95"
+    },
+    "spec": {
+      "id": "real-spec-76cbeba3-340e-4d60-93a8-64f38672a5dd",
+      "version": 1,
+      "kind": "real-spec",
+      "contentHash": "3f1ff2556139ffc22b035275517cfe3b09bf25428f8e3ea42d561a54c93b8122"
+    },
+    "engineCommit": "9d1509fe5077d019825f833eed04b16d342dfda1",
+    "binaryHash": "3f3a3dafbc0cffe957e1e472c63376cc32e7b02374f24805d45eb350f22bcab6",
+    "native": {
+      "id": "artifact-905fe1f1-b898-43b3-8282-89145d7b1a1c",
+      "version": 1,
+      "kind": "artifact",
+      "contentHash": "f742116b7b173315d15f7a8dec9d29cc288256597df8cce3e0b22b2d7a17c91e"
+    },
+    "tests": [
+      "real-input",
+      "hero",
+      "169-matrix",
+      "derived-range",
+      "refresh",
+      "backup"
+    ]
+  },
+  "localLogs": {
+    ".artifacts/solver/river-tree/final-verification.log": {
+      "sha256": "656ab0a544dacda3e3eef4aba888a05f3ae2efbae3663ec3b16a3e08209cdf94"
+    },
+    ".artifacts/solver/river-tree/final-tests.log": {
+      "sha256": "482bea581249957fc6f894fabd4e46421308054d2a5608237943672511ae0e8b"
+    },
+    ".artifacts/solver/river-tree/product-regression-final.log": {
+      "sha256": "18774aefed3427ddfeb0b57b79fd1d407ed19f787c19c350208733526a7c6e6e"
+    },
+    ".artifacts/solver/river-tree/product-mcp-final.log": {
+      "sha256": "0ea4f556fc6c07016fa9ec3c487ddc0649b1714b4bfc31cd385169120a1357e5"
+    },
+    ".artifacts/solver/river-tree/browser.log": {
+      "sha256": "b39c1d5bb4e08d5440939e11ef03db158a69985fe40433da00125c428ae4a445"
+    },
+    ".artifacts/solver/river-tree/browser-final.log": {
+      "sha256": "13b3ab7cdf638094c397583dee343761d5285984d9dcfbe21a0749143f1c1e55"
+    },
+    ".artifacts/solver/river-tree/browser-isolated.log": {
+      "sha256": "bd2471e870b0e948fa634e66110e796387180b54ff49e7712c1f60dda68774f6"
+    }
+  },
+  "intermediateIssue": {
+    "kind": "legacy-test-false-positive",
+    "symptom": "future-card substring 2c matched a random hand ID",
+    "resolution": "assert full card token boundaries; product information filter unchanged",
+    "final": "105 state tests passed"
+  },
+  "next": "Integrate explicit-tree application contract, real worker and on-demand native reader into the one authoritative workspace; validate fixed versions, derived ranges, MCP/UI handoff, cancellation and backup before turn expansion.",
+  "artifactPolicy": "Summary and hashes tracked; large native blobs, complete outputs, runtime workspaces and logs remain local. Rerun or copy backups separately on a new device.",
+  "frontendStability": {
+    "status": "unresolved",
+    "symptom": "Windows Vite child exited 0xC0000409 again; development launcher then stopped its owned runtime child",
+    "failedRun": "browser-final.log: 4 failed",
+    "isolatedRerun": "browser-isolated.log: 4 passed (23.7s)",
+    "rootCause": "unproven; simultaneous MCP run is an observation, not an established cause",
+    "compatibilityFlags": "existing flags do not fully prevent the failure",
+    "frontendLauncherChangedThisBatch": false
+  },
+  "inputReadBoundaries": {
+    "solveBytes": 1048576,
+    "queryBytes": 16384,
+    "method": "bounded read of at most limit+1 bytes before JSON parsing"
+  }
+}

@@ -1,6 +1,11 @@
 import { writeFileSync } from "node:fs";
 import { z } from "zod";
 import {
+  explicitRiverSchema,
+  nativeQuerySchema,
+  nativePageSchema,
+} from "../contracts/solver/river-tree.ts";
+import {
   realContract,
   realSchemas,
 } from "../src/modules/analysis/real-domain.ts";
@@ -14,6 +19,9 @@ for (const [name, schema] of Object.entries({
   command: engineCommandSchema,
   event: engineEventSchema,
   river: riverInputSchema,
+  "river-tree": explicitRiverSchema,
+  "native-query": nativeQuerySchema,
+  "native-page": nativePageSchema,
 })) {
   writeFileSync(
     new URL(`../contracts/solver/${name}.schema.json`, import.meta.url),

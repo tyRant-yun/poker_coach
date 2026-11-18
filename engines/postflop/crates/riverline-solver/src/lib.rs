@@ -4,6 +4,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashSet};
 use std::time::Instant;
 
+pub mod explicit;
+pub mod native_reader;
+
 pub const ENGINE_COMMIT: &str = "9d1509fe5077d019825f833eed04b16d342dfda1";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -88,6 +91,33 @@ pub fn build(input: &RiverInput) -> Result<PostFlopGame, String> {
                 .into(),
         );
     }
+    let bets = |player: usize| {
+        BetSizeOptions::try_from((
+            input.sizes[player][0].as_str(),
+            input.sizes[player][1].as_str(),
+        ))
+    };
+    // No implicit size merging or automatic all-in additions.
+    let tree = ActionTree::new(TreeConfig {
+        initial_state: BoardState::River,
+        starting_pot: input.pot,
+        effective_stack: input.stack,
+        river_bet_sizes: [bets(0)?, bets(1)?],
+        add_allin_threshold: 0.0,
+        force_allin_threshold: 0.0,
+        merging_threshold: 0.0,
+        ..Default::default()
+    })?;
+    build_with_tree(input, tree)
+}
+
+pub(crate) fn build_with_tree(
+    input: &RiverInput,
+    tree: ActionTree,
+) -> Result<PostFlopGame, String> {
+    if input.pot <= 0 || input.stack <= 0 || input.pot > 1_000_000 || input.stack > 1_000_000 {
+        return Err("unsupported-input: pot/stack outside 1..1000000 centibb".into());
+    }
     if input.limits.max_iterations == 0
         || input.limits.max_iterations > 100_000
         || input.limits.max_seconds == 0
@@ -132,23 +162,6 @@ pub fn build(input: &RiverInput) -> Result<PostFlopGame, String> {
         }
         ranges[player] = Range::from_hands_weights(&hands, &weights)?;
     }
-    let bets = |player: usize| {
-        BetSizeOptions::try_from((
-            input.sizes[player][0].as_str(),
-            input.sizes[player][1].as_str(),
-        ))
-    };
-    // No implicit size merging or automatic all-in additions.
-    let tree = ActionTree::new(TreeConfig {
-        initial_state: BoardState::River,
-        starting_pot: input.pot,
-        effective_stack: input.stack,
-        river_bet_sizes: [bets(0)?, bets(1)?],
-        add_allin_threshold: 0.0,
-        force_allin_threshold: 0.0,
-        merging_threshold: 0.0,
-        ..Default::default()
-    })?;
     let cards = CardConfig {
         range: ranges,
         flop: [board[0], board[1], board[2]],
@@ -235,8 +248,12 @@ pub fn lock(game: &mut PostFlopGame, locks: &[StrategyLock]) -> Result<(), Strin
         let hands = game.private_cards(player);
         let num_actions = game.available_actions().len();
         let mut values = vec![-1.0; hands.len() * num_actions];
+        let mut seen_hands = HashSet::new();
         for (combo, probabilities) in &constraint.allocations {
             let parsed = parse_combo(combo)?;
+            if !seen_hands.insert(parsed) {
+                return Err("unsupported-input: duplicate locked combo alias".into());
+            }
             let i = hands
                 .iter()
                 .position(|&h| h == parsed)
@@ -263,10 +280,10 @@ pub fn lock(game: &mut PostFlopGame, locks: &[StrategyLock]) -> Result<(), Strin
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Report {
+pub struct Report<T = RiverInput> {
     pub engine_commit: String,
     pub algorithm: String,
-    pub input: RiverInput,
+    pub input: T,
     pub iterations: u32,
     pub exploitability: f32,
     pub centered_root_ev: [f32; 2],
@@ -282,30 +299,42 @@ pub struct Report {
 pub fn run(
     input: RiverInput,
     cancelled: impl Fn() -> bool,
-    mut progress: impl FnMut(u32, f32),
+    progress: impl FnMut(u32, f32),
 ) -> Result<(PostFlopGame, Report), String> {
     let start = Instant::now();
-    let mut game = build(&input)?;
+    let game = build(&input)?;
+    let limits = input.limits.clone();
+    let locks = input.locks.clone();
+    run_prepared(input, game, limits, &locks, start, cancelled, progress)
+}
+
+pub(crate) fn run_prepared<T>(
+    input: T,
+    mut game: PostFlopGame,
+    limits: Limits,
+    locks: &[StrategyLock],
+    start: Instant,
+    cancelled: impl Fn() -> bool,
+    mut progress: impl FnMut(u32, f32),
+) -> Result<(PostFlopGame, Report<T>), String> {
     let memory_bytes = game.memory_usage().0;
-    if memory_bytes > input.limits.max_memory_bytes {
+    if memory_bytes > limits.max_memory_bytes {
         return Err("budget-exceeded: estimated allocation".into());
     }
     game.allocate_memory(false);
-    lock(&mut game, &input.locks)?;
+    lock(&mut game, locks)?;
     let mut exploitability = compute_exploitability(&game);
     let mut iterations = 0;
-    while iterations < input.limits.max_iterations
-        && exploitability > input.limits.target_exploitability
-    {
+    while iterations < limits.max_iterations && exploitability > limits.target_exploitability {
         if cancelled() {
             return Err("cancelled".into());
         }
-        if start.elapsed().as_secs() >= input.limits.max_seconds {
+        if start.elapsed().as_secs() >= limits.max_seconds {
             return Err("budget-exceeded: time".into());
         }
         solve_step(&game, iterations);
         iterations += 1;
-        if iterations % 10 == 0 || iterations == input.limits.max_iterations {
+        if iterations % 10 == 0 || iterations == limits.max_iterations {
             exploitability = compute_exploitability(&game);
             progress(iterations, exploitability);
         }
@@ -319,13 +348,13 @@ pub fn run(
         holes_to_strings(game.private_cards(0))?,
         holes_to_strings(game.private_cards(1))?,
     ];
-    let stop_reason = if exploitability <= input.limits.target_exploitability {
+    let stop_reason = if exploitability <= limits.target_exploitability {
         "quality-target"
     } else {
         "iteration-limit"
     }
     .into();
-    let quality_scope = if input.locks.is_empty() {
+    let quality_scope = if locks.is_empty() {
         "unraked-two-player-zero-sum-half-nashconv"
     } else {
         "locked-game-upstream-metric-not-independently-validated"

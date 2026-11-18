@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
+const tree = process.argv.includes("--tree");
 if (process.platform !== "win32")
   throw Error("R1 resource runner currently verified on Windows only");
 const python = path.join(
@@ -15,16 +16,48 @@ if (!existsSync(python))
 const commands = [
   [
     "pwsh",
-    ["-NoProfile", "-File", path.join(root, "benchmarks/solver/run-river.ps1")],
+    [
+      "-NoProfile",
+      "-File",
+      path.join(root, "benchmarks/solver/run-river.ps1"),
+      ...(tree
+        ? [
+            "-OutputDirectory",
+            ".artifacts/solver/river-tree",
+            "-Manifest",
+            "river-tree-cases.json",
+            "-Command",
+            "validate-river-tree",
+          ]
+        : []),
+    ],
   ],
   [
     python,
     [
-      path.join(root, "benchmarks/solver/verify_river.py"),
-      path.join(root, ".artifacts/solver/r1"),
+      path.join(
+        root,
+        tree
+          ? "benchmarks/solver/verify_river_tree.py"
+          : "benchmarks/solver/verify_river.py",
+      ),
+      path.join(
+        root,
+        tree ? ".artifacts/solver/river-tree" : ".artifacts/solver/r1",
+      ),
     ],
   ],
-  [python, [path.join(root, "benchmarks/solver/test_oracle.py")]],
+  [
+    python,
+    [
+      path.join(
+        root,
+        tree
+          ? "benchmarks/solver/test_tree_oracle.py"
+          : "benchmarks/solver/test_oracle.py",
+      ),
+    ],
+  ],
 ];
 for (const [command, args] of commands) {
   const result = spawnSync(command, args, {

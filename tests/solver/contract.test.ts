@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 import {
+  explicitRiverSchema,
+  nativeQuerySchema,
+  nativePageSchema,
+} from "../../contracts/solver/river-tree.ts";
+import {
   realContract,
   realSchemas,
 } from "../../src/modules/analysis/real-domain.ts";
@@ -29,6 +34,9 @@ test("versioned JSON schemas match TS and the golden Rust command", () => {
     command: engineCommandSchema,
     event: engineEventSchema,
     river: riverInputSchema,
+    "river-tree": explicitRiverSchema,
+    "native-query": nativeQuerySchema,
+    "native-page": nativePageSchema,
   })) {
     assert.deepEqual(
       z.toJSONSchema(schema),

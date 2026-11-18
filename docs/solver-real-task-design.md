@@ -1,5 +1,7 @@
 # 真实 Solver 开发任务包 v1
 
+后续执行更新（2026-11-18）：R2-B/C 扩树前置的显式树 schema 2、6 个独立一般河牌基准及原生分页查询已完成，状态为 **内部引擎验证通过、产品接入未完成**，见 [一般河牌报告](solver/validation/r2-river-tree-2026-11-18.md)。下一项继续 B/C 的一般树应用合同、worker 与查询/恢复；再推进 D/E。旧受限产品支持表保持原义。
+
 日期：2026-11-18。执行更新：R1 受限河牌独立验证通过，R2-A/B/C 已完成该受限模型的真实 UI/MCP、作业、查询、派生范围和保存/恢复闭环，48 条浏览器旅程通过。一般河牌树与多街、实验、教学消费、同构库及 R3 仍待实施。实际范围以 [R2 交付报告](solver/validation/r2-river-delivery-2026-11-18.md) 为准，独立数值门槛仍见 [R1](solver/validation/r1-river-2026-11-18.md)。保留既有 R1–R3 编号，不重开 SO01–SO09 Mock 批次。
 
 配套：[代码库方案](solver-real-codebase-design.md)、[工程规范与验证](solver-real-engineering-standard.md)。历史与基线见 [换设备交接](solver-real-engine-handoff-2026-11-13.md)；产品合同继续以 [S1 领域合同](solver-s1-contracts.md)、[唯一运行时/MCP 合同](solver-s1-mcp-runtime.md) 为基础，真实数值字段按本设计演进。

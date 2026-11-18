@@ -1,5 +1,7 @@
 # Solver 真实引擎开发交接
 
+最新续接（2026-11-18，受限产品之后）：已完成 [一般河牌树独立验证与原生查询](solver/validation/r2-river-tree-2026-11-18.md) 和 [机器证据](solver/validation/r2-river-tree-evidence.json)。内部 schema 2 可声明多尺寸、IP 下注、加注/再加注、全下与混合锁定；6 个独立问题、48 次原生单节点分页通过。**尚未接入产品合同/worker/UI/MCP**，真实页面仍是原受限模型。下一项将一般树接入同一应用状态与原生按需读取，替换六节点投影，再验双入口/来源/恢复；不要重复研究这些基准或直接扩街。运行 `npm run benchmark:solver:tree` 可复验，旧 `benchmark:solver:small` 仍复验原 R1。
+
 最新交付（2026-11-18）：受限 HU 河牌已完成真实引擎 UI/MCP 闭环，包括固定输入/范围、原生预检、排队/取消/中断重试、Hero/全范围/派生范围、备份恢复；48 条浏览器旅程通过。新设备先读 [R2 实际交付与运行方法](solver/validation/r2-river-delivery-2026-11-18.md)、[机器证据](solver/validation/r2-river-evidence.json)，再读 [R1 独立数值定义](solver/validation/r1-river-2026-11-18.md)。下一项为一般河牌树独立基准与合同，之后 R2-D 转牌、E 翻牌；实验、教学消费、同构库及 R3 尚未实施。只支持一个 OOP 下注、IP fold/call 的河牌模型，不能以本批覆盖一般 HU 或六人均衡。下文“尚未开发”保留 11 月 13 日事实。
 
 当前真实开发分支为 `codex/solver-real-r1-20261118`，本轮仅本地提交、未推送；下文 `demo/development` 为原归档分支。跨设备恢复前需另行同步本批源码及提交，不能只拉取原分支就认为包含真实引擎。
