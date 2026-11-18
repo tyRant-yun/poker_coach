@@ -6,7 +6,9 @@
 
 ## 当前开发门
 
-最新设计（2026-11-18）：用户要求“准备进入真实solver开发。先设计任务，代码库方案以及代码规范方法”。本次仅完成设计，入口为 `docs/solver-real-task-design.md`、`docs/solver-real-codebase-design.md`、`docs/solver-real-engineering-standard.md`。保留 R1–R3，优先完整 postflop-solver 固定版本＋Rust sidecar，现有 Node 服务仍是唯一业务权威；先 R1 独立河牌基准，再 R2 河牌→转牌→翻牌，R3 翻前/六人独立验证，同构预解库为 R2-I。全部真实子任务尚未实施；不把本次设计写成引擎已运行或接入。后续开发按最新用户执行指令推进，不重复开发 S1 Mock。
+最新执行（2026-11-18）：用户已要求“开始按序执行”，R1→R2→R3 按依赖推进已获授权，不重复询问启动。本批真实复用固定 postflop-solver，R1 对受限 HU 河牌取得四个独立 LP/终局/BR 基准通过证据；R2-A 已实现版本化 Node↔Rust 合同和进程运行器，实际完成/取消/中断已测。UI/MCP 真实业务接入、作业持久化、一般 HU 树、扩街及六人仍未完成；现有产品页面继续为 Mock。实际证据 `docs/solver/validation/r1-river-2026-11-18.md`，协议和续接 `contracts/solver/README.md`。Rust 1.85.1、单线程、bincode rc.3 固定；不要以根目录 cargo 的默认工具链绕过脚本。下一步完成 R2-A 应用层真实规格/错误与逐工具合同，再接 R2-B/C，不重复进行本批基准研究或扩充 Mock。
+
+执行前设计记录（2026-11-18）：用户要求“准备进入真实solver开发。先设计任务，代码库方案以及代码规范方法”。当时仅完成设计，入口为 `docs/solver-real-task-design.md`、`docs/solver-real-codebase-design.md`、`docs/solver-real-engineering-standard.md`。保留 R1–R3，优先完整 postflop-solver 固定版本＋Rust sidecar，现有 Node 服务仍是唯一业务权威；先 R1 独立河牌基准，再 R2 河牌→转牌→翻牌，R3 翻前/六人独立验证，同构预解库为 R2-I。设计时全部真实子任务尚未实施；当前执行状态以上方最新记录为准。
 
 最新续接（2026-11-13）：用户已明确“solver 开发不是 mock 开发”，后续主线为真实成熟引擎的 R1 验证、R2 HU 河牌→转牌→翻牌薄适配，及独立 R3 翻前/六人验证；花色同构预解库仅已讨论。真实引擎和预解库均尚未开发。本次最新动作仅整理并上传换设备交接，入口为 `docs/solver-real-engine-handoff-2026-11-13.md`。下文 Mock 边界描述此前 S1 批次；继续真实开发以最新用户目标和交接为准，其余质量、固定版本、信息边界及不伪造结果约定保持。
 

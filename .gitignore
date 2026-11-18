@@ -21,6 +21,8 @@ Thumbs.db
 .artifacts/
 .tmp/
 *.tsbuildinfo
+**/target/
+__pycache__/
 
 # IDE-local files
 .idea/

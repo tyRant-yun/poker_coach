@@ -2,6 +2,8 @@
 
 日期：2026-11-18。状态：计划采用，检查命令尚未全部配置。配套 [任务包](solver-real-task-design.md)、[代码库方案](solver-real-codebase-design.md)。
 
+执行更新：Rust 工具链/lock/rustfmt/clippy、独立数值基准、进程真实测试已落地；新增 TS/脚本固定 Prettier 3.6.2 并通过 strict 类型检查。ESLint 及应用层真实合同仍待 R2-A 后续，不能把下文所有拟增脚本当成已经存在。
+
 ## 1. 每项能力的开发方法
 
 按“读固定源码→列语义与不变量→准备小输入与独立预期→原生运行→薄适配→业务闭环→异常与资源验证→记录实际支持状态”推进。先为河牌建立可解释的 EV/BR 基准，再扩街；源码阅读、编译、运行、同源对照和独立验证分别记录。
@@ -62,19 +64,16 @@ npm run build
 git diff --check
 ```
 
-拟在 R1/R2 实施后增加（当前尚无这些路径与脚本）：
+本批 R1/R2-A 已增加以下实际入口；从仓库根目录执行，Rust 子目录的工具链由脚本选择：
 
 ```powershell
-cargo fmt --manifest-path engines/postflop/Cargo.toml --all --check
-cargo clippy --manifest-path engines/postflop/Cargo.toml --workspace --all-targets --locked -- -D warnings
-cargo test --manifest-path engines/postflop/Cargo.toml --workspace --locked
-cargo build --manifest-path engines/postflop/Cargo.toml --release --locked
-npm run lint:solver
+npm run solver:build
+npm run solver:check
 npm run test:solver
 npm run benchmark:solver:small
 ```
 
-提交检查跑改动相关的单测、合同和小基准；真实接入/扩街批次完成跑完整既有测试、实际 MCP 和相关浏览器旅程。大树性能基准单独有资源上限，不放在每次保存后的默认测试里。引擎升级、编译/压缩/线程改变或数值偏差出现时重跑受影响基准，不无理由反复跑全套。
+其中 Prettier、Rust 检查、进程合同及小基准已落地；ESLint 与应用层真实业务 schema 尚待后续。独立基准需先准备 Python oracle 环境。提交检查跑改动相关的单测、合同和小基准；真实接入/扩街批次完成跑完整既有测试、实际 MCP 和相关浏览器旅程。大树性能基准单独有资源上限，不放在每次保存后的默认测试里。引擎升级、编译/压缩/线程改变或数值偏差出现时重跑受影响基准，不无理由反复跑全套。
 
 后续 CI 先覆盖 Windows x64 的固定环境，小基准不访问远程服务；下载依赖与真正离线运行区分。依赖锁不能替代源码可获得性，换设备记录取得方法和校验值，必要的可复现依赖归档不含私密数据。
 

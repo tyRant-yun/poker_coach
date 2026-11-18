@@ -1,6 +1,10 @@
 # Solver 真实引擎开发交接
 
-续接更新（2026-11-18）：已按用户“先设计任务、代码库方案及代码规范方法”完成 [真实开发任务包](solver-real-task-design.md)、[代码库方案](solver-real-codebase-design.md)、[工程规范](solver-real-engineering-standard.md)。新设备从三份设计继续，本文仍保存原交接事实；真实引擎和预解库尚未实施。
+最新执行（2026-11-18）：真实引擎已开始开发。已完成固定引擎的受限 HU 河牌独立数值验证、Rust 研究驱动与 Node 进程协议；产品 UI/MCP 尚未接入。新设备先读 [实际验证报告](solver/validation/r1-river-2026-11-18.md) 与 [协议续接](../contracts/solver/README.md)，再按 R2-A/B/C 继续。下文“尚未开发”保留 11 月 13 日事实。
+
+当前真实开发分支为 `codex/solver-real-r1-20261118`，本轮仅本地提交、未推送；下文 `demo/development` 为原归档分支。跨设备恢复前需另行同步本批源码及提交，不能只拉取原分支就认为包含真实引擎。
+
+执行前续接记录（2026-11-18）：按用户“先设计任务、代码库方案及代码规范方法”完成 [真实开发任务包](solver-real-task-design.md)、[代码库方案](solver-real-codebase-design.md)、[工程规范](solver-real-engineering-standard.md)。当时真实引擎和预解库尚未实施，现以本页最上方执行记录为准。
 
 日期：2026-11-13（Asia/Shanghai）。用途：更换设备或更换聊天后继续同一任务。本文记录最新用户意图、实际代码状态及下一步；不会把计划写成已经实现。
 

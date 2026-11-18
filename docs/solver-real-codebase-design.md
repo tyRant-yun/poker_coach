@@ -2,6 +2,8 @@
 
 日期：2026-11-18。状态：待实施架构决策。配套 [任务包](solver-real-task-design.md)、[工程规范](solver-real-engineering-standard.md)。
 
+执行更新：`engines/postflop`、`runtime/engines/process-runner.ts`、`contracts/solver` 及独立基准已落地；采用、精度和环境见 [实际验证](solver/validation/r1-river-2026-11-18.md)。其余目录与产品接入仍为计划，不能把下文布局当作全已实现。
+
 ## 1. 采用方式
 
 继续使用当前仓库，保留 TypeScript/React 产品与唯一 Node 业务服务。增加 Rust 本地可执行进程，依赖完整 postflop-solver。Node 调度任务、校验制品并提交业务状态；Rust 只处理不可变计算输入、求解与查询，不拥有另一套工作区或教学账本。

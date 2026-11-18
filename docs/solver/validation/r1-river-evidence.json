@@ -1,0 +1,146 @@
+{
+  "date": "2026-11-18",
+  "engineCommit": "9d1509fe5077d019825f833eed04b16d342dfda1",
+  "rust": "1.85.1",
+  "features": [
+    "bincode"
+  ],
+  "nativeKernelPatches": [],
+  "cargoLockSha256": "03a223d822f39affd18c1278cbc954ce34f94c2bdac2922a821fec052173070e",
+  "upstreamLicenseSha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0",
+  "sourceArchiveSha256": "11be92079448650db8fde1d5ff14a6d0043cfe7b8061143b627e194d54960055",
+  "verification": {
+    "upstreamPassed": 40,
+    "upstreamIgnored": 4,
+    "rustPassed": 7,
+    "portAndContractPassed": 4,
+    "oracleSelfTestsPassed": 2,
+    "independentCasesPassed": 4,
+    "existingStatePassed": 105,
+    "typecheck": "passed",
+    "build": "passed",
+    "actualProductMcp": "not-integrated",
+    "browserJourneys": "not-run-no-ui-change"
+  },
+  "summary": {
+    "oracle": "stdlib-7card-enumeration+scipy-highs-normal-form-lp+pure-br/v1",
+    "thresholds": {
+      "frequencySum": 0.00001,
+      "terminalEvBb": 0.00001,
+      "nashConvPotFraction": 0.001,
+      "valuePotFraction": 0.001
+    },
+    "results": [
+      {
+        "caseId": "river-polar-pot",
+        "pass": true,
+        "lpValueOopBb": 7.5,
+        "actualValueOopBb": 7.49999999412962,
+        "nashConvBb": 0.00024282499595518203,
+        "terminalMaxErrorBb": 3.7087547433145573e-7,
+        "actionMaxErrorBb": 4.662999991268506e-7,
+        "equityMaxError": 0,
+        "iterations": 100000,
+        "elapsedMs": 59,
+        "stopReason": "iteration-limit",
+        "engineTargetMet": false,
+        "estimatedEngineBytes": 144776,
+        "inputSha256": "069105141cb1466132d3eeb184f90fed9bffddfa56a9d5252e78879822f35aa7"
+      },
+      {
+        "caseId": "river-asymmetric-half",
+        "pass": true,
+        "lpValueOopBb": 8.717948717948708,
+        "actualValueOopBb": 8.717948369240624,
+        "nashConvBb": 0.00001833333333500775,
+        "terminalMaxErrorBb": 0.0000010666670231529451,
+        "actionMaxErrorBb": 8.028975224798462e-7,
+        "equityMaxError": 3.666666664736695e-8,
+        "iterations": 15950,
+        "elapsedMs": 9,
+        "stopReason": "quality-target",
+        "engineTargetMet": true,
+        "estimatedEngineBytes": 144804,
+        "inputSha256": "09dcf92369efaa3d9c49a831974699bbe8a41d5cca43d23f055bbbcce1004622"
+      },
+      {
+        "caseId": "river-blockers",
+        "pass": true,
+        "lpValueOopBb": 9.528571428571432,
+        "actualValueOopBb": 9.528572352816358,
+        "nashConvBb": 0.000007226499999291036,
+        "terminalMaxErrorBb": 6.103515600000001e-7,
+        "actionMaxErrorBb": 7.400000026080988e-7,
+        "equityMaxError": 2.9802322e-8,
+        "iterations": 2070,
+        "elapsedMs": 2,
+        "stopReason": "quality-target",
+        "engineTargetMet": true,
+        "estimatedEngineBytes": 144844,
+        "inputSha256": "30454ca9dc76e91d85b22ed087770fe13f0c7ba816011d35b563795f4d778d70"
+      },
+      {
+        "caseId": "river-board-tie",
+        "pass": true,
+        "lpValueOopBb": 5.000000000000001,
+        "actualValueOopBb": 5.000000000000001,
+        "nashConvBb": 0,
+        "terminalMaxErrorBb": 0,
+        "actionMaxErrorBb": 8.881784197001252e-16,
+        "equityMaxError": 0,
+        "iterations": 10,
+        "elapsedMs": 0,
+        "stopReason": "quality-target",
+        "engineTargetMet": true,
+        "estimatedEngineBytes": 144776,
+        "inputSha256": "159d86fde18806c0ebaa02840925350ec869a727c368fffaf5e3692d3b6777d3"
+      }
+    ]
+  },
+  "execution": {
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "cpu": "Intel(R) Core(TM) i7-14700HX",
+    "physicalMemoryBytes": 16873545728,
+    "threads": 1,
+    "compression": false,
+    "memoryMethod": "Windows process PeakWorkingSet64 polled every 5ms while alive; null if unobserved; one solver process incl serialization/query",
+    "runs": [
+      {
+        "caseId": "river-polar-pot",
+        "wallMs": 76.1689,
+        "observedPeakWorkingSetBytes": 4689920,
+        "binarySha256": "92fc5c9c6dbf9e696986995f031f22731952133bf372f80b60dec7c241b85791",
+        "inputSha256": "10044d67ccd62a686efe4c3a9a0a8b4d62a6e08597c8b4ee10dec2a153839fa2",
+        "outputSha256": "f34fb772598be12820f18fd7fdaf59ea04e7fd2f0d5a546c20b8182947205e81",
+        "stdout": "{\"ok\":true,\"iterations\":100000,\"exploitability\":0.012191772}"
+      },
+      {
+        "caseId": "river-asymmetric-half",
+        "wallMs": 23.9815,
+        "observedPeakWorkingSetBytes": 4694016,
+        "binarySha256": "92fc5c9c6dbf9e696986995f031f22731952133bf372f80b60dec7c241b85791",
+        "inputSha256": "c0d27f32d9e7f4b4e4fc8f880684b9f87c8448471ab501f980d2e10103ff2cb0",
+        "outputSha256": "fd8e7bed87539d544c9c66709ec689682afc35c866199152c3bcbf87b763a6d0",
+        "stdout": "{\"ok\":true,\"iterations\":15950,\"exploitability\":0.00093078613}"
+      },
+      {
+        "caseId": "river-blockers",
+        "wallMs": 20.9076,
+        "observedPeakWorkingSetBytes": 4694016,
+        "binarySha256": "92fc5c9c6dbf9e696986995f031f22731952133bf372f80b60dec7c241b85791",
+        "inputSha256": "9c6415304b21a9751f388929cc5f0242c9f75cafa1fc2cd3672fb5b59ff2c6c2",
+        "outputSha256": "1d5ede464a8b6c1d8e5c94de1bbfb232daa5aa5c0a9c7c76e248f083f69e9690",
+        "stdout": "{\"ok\":true,\"iterations\":2070,\"exploitability\":0.00036621094}"
+      },
+      {
+        "caseId": "river-board-tie",
+        "wallMs": 14.5712,
+        "observedPeakWorkingSetBytes": null,
+        "binarySha256": "92fc5c9c6dbf9e696986995f031f22731952133bf372f80b60dec7c241b85791",
+        "inputSha256": "6f2b0d4154614e2eaf5f5ed1981d983092613ad72090d669bc7a0e73ec9cd3fd",
+        "outputSha256": "a85c4908513582940b9c43401a7517601cb6b826c60e7caf62f7d202231e0c33",
+        "stdout": "{\"ok\":true,\"iterations\":10,\"exploitability\":0}"
+      }
+    ]
+  }
+}

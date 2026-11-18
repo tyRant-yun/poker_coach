@@ -1,0 +1,209 @@
+//! Bounded process protocol. Only the parent publishes business artifacts.
+use riverline_solver::{run, RiverInput, ENGINE_COMMIT};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::fs;
+use std::io::{self, BufRead, Read, Write};
+use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+
+const MAX_FRAME: u64 = 262144;
+const PROTOCOL: &str = "riverline-engine/1";
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct Identity {
+    request_id: String,
+    job_id: String,
+    attempt: u32,
+    spec_hash: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct Command {
+    protocol_version: String,
+    operation: String,
+    identity: Identity,
+}
+
+fn read_command(reader: &mut impl BufRead) -> Result<Option<Command>, String> {
+    let mut bytes = vec![];
+    let read = reader
+        .take(MAX_FRAME + 1)
+        .read_until(b'\n', &mut bytes)
+        .map_err(|e| e.to_string())?;
+    if read == 0 {
+        return Ok(None);
+    }
+    if read as u64 > MAX_FRAME || bytes.last() != Some(&b'\n') {
+        return Err("protocol-error: overlong/incomplete frame".into());
+    }
+    let command: Command =
+        serde_json::from_slice(&bytes).map_err(|e| format!("protocol-error: {e}"))?;
+    if command.protocol_version != PROTOCOL
+        || command.identity.attempt == 0
+        || command.identity.spec_hash.len() != 64
+        || !command
+            .identity
+            .spec_hash
+            .bytes()
+            .all(|c| c.is_ascii_hexdigit())
+        || [&command.identity.job_id, &command.identity.request_id]
+            .iter()
+            .any(|s| {
+                s.is_empty()
+                    || s.len() > 128
+                    || !s
+                        .bytes()
+                        .all(|c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_')
+            })
+    {
+        return Err("protocol-error: invalid identity or version".into());
+    }
+    Ok(Some(command))
+}
+
+fn emit(
+    kind: &str,
+    identity: Option<&Identity>,
+    seq: u32,
+    payload: serde_json::Value,
+) -> Result<(), String> {
+    let event = serde_json::json!({"protocolVersion": PROTOCOL, "kind":kind, "identity":identity, "seq":seq, "payload":payload});
+    let mut output = io::stdout().lock();
+    serde_json::to_writer(&mut output, &event).map_err(|e| e.to_string())?;
+    output.write_all(b"\n").map_err(|e| e.to_string())?;
+    output.flush().map_err(|e| e.to_string())
+}
+
+pub fn serve(directory: &Path) -> Result<(), String> {
+    let directory = directory.canonicalize().map_err(|e| e.to_string())?;
+    let input_path = directory.join("input.json");
+    let native_path = directory.join("solution.bin");
+    let summary_path = directory.join("summary.json");
+    let metadata = fs::symlink_metadata(&input_path).map_err(|e| e.to_string())?;
+    if !metadata.is_file()
+        || metadata.file_type().is_symlink()
+        || metadata.len() > 1024 * 1024
+        || fs::symlink_metadata(&native_path).is_ok()
+        || fs::symlink_metadata(&summary_path).is_ok()
+    {
+        return Err("artifact-error: unsafe input or existing output".into());
+    }
+    emit(
+        "hello",
+        None,
+        0,
+        serde_json::json!({"engineCommit":ENGINE_COMMIT,"algorithmId":"upstream-dcfr-gamma3-v1","features":["bincode"],"resume":false}),
+    )?;
+    let stdin = io::stdin();
+    let first = read_command(&mut stdin.lock())?.ok_or("protocol-error: missing start")?;
+    if first.operation != "solve" {
+        return Err("protocol-error: first command must solve".into());
+    }
+    let bytes = fs::read(input_path).map_err(|e| e.to_string())?;
+    if format!("{:x}", Sha256::digest(&bytes)) != first.identity.spec_hash {
+        return Err("artifact-error: input hash mismatch".into());
+    }
+    let input: RiverInput = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let invalid = Arc::new(AtomicBool::new(false));
+    let reader_cancelled = Arc::clone(&cancelled);
+    let reader_invalid = Arc::clone(&invalid);
+    let identity = first.identity;
+    let reader_identity = identity.clone();
+    std::thread::spawn(move || {
+        let mut reader = io::stdin().lock();
+        match read_command(&mut reader) {
+            Ok(Some(command))
+                if command.operation == "cancel" && command.identity == reader_identity =>
+            {
+                reader_cancelled.store(true, Ordering::SeqCst);
+            }
+            Ok(None) => {
+                reader_cancelled.store(true, Ordering::SeqCst);
+            }
+            _ => {
+                reader_invalid.store(true, Ordering::SeqCst);
+                reader_cancelled.store(true, Ordering::SeqCst);
+            }
+        }
+    });
+    let mut seq = 1;
+    emit("started", Some(&identity), seq, serde_json::json!({}))?;
+    seq += 1;
+    let result = run(
+        input,
+        || cancelled.load(Ordering::SeqCst),
+        |iterations, exploitability| {
+            // At most 100 progress frames for the current 100000-iteration cap.
+            if iterations % 1000 == 0 {
+                if emit("progress", Some(&identity), seq, serde_json::json!({"iterations":iterations,"exploitability":exploitability,"unit":"centibb"})).is_err() { cancelled.store(true, Ordering::SeqCst); }
+                seq += 1;
+            }
+        },
+    );
+    if invalid.load(Ordering::SeqCst) {
+        emit(
+            "failed",
+            Some(&identity),
+            seq,
+            serde_json::json!({"code":"protocol-error"}),
+        )?;
+        return Ok(());
+    }
+    match result {
+        Err(message) => emit(
+            if message == "cancelled" {
+                "cancelled"
+            } else {
+                "failed"
+            },
+            Some(&identity),
+            seq,
+            serde_json::json!({"message":message}),
+        ),
+        Ok((game, report)) => {
+            if cancelled.load(Ordering::SeqCst) {
+                return emit("cancelled", Some(&identity), seq, serde_json::json!({}));
+            }
+            postflop_solver::save_data_to_file(&game, "riverline-engine/1", &native_path, None)?;
+            let mut summary = serde_json::to_value(report).map_err(|e| e.to_string())?;
+            summary["identity"] = serde_json::to_value(&identity).map_err(|e| e.to_string())?;
+            fs::write(
+                &summary_path,
+                serde_json::to_vec(&summary).map_err(|e| e.to_string())?,
+            )
+            .map_err(|e| e.to_string())?;
+            // Cancellation arriving after publication staging is resolved by the Node transaction.
+            emit(
+                "completed",
+                Some(&identity),
+                seq,
+                serde_json::json!({"nativeFile":"solution.bin","summaryFile":"summary.json"}),
+            )
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shared_golden_and_malformed_frames() {
+        let golden = include_str!("../../../../../contracts/solver/examples/solve.json");
+        let mut value: serde_json::Value = serde_json::from_str(golden).unwrap();
+        let line = serde_json::to_string(&value).unwrap() + "\n";
+        let command = read_command(&mut line.as_bytes()).unwrap().unwrap();
+        assert_eq!(command.operation, "solve");
+        value["extra"] = true.into();
+        assert!(
+            read_command(&mut (serde_json::to_string(&value).unwrap() + "\n").as_bytes()).is_err()
+        );
+        assert!(read_command(&mut b"{}".as_slice()).is_err());
+        assert!(read_command(&mut vec![b' '; MAX_FRAME as usize + 1].as_slice()).is_err());
+    }
+}
