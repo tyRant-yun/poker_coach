@@ -1,4 +1,4 @@
-use riverline_solver::explicit::{run_explicit, ExplicitRiverInput};
+use riverline_solver::explicit::{build_explicit, run_explicit, ExplicitRiverInput};
 use riverline_solver::{collect, run, RiverInput};
 use std::io::Read;
 use std::{env, fs, process};
@@ -43,7 +43,22 @@ fn execute() -> Result<(), String> {
         return Ok(());
     }
     if args.len() == 3 && args[1] == "worker" {
-        return worker::serve(std::path::Path::new(&args[2]));
+        return worker::serve(std::path::Path::new(&args[2]), false);
+    }
+    if args.len() == 3 && args[1] == "worker-tree" {
+        return worker::serve(std::path::Path::new(&args[2]), true);
+    }
+    if args.len() == 3 && args[1] == "preflight-river-tree" {
+        let bytes = read_bounded(&args[2], 1024 * 1024)?;
+        let input: ExplicitRiverInput =
+            serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+        let game = build_explicit(&input)?;
+        let memory = game.memory_usage().0;
+        if memory > input.limits.max_memory_bytes {
+            return Err("budget-exceeded: memory".into());
+        }
+        println!("{{\"ok\":true,\"estimatedBytes\":{memory}}}");
+        return Ok(());
     }
     if args.len() == 4 && args[1] == "validate-river-tree" {
         let bytes = read_bounded(&args[2], 1024 * 1024)?;

@@ -8,6 +8,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { startRuntime } from "../../runtime/server.ts";
 import { tools } from "../../src/modules/analysis/domain.ts";
+import { gameTools } from "../../src/modules/play/domain.ts";
 import { realTools } from "../../src/modules/analysis/real-domain.ts";
 import type {
   Reply,
@@ -101,7 +102,11 @@ test(
       const list = await client.listTools();
       assert.deepEqual(
         new Set(list.tools.map((t) => t.name)),
-        new Set([...Object.keys(tools),...Object.keys(realTools)]),
+        new Set([
+          ...Object.keys(tools),
+          ...Object.keys(realTools),
+          ...Object.keys(gameTools),
+        ]),
       );
       const capabilities = await call<{ capabilities: unknown[] }>(
         "solver_capabilities",

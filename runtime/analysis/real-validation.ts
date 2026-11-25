@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { hash } from "../store.ts";
-import { realStateSchema } from "../../src/modules/analysis/real-domain.ts";
+import {
+  caseTreeSchema,
+  realStateSchema,
+} from "../../src/modules/analysis/real-domain.ts";
 import type { RuntimeState, Ref } from "../../src/modules/analysis/domain.ts";
 
 export function validateRealState(s: RuntimeState) {
@@ -35,6 +38,7 @@ export function validateRealState(s: RuntimeState) {
       betPercent: z.string(),
       ranges: z.array(z.unknown()).length(2),
     }).parse(c);
+    if (c.tree) caseTreeSchema.parse(c.tree);
     c.ranges.forEach((r) => fixed(s.ranges, r));
   }
   for (const spec of Object.values(s.real.specs)) {
@@ -63,7 +67,9 @@ export function validateRealState(s: RuntimeState) {
     fixed(s.real.specs, solution.spec);
     if (
       solution.dataKind !== "engine-computed" ||
-      solution.nodes.length !== 6 ||
+      (solution.queryModel === "native-paged/2"
+        ? solution.nodes.length !== 0
+        : solution.queryModel !== undefined || solution.nodes.length !== 6) ||
       solution.engineCommit !== "9d1509fe5077d019825f833eed04b16d342dfda1"
     )
       throw Error("真实解能力或版本不匹配");

@@ -4,6 +4,9 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { DiskStore, hash, ref } from "../store.ts";
+import { NativeNodeCache } from "../engines/native-access.ts";
+import { explicitRiverSchema } from "../../contracts/solver/river-tree.ts";
+import type { ExplicitRiverInput } from "../../contracts/solver/river-tree.ts";
 import { startEngine } from "../engines/process-runner.ts";
 import { validateNode, validateRealArtifacts } from "./native-projection.ts";
 import type { NativeNode } from "./native-projection.ts";
@@ -91,6 +94,7 @@ const demand = (condition: unknown, code: string, message: string) => {
 export class RealAnalysisService {
   private active?: { jobId: string; run: ReturnType<typeof startEngine> };
   private stopped = false;
+  private nativeNodes = new NativeNodeCache();
   constructor(private store: DiskStore) {
     mkdirSync(join(store.directory, "real-jobs"), { recursive: true });
     mkdirSync(join(store.directory, "real-preflight"), { recursive: true });
@@ -135,12 +139,12 @@ export class RealAnalysisService {
       engineCommit,
       installed: existsSync(binary),
       model:
-        "HU river: OOP check/single bet; IP check or fold/call; no raise/rake/bunching",
+        "HU river: explicit discrete bet/raise/all-in trees or legacy single bet; no rake/bunching/locks",
       capabilities: [
         { id: "HU-preflop", status: "unsupported" },
         {
           id: "HU-postflop",
-          status: "verified-restricted-river",
+          status: "verified-explicit-river",
           streets: ["river"],
         },
         { id: "6max-preflop", status: "unsupported" },
@@ -151,6 +155,11 @@ export class RealAnalysisService {
         computeSlots: 1,
         queued: 4,
         positiveCombosPerPlayer: 200,
+        explicitTreeLines: 32,
+        treeLineDepth: 12,
+        queryPathDepth: 16,
+        nativeQuerySlots: 2,
+        cachedNodes: 8,
         queryPage: 200,
         maxIterations: 100000,
         memoryEstimateBytes: 268435456,
@@ -191,14 +200,20 @@ export class RealAnalysisService {
     s.artifacts[a.ref.id] = a;
     return a.ref;
   }
-  private input(s: RuntimeState, spec: RealSpec): RiverInput {
+  private input(
+    s: RuntimeState,
+    spec: RealSpec,
+  ): RiverInput | ExplicitRiverInput {
     const a = getFixed(s.artifacts, spec.input);
     demand(
       a.hash === spec.inputHash,
       "ARTIFACT_INCOMPLETE",
       "规格输入指纹不匹配",
     );
-    return riverInputSchema.parse(this.artifact(s, spec.input));
+    const raw = this.artifact<{ schemaVersion: number }>(s, spec.input);
+    return raw.schemaVersion === 2
+      ? explicitRiverSchema.parse(raw)
+      : riverInputSchema.parse(raw);
   }
   private preflight(s: RuntimeState, spec: RealSpec) {
     const input = this.input(s, spec);
@@ -230,12 +245,19 @@ export class RealAnalysisService {
       "ARTIFACT_INCOMPLETE",
       "预检输入损坏",
     );
-    const result = spawnSync(binary, ["preflight-river", path], {
-      windowsHide: true,
-      encoding: "utf8",
-      timeout: 5000,
-      maxBuffer: 65536,
-    });
+    const result = spawnSync(
+      binary,
+      [
+        input.schemaVersion === 2 ? "preflight-river-tree" : "preflight-river",
+        path,
+      ],
+      {
+        windowsHide: true,
+        encoding: "utf8",
+        timeout: 5000,
+        maxBuffer: 65536,
+      },
+    );
     if (result.status !== 0)
       return {
         supported: false,
@@ -268,6 +290,73 @@ export class RealAnalysisService {
           ref: ref("real-case", next, old.id, old.version + 1),
         });
       }
+    }
+  }
+  async executeAsync(name: RealTool, raw: unknown): Promise<Reply> {
+    try {
+      const parsed = realSchemas[name].safeParse(raw);
+      if (
+        !parsed.success ||
+        parsed.data.workspaceId !== this.store.state.workspaceId ||
+        this.store.state.independent
+      )
+        return this.execute(name, raw);
+      if (
+        !realReadTools.has(name) &&
+        this.store.state.receipts[`${name}:${parsed.data.requestId}`]
+      )
+        return this.execute(name, raw);
+      if (
+        [
+          "real_solution_query",
+          "real_range_aggregate",
+          "real_range_derive",
+        ].includes(name)
+      ) {
+        const args = parsed.data as RealInputs["real_solution_query"];
+        const solution = this.find(
+          this.store.state,
+          "solutions",
+          args.solutionId,
+        );
+        if (solution.queryModel === "native-paged/2") {
+          const spec = getFixed(this.store.state.real!.specs, solution.spec),
+            native = getFixed(this.store.state.artifacts, solution.native);
+          const summary = this.artifact<{ privateCards: [string[], string[]] }>(
+            this.store.state,
+            solution.summary,
+          );
+          await this.nativeNodes.prepare(
+            {
+              bytes: this.store.getBytes(native.hash),
+              nativeHash: native.hash,
+              inputHash: spec.inputHash,
+              counts: solution.handCounts,
+              cards: summary.privateCards,
+            },
+            args.path,
+          );
+        }
+      }
+      // Recheck current identity, permissions and revisions after the external reader returns.
+      return this.execute(name, raw);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const code =
+        error instanceof RealFault
+          ? error.code
+          : ([
+              "RESOURCE_LIMIT",
+              "UNSUPPORTED_INPUT",
+              "ARTIFACT_INCOMPLETE",
+            ].find((c) => message.includes(c)) ?? "ARTIFACT_INCOMPLETE");
+      return {
+        ok: false,
+        code,
+        message,
+        currentRevision: this.store.state.revision,
+        retryable: code === "RESOURCE_LIMIT",
+      };
     }
   }
   execute(name: RealTool, raw: unknown): Reply {
@@ -470,6 +559,7 @@ export class RealAnalysisService {
           pot: a.pot,
           stack: a.stack,
           betPercent: a.betPercent,
+          ...(a.tree ? { tree: a.tree } : {}),
           ranges,
         };
         const c = { ...payload, ref: ref("real-case", payload) };
@@ -495,6 +585,8 @@ export class RealAnalysisService {
             ),
           ),
         };
+        if (a.tree === null) delete next.tree;
+        else if (a.tree) next.tree = a.tree;
         demand(
           !(a.rangeIds && a.ranges),
           "VALIDATION_ERROR",
@@ -558,8 +650,7 @@ export class RealAnalysisService {
         const a = parse(name),
           c = this.find(s, "cases", a.caseId),
           ranges = c.ranges.map((r) => getFixed(s.ranges, r));
-        const input = riverInputSchema.parse({
-          schemaVersion: 1,
+        const commonInput = {
           caseId: c.ref.id,
           board: c.board,
           pot: c.pot,
@@ -569,10 +660,6 @@ export class RealAnalysisService {
               Object.entries(r.weights).map(([k, v]) => [k, v / 10000]),
             ),
           ),
-          sizes: [
-            [`${c.betPercent}%`, ""],
-            ["", ""],
-          ],
           limits: {
             maxIterations: a.maxIterations,
             targetExploitability: (c.pot * a.targetNashConvPotFraction) / 2,
@@ -580,7 +667,21 @@ export class RealAnalysisService {
             maxSeconds: 120,
           },
           locks: [],
-        });
+        };
+        const input = c.tree
+          ? explicitRiverSchema.parse({
+              ...commonInput,
+              schemaVersion: 2,
+              treeLines: c.tree.lines,
+            })
+          : riverInputSchema.parse({
+              ...commonInput,
+              schemaVersion: 1,
+              sizes: [
+                [`${c.betPercent}%`, ""],
+                ["", ""],
+              ],
+            });
         const bytes = Buffer.from(JSON.stringify(input)),
           inputRef = this.put(s, bytes),
           payload = {
@@ -592,8 +693,8 @@ export class RealAnalysisService {
               c.board,
               c.pot,
               c.stack,
-              c.betPercent,
-              "river-check-bet-call/v1",
+              c.tree ?? c.betPercent,
+              c.tree ? "explicit-river/v2" : "river-check-bet-call/v1",
             ]),
             targetNashConvPotFraction: a.targetNashConvPotFraction,
             engineCommit,
@@ -786,6 +887,20 @@ export class RealAnalysisService {
     solution: RealSolution,
     path: number[],
   ): NativeNode {
+    if (solution.queryModel === "native-paged/2") {
+      const spec = getFixed(this.state(s).specs, solution.spec),
+        native = getFixed(s.artifacts, solution.native);
+      const node = this.nativeNodes.get(
+        { nativeHash: native.hash, inputHash: spec.inputHash },
+        path,
+      );
+      demand(
+        node,
+        "NATIVE_QUERY_REQUIRED",
+        "原生节点尚未准备，请通过异步应用入口读取",
+      );
+      return node!;
+    }
     const page = solution.nodes.find(
       (n) => JSON.stringify(n.path) === JSON.stringify(path),
     );
@@ -841,7 +956,7 @@ export class RealAnalysisService {
       };
     });
     const returned =
-      page.terminal && path[0] === 1 && path[1] === 0
+      page.terminal && page.invested[0] !== page.invested[1]
         ? [
             Math.max(0, page.invested[0] - page.invested[1]),
             Math.max(0, page.invested[1] - page.invested[0]),
@@ -930,7 +1045,7 @@ export class RealAnalysisService {
                 exploitability: number;
                 stopReason: string;
                 algorithm: string;
-                input: RiverInput;
+                input: RiverInput | ExplicitRiverInput;
               };
               demand(
                 report.input.locks.length === 0 &&
@@ -944,7 +1059,7 @@ export class RealAnalysisService {
                   "application/x-riverline-native",
                 ),
                 summary = this.put(updated, readFileSync(result.summary!.path));
-              const nodes = result.nodes!.map((n) => {
+              const nodes = (result.nodes ?? []).map((n) => {
                 const bytes = readFileSync(n.path);
                 const page = validateNode(
                   JSON.parse(bytes.toString()),
@@ -977,6 +1092,9 @@ export class RealAnalysisService {
                 native,
                 summary,
                 nodes,
+                ...(report.input.schemaVersion === 2
+                  ? { queryModel: "native-paged/2" as const }
+                  : {}),
                 handCounts: report.privateCards.map((c) => c.length) as [
                   number,
                   number,

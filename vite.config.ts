@@ -12,6 +12,7 @@ export default defineConfig({
         "**/.artifacts/**",
         "**/.data/**",
         "**/engines/**",
+        "**/.venv-rules/**",
         "**/playwright-report/**",
         "**/test-results/**",
         "**/coverage/**",

@@ -15,6 +15,11 @@ async function connect() {
     new StdioClientTransport({
       command: process.execPath,
       args: ["--import", "tsx", "runtime/mcp.ts"],
+      env: {
+        ...process.env,
+        RIVERLINE_RUNTIME:
+          process.env.RIVERLINE_RUNTIME ?? "http://127.0.0.1:5174",
+      },
       stderr: "pipe",
     }),
   );
@@ -63,7 +68,7 @@ test("R2 HU: new ranges and nonfixture input → real solve → Hero/full range 
   const name = `真实旅程 ${Date.now()}`;
   await page.goto("/solver/real");
   await expect(
-    page.getByRole("heading", { name: "真实 HU 河牌研究" }),
+    page.getByRole("heading", { name: "河牌研究", exact: true }),
   ).toBeVisible();
   await page.getByLabel("作品名称", { exact: true }).fill(name);
   await page.getByLabel("根底池 bb", { exact: true }).fill("12.34");
@@ -83,7 +88,9 @@ test("R2 HU: new ranges and nonfixture input → real solve → Hero/full range 
     .getByRole("button", { name: "打开真实解", exact: true })
     .first()
     .click();
-  await expect(page.getByText("真实计算证据", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "全范围与 Hero", exact: true }),
+  ).toBeVisible();
   await expect(page.locator('button[title*="条件占比"]')).toHaveCount(169);
   await page.getByLabel("Hero 具体组合", { exact: true }).fill("AcAd");
   await expect(page.getByText(/权益 100.00%/).first()).toBeVisible();
@@ -104,7 +111,7 @@ test("R2 HU: new ranges and nonfixture input → real solve → Hero/full range 
     .click();
   await expect(page.locator('button[title*="条件占比"]')).toHaveCount(169);
   const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "导出工作区", exact: true }).click();
+  await page.getByRole("button", { name: "导出研究", exact: true }).click();
   const file = await download;
   expect(file.suggestedFilename()).toBe("riverline-analysis-backup.json");
   mkdirSync(".artifacts/solver/r2", { recursive: true });
@@ -294,14 +301,14 @@ test("R2 restore: MCP restores the shared workspace, clears removed result conte
         .first()
         .click();
       await expect(
-        page.getByText("真实计算证据", { exact: true }),
+        page.getByRole("heading", { name: "全范围与 Hero", exact: true }),
       ).toBeVisible();
     }
     await tool(client, "workspace_import", { backup: snapshot });
     await expect(page.getByRole("status")).toContainText("草稿保留，可另存");
-    await expect(page.getByText("真实计算证据", { exact: true })).toHaveCount(
-      0,
-    );
+    await expect(
+      page.getByRole("heading", { name: "全范围与 Hero", exact: true }),
+    ).toHaveCount(0);
     await expect(page.getByLabel("作品名称", { exact: true })).toHaveValue(
       name,
     );

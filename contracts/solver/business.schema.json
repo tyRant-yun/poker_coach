@@ -103,6 +103,73 @@
           "maxLength": 8,
           "pattern": "^\\d+(?:\\.\\d+)?$"
         },
+        "tree": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "explicit-river/v2"
+            },
+            "lines": {
+              "maxItems": 32,
+              "type": "array",
+              "items": {
+                "minItems": 1,
+                "maxItems": 12,
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "check",
+                            "fold",
+                            "call"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "bet",
+                            "raise",
+                            "all-in"
+                          ]
+                        },
+                        "amount": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 1000000
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "amount"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "lines"
+          ],
+          "additionalProperties": false
+        },
         "ranges": {
           "type": "array",
           "prefixItems": [
@@ -200,6 +267,80 @@
           "type": "string",
           "maxLength": 8,
           "pattern": "^\\d+(?:\\.\\d+)?$"
+        },
+        "tree": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "explicit-river/v2"
+                },
+                "lines": {
+                  "maxItems": 32,
+                  "type": "array",
+                  "items": {
+                    "minItems": 1,
+                    "maxItems": 12,
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "check",
+                                "fold",
+                                "call"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "bet",
+                                "raise",
+                                "all-in"
+                              ]
+                            },
+                            "amount": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 1000000
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "amount"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "required": [
+                "kind",
+                "lines"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "rangeIds": {
           "type": "array",
@@ -501,12 +642,12 @@
         },
         "path": {
           "default": [],
-          "maxItems": 2,
+          "maxItems": 16,
           "type": "array",
           "items": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 1
+            "maximum": 128
           }
         },
         "player": {
@@ -583,12 +724,12 @@
         },
         "path": {
           "default": [],
-          "maxItems": 2,
+          "maxItems": 16,
           "type": "array",
           "items": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 1
+            "maximum": 128
           }
         },
         "player": {
@@ -636,18 +777,18 @@
         },
         "path": {
           "default": [],
-          "maxItems": 1,
+          "maxItems": 15,
           "type": "array",
           "items": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 1
+            "maximum": 128
           }
         },
         "action": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 1
+          "maximum": 128
         }
       },
       "required": [

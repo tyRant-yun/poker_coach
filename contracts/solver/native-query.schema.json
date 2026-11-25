@@ -10,6 +10,10 @@
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
     },
+    "inputSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
     "path": {
       "maxItems": 16,
       "type": "array",

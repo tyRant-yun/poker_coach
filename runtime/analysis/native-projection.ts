@@ -1,77 +1,13 @@
-import { z } from "zod";
 import type { RuntimeState, Ref } from "../../src/modules/analysis/domain.ts";
+import { explicitRiverSchema } from "../../contracts/solver/river-tree.ts";
+import { verifyNativeRoot } from "../engines/native-access.ts";
 import { riverInputSchema } from "../../contracts/solver/engine.ts";
 import { allCombos } from "../../src/modules/analysis/content.ts";
 import { hash } from "../store.ts";
 
-const floats = z.array(z.number().finite());
-export const nodeSchema = z
-  .object({
-    path: z.array(z.number().int()),
-    terminal: z.boolean(),
-    player: z.union([z.literal(0), z.literal(1)]).nullable(),
-    actions: z.array(z.string()),
-    invested: z.tuple([
-      z.number().int().nonnegative(),
-      z.number().int().nonnegative(),
-    ]),
-    weights: z.tuple([floats, floats]),
-    compatibleWeights: z.tuple([floats, floats]),
-    equity: z.tuple([floats, floats]),
-    ev: z.tuple([floats, floats]),
-    actionEv: floats,
-    strategy: floats,
-  })
-  .strict();
-export type NativeNode = z.infer<typeof nodeSchema>;
-export function validateNode(
-  value: unknown,
-  counts: [number, number],
-): NativeNode {
-  const node = nodeSchema.parse(value);
-  for (const p of [0, 1] as const)
-    for (const field of [
-      "weights",
-      "compatibleWeights",
-      "equity",
-      "ev",
-    ] as const)
-      if (node[field][p].length !== counts[p])
-        throw Error("ARTIFACT_INCOMPLETE: private-card dimensions differ");
-  if (node.terminal) {
-    if (
-      node.player !== null ||
-      node.actions.length ||
-      node.strategy.length ||
-      node.actionEv.length
-    )
-      throw Error("ARTIFACT_INCOMPLETE: invalid terminal projection");
-  } else {
-    if (
-      node.player === null ||
-      !node.actions.length ||
-      node.strategy.length !== node.actions.length * counts[node.player] ||
-      node.actionEv.length !== node.strategy.length
-    )
-      throw Error("ARTIFACT_INCOMPLETE: action-major dimensions differ");
-    for (let i = 0; i < counts[node.player]; i++)
-      if (
-        node.weights[node.player][i] > 0 &&
-        node.compatibleWeights[node.player][i] > 0
-      ) {
-        let sum = 0;
-        for (let a = 0; a < node.actions.length; a++) {
-          const v = node.strategy[a * counts[node.player] + i];
-          if (v < 0 || v > 1.000001)
-            throw Error("ARTIFACT_INCOMPLETE: invalid strategy probability");
-          sum += v;
-        }
-        if (Math.abs(sum - 1) > 1e-5)
-          throw Error("ARTIFACT_INCOMPLETE: strategy column sum differs");
-      }
-  }
-  return node;
-}
+import { validateNode } from "./native-node.ts";
+export { validateNode } from "./native-node.ts";
+export type { NativeNode } from "./native-node.ts";
 
 export function validateRealArtifacts(
   state: RuntimeState,
@@ -88,11 +24,17 @@ export function validateRealArtifacts(
       throw Error("ARTIFACT_INCOMPLETE: fixed reference missing");
     return v;
   };
+  const parseInput = (bytes: Buffer) => {
+    const raw = JSON.parse(bytes.toString());
+    return raw.schemaVersion === 2
+      ? explicitRiverSchema.parse(raw)
+      : riverInputSchema.parse(raw);
+  };
   for (const spec of Object.values(state.real.specs)) {
     const bytes = read(spec.input);
     if (hash(bytes) !== spec.inputHash)
       throw Error("ARTIFACT_INCOMPLETE: input bytes changed");
-    const input = riverInputSchema.parse(JSON.parse(bytes.toString()));
+    const input = parseInput(bytes);
     const c = fixed(state.real.cases, spec.situation),
       ranges = spec.ranges.map((r) => fixed(state.ranges, r));
     const expectedRanges = ranges.map((r) =>
@@ -105,8 +47,18 @@ export function validateRealArtifacts(
       hash(input.board) !== hash(c.board) ||
       input.pot !== c.pot ||
       input.stack !== c.stack ||
-      input.sizes[0][0] !== `${c.betPercent}%` ||
+      (input.schemaVersion === 2
+        ? !c.tree || hash(input.treeLines) !== hash(c.tree.lines)
+        : !!c.tree || input.sizes[0][0] !== `${c.betPercent}%`) ||
       input.locks.length ||
+      spec.treeHash !==
+        hash([
+          c.board,
+          c.pot,
+          c.stack,
+          c.tree ?? c.betPercent,
+          c.tree ? "explicit-river/v2" : "river-check-bet-call/v1",
+        ]) ||
       input.limits.targetExploitability !==
         (c.pot * spec.targetNashConvPotFraction) / 2
     )
@@ -121,7 +73,7 @@ export function validateRealArtifacts(
   const paths = [[], [0], [0, 0], [1], [1, 0], [1, 1]];
   for (const solution of Object.values(state.real.solutions)) {
     const spec = fixed(state.real.specs, solution.spec),
-      input = riverInputSchema.parse(JSON.parse(read(spec.input).toString())),
+      input = parseInput(read(spec.input)),
       summary = JSON.parse(read(solution.summary).toString()) as {
         engineCommit: string;
         algorithm: string;
@@ -162,6 +114,23 @@ export function validateRealArtifacts(
       )
         throw Error("ARTIFACT_INCOMPLETE: private-card mapping differs");
     }
+    if (input.schemaVersion === 2) {
+      if (
+        solution.queryModel !== "native-paged/2" ||
+        solution.nodes.length !== 0
+      )
+        throw Error("ARTIFACT_INCOMPLETE: unexpected general tree projection");
+      verifyNativeRoot({
+        bytes: native,
+        nativeHash: hash(native),
+        inputHash: spec.inputHash,
+        counts: solution.handCounts,
+        cards: summary.privateCards,
+      });
+      continue;
+    }
+    if (solution.queryModel)
+      throw Error("ARTIFACT_INCOMPLETE: legacy query model differs");
     for (let i = 0; i < paths.length; i++) {
       const page = solution.nodes[i];
       if (!page || hash(page.path) !== hash(paths[i]))

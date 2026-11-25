@@ -1,9 +1,13 @@
 import { fork, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { z } from "zod";
 import { DiskStore, canonical, hash, ref, emptyState } from "./store.ts";
 import { validateBackupState } from "./validation.ts";
 import { RealAnalysisService } from "./analysis/real-service.ts";
+import { GameService } from "./game/service.ts";
+import { gameTools, type GameTool } from "../src/modules/play/domain.ts";
 import { validateRealArtifacts } from "./analysis/native-projection.ts";
 import { realTools } from "../src/modules/analysis/real-domain.ts";
 import type { RealTool } from "../src/modules/analysis/real-domain.ts";
@@ -603,7 +607,46 @@ export class AnalysisService {
     });
     worker.send({ outcome: job.outcome, attempt: job.attempt });
   }
+  private game?: GameService;
+  private handRestricted() {
+    if (!this.game && existsSync(join(this.store.directory, "hands.sqlite")))
+      this.game = new GameService(this.store);
+    return this.game?.restricted() ?? false;
+  }
+  private handGuard(name: string): Reply | undefined {
+    if (
+      this.handRestricted() &&
+      ![
+        "solver_capabilities",
+        "real_capabilities",
+        "analysis_get",
+        "real_analysis_get",
+        "analysis_cancel",
+        "real_analysis_cancel",
+      ].includes(name)
+    )
+      return {
+        ok: false,
+        code: "INFORMATION_RESTRICTED",
+        message: "请先完成当前整手练习，再查看研究与参考。",
+        retryable: false,
+      };
+  }
+  async executeAsync(name: string, raw: unknown): Promise<Reply> {
+    if (Object.hasOwn(gameTools, name)) {
+      this.game ??= new GameService(this.store);
+      return this.game.execute(name as GameTool, raw);
+    }
+    const guard = this.handGuard(name);
+    if (guard) return guard;
+    const reply = Object.hasOwn(realTools, name)
+      ? await this.real.executeAsync(name as RealTool, raw)
+      : this.execute(name, raw);
+    return this.handGuard(name) ?? reply;
+  }
   execute(name: string, raw: unknown): Reply {
+    const guard = this.handGuard(name);
+    if (guard) return guard;
     if (Object.hasOwn(realTools, name))
       return this.real.execute(name as RealTool, raw);
     try {
@@ -2443,6 +2486,7 @@ export class AnalysisService {
     };
   }
   resources(): { uri: string; name: string; mimeType: string }[] {
+    if (this.handRestricted()) return [];
     if (this.state.independent) return [];
     return [
       ...unique(this.state.solutions).map((s) => ({
@@ -2458,6 +2502,8 @@ export class AnalysisService {
     ];
   }
   readResource(uri: string): Reply {
+    const guard = this.handGuard("read-resource");
+    if (guard) return guard;
     try {
       this.allowed(this.state, "solution_node_strategy");
       const realMatch =
@@ -2504,6 +2550,7 @@ export class AnalysisService {
     }
   }
   close() {
+    this.game?.close();
     this.stopped = true;
     this.real.close();
     for (const worker of this.workers.values()) worker.kill();

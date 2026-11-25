@@ -1,10 +1,10 @@
 .page {
-  background: #101923;
-  color: #dbe4ef;
+  background: #f3f5f8;
+  color: #172638;
   min-height: 100vh;
-  padding: 28px;
+  padding: 0 32px 28px;
   font:
-    14px/1.6 Inter,
+    15px/1.55 Inter,
     "Microsoft YaHei",
     sans-serif;
 }
@@ -12,7 +12,7 @@
   box-sizing: border-box;
 }
 .page a {
-  color: #87c5ff;
+  color: #185e87;
 }
 .page h1 {
   font-size: 26px;
@@ -34,7 +34,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 24px;
-  margin-bottom: 18px;
+  margin: 24px 0 18px;
 }
 .header nav,
 .actions {
@@ -44,23 +44,23 @@
   align-items: center;
 }
 .notice {
-  background: #1c2c3c;
-  border-left: 3px solid #78b8e9;
-  padding: 13px 18px;
+  background: #e3edf6;
+  border-left: 3px solid #286f9b;
+  padding: 9px 14px;
   margin: 18px 0;
   overflow-wrap: anywhere;
 }
 .layout {
   display: grid;
-  grid-template-columns: 330px minmax(0, 1fr);
+  grid-template-columns: 300px minmax(0, 1fr);
   gap: 22px;
   align-items: start;
 }
 .panel {
-  padding: 22px;
-  border: 1px solid #314254;
-  border-radius: 12px;
-  background: #16222f;
+  padding: 18px;
+  border: 1px solid #cbd3dd;
+  border-radius: 9px;
+  background: #fff;
 }
 .content {
   display: grid;
@@ -70,17 +70,18 @@
 .page label {
   display: block;
   font-size: 12px;
-  color: #b5c9d9;
+  color: #526478;
   margin: 12px 0;
 }
 .page input,
+.page select,
 .page textarea {
   display: block;
   width: 100%;
   margin-top: 6px;
-  background: #0e1823;
-  color: #e4edf5;
-  border: 1px solid #3c5268;
+  background: #fff;
+  color: #172638;
+  border: 1px solid #a8b5c3;
   border-radius: 6px;
   padding: 9px;
   font: 14px/1.5 inherit;
@@ -90,9 +91,9 @@
   resize: vertical;
 }
 .page button {
-  border: 1px solid #41596f;
-  background: #203447;
-  color: #e4eef6;
+  border: 1px solid #a8b5c3;
+  background: #f5f7fa;
+  color: #172638;
   border-radius: 6px;
   padding: 8px 12px;
   cursor: pointer;
@@ -105,9 +106,45 @@
   opacity: 0.45;
   cursor: default;
 }
+.page button[aria-pressed="true"] {
+  border-color: #17604e;
+  box-shadow: inset 0 -2px #17604e;
+}
+.source {
+  margin: 0 0 18px;
+  padding: 14px 0;
+  border-bottom: 1px solid #cbd3dd;
+}
+.source > div:first-child {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.source > div:first-child > span {
+  color: #526478;
+  font-size: 13px;
+}
+.source label {
+  max-width: 750px;
+}
+.source details {
+  margin: 8px 0;
+}
+.tableWrap {
+  overflow-x: auto;
+}
+.tableWrap table {
+  min-width: 580px;
+}
+.matrix small {
+  display: block;
+  font-size: 10px;
+}
 .page .primary {
   width: 100%;
   background: #277760;
+  color: #fff;
   border-color: #359d7f;
   margin-bottom: 12px;
 }
@@ -124,16 +161,16 @@
 }
 .muted {
   font-size: 12px;
-  color: #98afc1;
+  color: #526478;
 }
 .warning {
-  background: #493c20;
-  color: #f4d394;
+  background: #fff2d9;
+  color: #765014;
   padding: 10px;
   border-radius: 5px;
 }
 .error {
-  color: #f4a3a3;
+  color: #a52e2e;
   max-width: 600px;
   overflow-wrap: anywhere;
 }
@@ -146,8 +183,8 @@
 .work small,
 .job small {
   display: block;
-  color: #9fb5c8;
-  font-size: 11px;
+  color: #526478;
+  font-size: 12px;
 }
 .job {
   display: flex;
@@ -155,7 +192,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 14px 0;
-  border-bottom: 1px solid #304153;
+  border-bottom: 1px solid #cbd3dd;
 }
 .badge {
   background: #23483c;
@@ -169,28 +206,28 @@
   align-items: center;
   gap: 18px;
   flex-wrap: wrap;
-  background: #21384a;
+  background: #e9f0f6;
   padding: 16px;
   border-radius: 8px;
   margin: 12px 0;
 }
 .matrix {
   display: grid;
-  grid-template-columns: repeat(13, minmax(25px, 1fr));
+  grid-template-columns: repeat(13, minmax(0, 1fr));
   gap: 3px;
   margin: 18px 0;
 }
 .matrix button {
   font-size: 11px;
   padding: 6px 0;
-  border-color: #344a60;
+  border-color: #bdcbd7;
   border-radius: 3px;
 }
 .matrix .chosen {
   outline: 2px solid #f5d18b;
 }
 .stat {
-  background: #1b3442;
+  background: #e9f0f6;
   padding: 6px 10px;
   font-size: 12px;
   border-radius: 5px;
@@ -203,33 +240,33 @@
 }
 .page th {
   text-align: left;
-  color: #a4bacd;
+  color: #526478;
 }
 .page td,
 .page th {
   padding: 9px 7px;
-  border-bottom: 1px solid #2c4052;
+  border-bottom: 1px solid #cbd3dd;
 }
 .page tbody tr {
   cursor: pointer;
 }
 .page tbody tr:hover {
-  background: #213344;
+  background: #edf3f7;
 }
 .page details {
   margin-top: 20px;
-  color: #a7bfce;
+  color: #526478;
   font-size: 12px;
   overflow-wrap: anywhere;
 }
 .protected {
   min-height: 100vh;
-  background: #101923;
-  color: #e4edf5;
+  background: #f3f5f8;
+  color: #172638;
   padding: 60px;
 }
 .protected a {
-  color: #9bc9f4;
+  color: #185e87;
 }
 @media (max-width: 1100px) {
   .layout {

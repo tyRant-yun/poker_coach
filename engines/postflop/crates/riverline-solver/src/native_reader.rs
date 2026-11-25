@@ -10,6 +10,8 @@ use std::path::Path;
 pub struct NativeQuery {
     pub schema_version: u32,
     pub native_sha256: String,
+    #[serde(default)]
+    pub input_sha256: Option<String>,
     pub path: Vec<usize>,
     pub player: usize,
     pub offset: usize,
@@ -86,7 +88,16 @@ pub fn read_page(path: &Path, request: &NativeQuery) -> Result<NodePage, String>
     file.seek(SeekFrom::Start(0)).map_err(|e| e.to_string())?;
     let (mut game, memo): (PostFlopGame, String) =
         load_data_from_std_read(&mut file, Some(request.max_memory_bytes))?;
-    if memo != "riverline-river-tree/2" {
+    let expected_memo = request
+        .input_sha256
+        .as_ref()
+        .map(|h| format!("riverline-river-tree/2:{h}"));
+    if expected_memo
+        .as_ref()
+        .map_or(memo != "riverline-river-tree/2", |expected| {
+            &memo != expected
+        })
+    {
         return Err("artifact-error: native model mismatch".into());
     }
     let node = query(&mut game, &request.path)?;

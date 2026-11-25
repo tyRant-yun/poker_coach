@@ -14,6 +14,11 @@ async function connect() {
     new StdioClientTransport({
       command: process.execPath,
       args: ["--import", "tsx", "runtime/mcp.ts"],
+      env: {
+        ...process.env,
+        RIVERLINE_RUNTIME:
+          process.env.RIVERLINE_RUNTIME ?? "http://127.0.0.1:5174",
+      },
       stderr: "pipe",
     }),
   );
@@ -96,7 +101,13 @@ test("SJ01/02/03/04/16/17: UI ↔ real MCP; complete matrix, immutable range edi
       "workspace_get",
     );
     expect(after.situations.at(-1)!.ranges.BTN.contentHash).not.toBe(oldHash);
+    const undoSaved = page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/api/analysis/call") &&
+        response.request().postDataJSON()?.tool === "range_undo",
+    );
     await page.getByRole("button", { name: "撤销范围", exact: true }).click();
+    await (await undoSaved).json();
     const undone = await tool<{ items: { combo: string; weight: number }[] }>(
       client,
       "range_get",

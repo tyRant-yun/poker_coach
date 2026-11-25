@@ -1,4 +1,5 @@
 //! Bounded process protocol. Only the parent publishes business artifacts.
+use riverline_solver::explicit::{run_explicit, ExplicitRiverInput};
 use riverline_solver::{query, run, RiverInput, ENGINE_COMMIT};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -78,7 +79,7 @@ fn emit(
     output.flush().map_err(|e| e.to_string())
 }
 
-pub fn serve(directory: &Path) -> Result<(), String> {
+pub fn serve(directory: &Path, explicit: bool) -> Result<(), String> {
     let directory = directory.canonicalize().map_err(|e| e.to_string())?;
     let input_path = directory.join("input.json");
     let native_path = directory.join("solution.bin");
@@ -107,7 +108,7 @@ pub fn serve(directory: &Path) -> Result<(), String> {
     if format!("{:x}", Sha256::digest(&bytes)) != first.identity.spec_hash {
         return Err("artifact-error: input hash mismatch".into());
     }
-    let input: RiverInput = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+
     let cancelled = Arc::new(AtomicBool::new(false));
     let invalid = Arc::new(AtomicBool::new(false));
     let reader_cancelled = Arc::clone(&cancelled);
@@ -134,17 +135,22 @@ pub fn serve(directory: &Path) -> Result<(), String> {
     let mut seq = 1;
     emit("started", Some(&identity), seq, serde_json::json!({}))?;
     seq += 1;
-    let result = run(
-        input,
-        || cancelled.load(Ordering::SeqCst),
-        |iterations, exploitability| {
-            // At most 100 progress frames for the current 100000-iteration cap.
-            if iterations % 1000 == 0 {
-                if emit("progress", Some(&identity), seq, serde_json::json!({"iterations":iterations,"exploitability":exploitability,"unit":"centibb"})).is_err() { cancelled.store(true, Ordering::SeqCst); }
-                seq += 1;
-            }
-        },
-    );
+    let progress = |iterations, exploitability| {
+        if iterations % 1000 == 0 {
+            if emit("progress", Some(&identity), seq, serde_json::json!({"iterations":iterations,"exploitability":exploitability,"unit":"centibb"})).is_err() { cancelled.store(true, Ordering::SeqCst); }
+            seq += 1;
+        }
+    };
+    let result = if explicit {
+        let input: ExplicitRiverInput =
+            serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+        run_explicit(input, || cancelled.load(Ordering::SeqCst), progress)
+            .and_then(|(g, r)| Ok((g, serde_json::to_value(r).map_err(|e| e.to_string())?)))
+    } else {
+        let input: RiverInput = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+        run(input, || cancelled.load(Ordering::SeqCst), progress)
+            .and_then(|(g, r)| Ok((g, serde_json::to_value(r).map_err(|e| e.to_string())?)))
+    };
     if invalid.load(Ordering::SeqCst) {
         emit(
             "failed",
@@ -169,14 +175,20 @@ pub fn serve(directory: &Path) -> Result<(), String> {
             if cancelled.load(Ordering::SeqCst) {
                 return emit("cancelled", Some(&identity), seq, serde_json::json!({}));
             }
-            postflop_solver::save_data_to_file(&game, "riverline-engine/1", &native_path, None)?;
+            let memo = if explicit {
+                format!("riverline-river-tree/2:{}", identity.spec_hash)
+            } else {
+                "riverline-engine/1".into()
+            };
+            postflop_solver::save_data_to_file(&game, &memo, &native_path, None)?;
             let (mut loaded, _): (postflop_solver::PostFlopGame, String) =
                 postflop_solver::load_data_from_file(&native_path, Some(2 * 1024 * 1024 * 1024))?;
             // This supported model has exactly six nodes. Keep each projection separate;
             // a general/multistreet tree must use a separate on-demand native reader.
             let paths = [vec![], vec![0], vec![0, 0], vec![1], vec![1, 0], vec![1, 1]];
             let mut pages = vec![];
-            for (index, path) in paths.iter().enumerate() {
+            query(&mut loaded, &[])?;
+            for (index, path) in paths.iter().enumerate().filter(|_| !explicit) {
                 let node = query(&mut loaded, path)?;
                 let filename = format!("node-{index}.json");
                 let output = directory.join(&filename);
@@ -187,7 +199,7 @@ pub fn serve(directory: &Path) -> Result<(), String> {
                 fs::write(output, &bytes).map_err(|e| e.to_string())?;
                 pages.push(serde_json::json!({"path":path,"file":filename,"hash":format!("{:x}",Sha256::digest(&bytes)),"bytes":bytes.len()}));
             }
-            let mut summary = serde_json::to_value(report).map_err(|e| e.to_string())?;
+            let mut summary = report;
             summary["nodes"] = pages.into();
             summary["identity"] = serde_json::to_value(&identity).map_err(|e| e.to_string())?;
             fs::write(

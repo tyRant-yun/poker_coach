@@ -16,7 +16,7 @@ test('D01: create, edit, submit, compare, revise, reload, and recover the origin
   const external: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => { if (!['127.0.0.1', 'localhost'].includes(new URL(request.url()).hostname)) external.push(request.url()); });
-  await page.goto('/');
+  await page.goto('/legacy');
   await expect(page.getByRole('heading', { name: '每一手牌，都有一个更大的范围。' })).toBeVisible();
   await capture(page, 'home-1440');
   await page.getByRole('link', { name: /局面库/ }).first().click();

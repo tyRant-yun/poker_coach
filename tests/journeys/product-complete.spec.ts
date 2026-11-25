@@ -26,6 +26,7 @@ test('J09: all extension previews preserve their own ranges, units and uncovered
 });
 test('J08/J09: corrupt storage can be downloaded intact and reset touches only this app; global jobs open fixed reports',async({page})=>{
   await page.goto('/library');
+  await expect(page.getByRole('button',{name:'创建研究案例',exact:true})).toBeVisible();
   await page.evaluate(async()=>{localStorage.setItem('other-app-test','keep');const db=await new Promise<IDBDatabase>((resolve,reject)=>{const req=indexedDB.open('riverline-demo-t1',1);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});await new Promise<void>((resolve,reject)=>{const tx=db.transaction('workspace','readwrite');tx.objectStore('workspace').put({schemaVersion:999,original:'retained'},'current');tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});db.close();});
   await page.reload();await expect(page.getByText('仅内存模式',{exact:true})).toBeVisible();await page.getByRole('link',{name:'演示设置',exact:true}).click();
   const pending=page.waitForEvent('download');await page.getByRole('button',{name:'导出原始存储记录',exact:true}).click();const file=await pending;expect(JSON.parse(await readFile((await file.path())!,'utf8'))).toEqual({schemaVersion:999,original:'retained'});

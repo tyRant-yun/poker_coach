@@ -1,8 +1,16 @@
-# Riverline Poker Coach — Product Demo
+# Riverline Poker Coach
 
-2026-11-18 后续进展：[一般河牌树独立验证与查询基础](docs/solver/validation/r2-river-tree-2026-11-18.md) 已完成，覆盖双方下注、多尺寸、再加注、全下与锁定的 6 个独立数值问题，提供原生按节点分页读取。当前为内部真实引擎能力，**尚未接入产品 UI/MCP**；下方真实页面仍按单下注受限模型开放。下一项继续接入一般树产品合同与作业服务。
+2026-11-25 第一轮实施：产品目标确认，以**整手练习 → 行动前复盘 → 深入研究 → 回到练习**为主路径。已接入 PokerKit 真实规则、HU/6-max 连续整手、SQLite 保存恢复、研究来源/笔记，以及真实一般 HU 河牌树的 UI/MCP/原生查询。UI 与文字独立专项已落实到新主流程。实际范围、验证、限制与启动方法见 [第一轮交付](docs/riverline-first-round-delivery-2026-11-25.md)。转牌/翻牌、多人均衡、真解整手评分及定向复测尚未交付。
 
-真实河牌新入口：`http://127.0.0.1:5173/solver/real`。受限 HU 河牌已完成真实引擎、同一工作区和 MCP 的产品闭环，整版 48 条浏览器旅程通过；见 [R2 实际范围、验收与运行方法](docs/solver/validation/r2-river-delivery-2026-11-18.md)。首次使用真实计算先运行 `npm run solver:build`；原 `/solver` 仍是合成示例工作台。当前只支持 OOP 一个下注尺寸、IP fold/call 的河牌模型；一般河牌树、转牌、翻牌、六人、实验和教学真实消费仍待开发。
+本地使用：`npm ci` → `npm run rules:setup` → `npm run solver:build` → `npm run build` → `npm start`，打开 [整手练习](http://127.0.0.1:5174/play)。需要 Node 24、Python 与固定 Rust 工具链；构建后由同一 Node 服务提供页面/API。下文旧批次按日期保留。
+
+2026-11-25 呈现专项：[UI 设计与文字呈现优化](docs/riverline-ui-copy-optimization-task-2026-11-25.md)。新主流程的信息取舍、导航、UI 与文字已实施；全部旧课程/示例页的专项改造仍未完成。
+
+2026-11-25 统一产品设计：[练习→复盘→研究→再训练](docs/riverline-unified-product-architecture-2026-11-25.md)、[运行时/技术栈/部署](docs/riverline-unified-runtime-deployment-2026-11-25.md)、[视觉与交互](docs/riverline-unified-experience-design-2026-11-25.md)、[开发与验收](docs/riverline-unified-implementation-plan-2026-11-25.md)。以本仓库为主底座，复用成熟规则内核和固定 Solver；第一轮已实施范围以上方交付为准，不代表 U00–U08 全部完成。
+
+2026-11-18 历史检查点：[一般河牌树独立验证与查询基础](docs/solver/validation/r2-river-tree-2026-11-18.md) 覆盖 6 个独立数值问题与按节点分页读取。2026-11-25 已将一般树合同/作业/按需读取/恢复接入产品 UI/MCP；产品锁定/BR实验仍未开放，不能把内部基准能力等同于产品覆盖。
+
+真实研究入口：`/solver/real`；原 `/solver` 仍是合成示例工作台。[2026-11-18 R2 交付](docs/solver/validation/r2-river-delivery-2026-11-18.md) 为原单下注受限模型的历史证据；本轮已扩展到一般 HU 河牌离散树，具体组合/资源限制见最新交付。转牌、翻牌、六人均衡、实验和教学真解消费仍待开发。
 
 2026-11-18 R1 历史检查点：固定版本完整引擎的受限 HU 河牌通过 4 个独立数值基准，完成 Node↔Rust 进程协议与取消/中断验证。当时 UI/MCP 未接入，现已以上方 R2 交付更新。[独立验证与限制](docs/solver/validation/r1-river-2026-11-18.md)、[运行基准](benchmarks/solver/README.md)、[R2 进程边界](contracts/solver/README.md)。
 

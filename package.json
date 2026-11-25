@@ -7,6 +7,10 @@
     "node": ">=24.0.0"
   },
   "scripts": {
+    "start": "node --import tsx runtime/server.ts --serve",
+    "e2e:first-round": "node scripts/test-first-round.mjs",
+    "rules:setup": "node scripts/setup-rules.mjs",
+    "test:game": "node --import tsx --test tests/game/*.test.ts",
     "dev": "node scripts/dev.mjs",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build",

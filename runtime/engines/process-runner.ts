@@ -1,3 +1,5 @@
+import { explicitRiverSchema } from "../../contracts/solver/river-tree.ts";
+import type { ExplicitRiverInput } from "../../contracts/solver/river-tree.ts";
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync, readFileSync, lstatSync } from "node:fs";
@@ -38,7 +40,7 @@ export type EngineRunResult = {
 
 /** No workspace state here: caller owns job transitions and atomic artifact publication. */
 export function startEngine(
-  input: RiverInput,
+  input: RiverInput | ExplicitRiverInput,
   options: {
     directory: string;
     jobId?: string;
@@ -50,7 +52,10 @@ export function startEngine(
   cancel: () => void;
   interrupt: () => void;
 } {
-  const parsed = riverInputSchema.parse(input);
+  const parsed =
+    input.schemaVersion === 2
+      ? explicitRiverSchema.parse(input)
+      : riverInputSchema.parse(input);
   const directory = resolve(options.directory);
   // Exclusive fresh directory prevents retry artifacts and symlink substitutions being reused.
   mkdirSync(directory, { recursive: false });
@@ -69,10 +74,14 @@ export function startEngine(
   });
   const binaryHash = digest(readFileSync(binary));
   writeFileSync(join(directory, "input.json"), inputBytes, { flag: "wx" });
-  const child = spawn(binary, ["worker", directory], {
-    stdio: ["pipe", "pipe", "pipe"],
-    windowsHide: true,
-  });
+  const child = spawn(
+    binary,
+    [parsed.schemaVersion === 2 ? "worker-tree" : "worker", directory],
+    {
+      stdio: ["pipe", "pipe", "pipe"],
+      windowsHide: true,
+    },
+  );
   let pending = Buffer.alloc(0),
     stderr = "",
     seq = -1,
@@ -242,8 +251,14 @@ export function startEngine(
             JSON.stringify(identity)
         )
           throw Error("artifact identity mismatch");
-        const paths = [[], [0], [0, 0], [1], [1, 0], [1, 1]];
-        if (!Array.isArray(report.nodes) || report.nodes.length !== 6)
+        const paths =
+          parsed.schemaVersion === 2
+            ? []
+            : [[], [0], [0, 0], [1], [1, 0], [1, 1]];
+        if (
+          !Array.isArray(report.nodes) ||
+          report.nodes.length !== paths.length
+        )
           throw Error("node index incomplete");
         const nodes = report.nodes.map((node, index) => {
           if (

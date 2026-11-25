@@ -43,6 +43,10 @@ export const nativeQuerySchema = z
   .object({
     schemaVersion: z.literal(1),
     nativeSha256: z.string().regex(/^[a-f0-9]{64}$/),
+    inputSha256: z
+      .string()
+      .regex(/^[a-f0-9]{64}$/)
+      .optional(),
     path: z.array(z.number().int().nonnegative()).max(16),
     player: z.union([z.literal(0), z.literal(1)]),
     offset: z.number().int().min(0).max(1326),

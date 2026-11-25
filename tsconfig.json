@@ -15,5 +15,12 @@
     "noUnusedParameters": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "runtime", "tests", "vite.config.ts", "playwright.config.ts"]
+  "include": [
+    "src",
+    "runtime",
+    "tests",
+    "vite.config.ts",
+    "playwright.config.ts",
+    "playwright.first-round.config.ts"
+  ]
 }

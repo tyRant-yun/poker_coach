@@ -9,6 +9,11 @@ import {
 import { z } from "zod";
 import { toolInput, tools } from "../src/modules/analysis/domain.ts";
 import { realSchemas, realTools } from "../src/modules/analysis/real-domain.ts";
+import {
+  gameSchemas,
+  gameTools,
+  type GameTool,
+} from "../src/modules/play/domain.ts";
 const address = process.env.RIVERLINE_RUNTIME ?? "http://127.0.0.1:5174";
 if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(address))
   throw Error("只允许连接本机分析运行时");
@@ -42,6 +47,14 @@ const server = new Server(
 );
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
+    ...Object.entries(gameTools).map(([name, description]) => ({
+      name,
+      description,
+      inputSchema: z.toJSONSchema(gameSchemas[name as GameTool]) as {
+        type: "object";
+        [key: string]: unknown;
+      },
+    })),
     ...Object.entries(tools).map(([name, description]) => ({
       name,
       description,

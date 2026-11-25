@@ -23,6 +23,7 @@ Thumbs.db
 *.tsbuildinfo
 **/target/
 __pycache__/
+.venv-rules/
 
 # IDE-local files
 .idea/
