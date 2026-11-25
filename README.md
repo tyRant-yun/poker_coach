@@ -1,5 +1,7 @@
 # Riverline Poker Coach
 
+2026-11-25 下一轮规划：[三个仓库的学习与复用裁决](docs/riverline-round2-repository-study-2026-11-25.md)、[行动节奏 / 图形选牌 / 真实研究任务包](docs/riverline-round2-task-design-2026-11-25.md)。保留当前UI和三个主模块，先完成动作时序与图形输入，再打通真实河牌研究和图表，随后按R2-D独立验证扩展转牌。N00–N08与UI07–UI12当前均为设计，尚未实施；不改写下方第一轮交付。
+
 2026-11-25 第一轮实施：产品目标确认，以**整手练习 → 行动前复盘 → 深入研究 → 回到练习**为主路径。已接入 PokerKit 真实规则、HU/6-max 连续整手、SQLite 保存恢复、研究来源/笔记，以及真实一般 HU 河牌树的 UI/MCP/原生查询。UI 与文字独立专项已落实到新主流程。实际范围、验证、限制与启动方法见 [第一轮交付](docs/riverline-first-round-delivery-2026-11-25.md)。转牌/翻牌、多人均衡、真解整手评分及定向复测尚未交付。
 
 本地使用：`npm ci` → `npm run rules:setup` → `npm run solver:build` → `npm run build` → `npm start`，打开 [整手练习](http://127.0.0.1:5174/play)。需要 Node 24、Python 与固定 Rust 工具链；构建后由同一 Node 服务提供页面/API。下文旧批次按日期保留。
