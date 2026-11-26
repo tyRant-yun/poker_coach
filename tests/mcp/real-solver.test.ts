@@ -17,7 +17,7 @@ import type {
 import type { Reply } from "../../src/modules/analysis/domain.ts";
 
 test(
-  "real solver MCP: all 15 actions, same HTTP workspace, turn chance query, versioned artifacts, queue and permissions",
+  "real solver MCP: all 17 actions, same HTTP workspace, turn chance query, versioned artifacts, queue and permissions",
   { timeout: 30000 },
   async () => {
     const directory = mkdtempSync(join(tmpdir(), "riverline-real-mcp-")),
@@ -241,6 +241,31 @@ test(
       });
       assert.equal(chance.node.kind, "chance");
       assert.ok(chance.node.chanceCards.length > 40);
+      await call("real_browse_save", {
+        view: {
+          solution: turnDone.result!,
+          path: [],
+          turnPath: [
+            { kind: "action", index: 0 },
+            { kind: "action", index: 0 },
+          ],
+          labels: ["过牌", "过牌"],
+          player: 1,
+          hand: "",
+          hero: "AdAc",
+          metric: "ev",
+          showAll: false,
+          offset: 0,
+        },
+      });
+      assert.equal(
+        (
+          await call<any>("real_browse_get", {
+            solutionId: turnDone.result!.id,
+          })
+        ).player,
+        1,
+      );
       await call("teaching_begin");
       const denied = await raw("real_solution_query", {
         solutionId: solution.ref.id,

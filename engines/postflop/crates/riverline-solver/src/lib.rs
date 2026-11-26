@@ -7,6 +7,7 @@ use std::time::Instant;
 pub mod explicit;
 pub mod native_reader;
 pub mod turn;
+pub mod turn_page;
 pub mod turn_reader;
 
 pub const ENGINE_COMMIT: &str = "9d1509fe5077d019825f833eed04b16d342dfda1";

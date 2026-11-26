@@ -16,12 +16,21 @@ pub struct TurnQuery {
     pub max_memory_bytes: u64,
 }
 pub fn read_turn(path: &Path, request: &TurnQuery) -> Result<TurnNode, String> {
+    let mut game = load_turn(path, request, 3, 16)?;
+    query_turn(&mut game, &request.path)
+}
+pub fn load_turn(
+    path: &Path,
+    request: &TurnQuery,
+    version: u32,
+    limit: usize,
+) -> Result<PostFlopGame, String> {
     let valid_hash = |s: &str| {
         s.len() == 64
             && s.bytes()
                 .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
     };
-    if request.schema_version != 3
+    if request.schema_version != version
         || request.path.len() > 24
         || !valid_hash(&request.native_sha256)
         || !valid_hash(&request.input_sha256)
@@ -48,13 +57,15 @@ pub fn read_turn(path: &Path, request: &TurnQuery) -> Result<TurnNode, String> {
         return Err("artifact-error: native checksum mismatch".into());
     }
     file.seek(SeekFrom::Start(0)).map_err(|e| e.to_string())?;
-    let (mut game, memo): (PostFlopGame, String) =
+    let (game, memo): (PostFlopGame, String) =
         load_data_from_std_read(&mut file, Some(request.max_memory_bytes))?;
-    if memo != format!("riverline-turn/3:{}", request.input_sha256) {
+    if memo != format!("riverline-turn/{version}:{}", request.input_sha256) {
         return Err("artifact-error: turn model/input mismatch".into());
     }
-    if [0, 1].iter().any(|&p| game.private_cards(p).len() > 16) {
-        return Err("unsupported-input: turn product limit 16 combos per side".into());
+    if [0, 1].iter().any(|&p| game.private_cards(p).len() > limit) {
+        return Err(format!(
+            "unsupported-input: turn product limit {limit} combos per side"
+        ));
     }
-    query_turn(&mut game, &request.path)
+    Ok(game)
 }

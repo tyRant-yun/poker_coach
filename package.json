@@ -10,6 +10,7 @@
     "start": "node --import tsx runtime/server.ts --serve",
     "e2e:first-round": "node scripts/test-first-round.mjs",
     "rules:setup": "node scripts/setup-rules.mjs",
+    "bot:setup": "node scripts/setup-bot.mjs",
     "test:game": "node --import tsx --test tests/game/*.test.ts",
     "dev": "node scripts/dev.mjs",
     "typecheck": "tsc --noEmit",

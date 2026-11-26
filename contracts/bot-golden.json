@@ -1,0 +1,14 @@
+{
+  "contract": "riverline-bot/1",
+  "requestId": "11111111-1111-4111-8111-111111111111",
+  "handId": "22222222-2222-4222-8222-222222222222",
+  "sessionId": "33333333-3333-4333-8333-333333333333",
+  "revision": 0, "sequence": 0, "playerId": "opponent-0",
+  "originPlayers": 2, "actor": 0, "dealerSeat": 0, "street": 0,
+  "ownCards": ["As", "Kh"], "board": [],
+  "stacks": [9950, 9900], "bets": [50, 100], "active": [true, true],
+  "pot": 150, "smallBlind": 50, "bigBlind": 100, "handIndex": 1,
+  "history": [],
+  "legal": [{"kind":"fold"}, {"kind":"call","amount":50}, {"kind":"raise","min":200,"max":10000}],
+  "seed": "golden/1", "budgetMs": 300
+}

@@ -5,7 +5,12 @@ export default defineConfig({
   testMatch:
     process.env.RIVERLINE_ALL_JOURNEYS === "1"
       ? ["**/*.spec.ts"]
-      : ["real-solver.spec.ts", "round2.spec.ts", "whole-hand.spec.ts"],
+      : [
+          "real-solver.spec.ts",
+          "round2.spec.ts",
+          "whole-hand.spec.ts",
+          "m1.spec.ts",
+        ],
   workers: 1,
   fullyParallel: false,
   timeout: 60000,
@@ -18,6 +23,7 @@ export default defineConfig({
               /solver\.spec\.ts$/,
               /whole-hand\.spec\.ts$/,
               /round2\.spec\.ts$/,
+              /m1\.spec\.ts$/,
             ],
           },
           {
@@ -27,7 +33,7 @@ export default defineConfig({
           },
           {
             name: "whole-hand",
-            testMatch: /(?:whole-hand|round2)\.spec\.ts$/,
+            testMatch: /(?:whole-hand|round2|m1)\.spec\.ts$/,
             dependencies: ["analysis"],
           },
         ]

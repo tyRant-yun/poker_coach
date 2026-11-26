@@ -21,7 +21,7 @@ export const turnPathSchema = z
 export type TurnPath = z.infer<typeof turnPathSchema>;
 export const turnProfileSchema = z
   .object({
-    kind: z.literal("hu-turn/3"),
+    kind: z.enum(["hu-turn/3", "hu-turn/4"]),
     turnBets: z.tuple([
       z.number().int().nonnegative().max(1000000),
       z.number().int().nonnegative().max(1000000),
@@ -36,7 +36,7 @@ export type TurnProfile = z.infer<typeof turnProfileSchema>;
 export const turnInputSchema = riverInputSchema
   .omit({ sizes: true })
   .extend({
-    schemaVersion: z.literal(3),
+    schemaVersion: z.union([z.literal(3), z.literal(4)]),
     board: riverInputSchema.shape.board.element.array().length(4),
     turnBets: turnProfileSchema.shape.turnBets,
     riverBets: turnProfileSchema.shape.riverBets,
@@ -100,3 +100,79 @@ export const turnNodeSchema = z
   })
   .strict();
 export type TurnNode = z.infer<typeof turnNodeSchema>;
+export const turnPageQuerySchema = z
+  .object({
+    schemaVersion: z.literal(4),
+    nativeSha256: z.string().regex(/^[a-f0-9]{64}$/),
+    inputSha256: z.string().regex(/^[a-f0-9]{64}$/),
+    path: turnPathSchema,
+    maxMemoryBytes: z.number().int().min(1).max(268435456),
+    player: z.union([z.literal(0), z.literal(1)]),
+    indices: z.array(z.number().int().min(0).max(127)).max(100),
+  })
+  .strict();
+export const turnPageSchema = z
+  .object({
+    schemaVersion: z.literal(4),
+    path: turnPathSchema,
+    player: z.union([z.literal(0), z.literal(1)]),
+    counts: z.tuple([
+      z.number().int().min(1).max(128),
+      z.number().int().min(1).max(128),
+    ]),
+    node: turnNodeSchema.pick({
+      kind: true,
+      board: true,
+      terminal: true,
+      player: true,
+      actions: true,
+      chanceCards: true,
+      invested: true,
+    }),
+    rows: z
+      .array(
+        z
+          .object({
+            index: z.number().int().min(0).max(127),
+            combo: z.string().regex(/^(?:[2-9TJQKA][cdhs]){2}$/),
+            weight: z.number().finite().nonnegative(),
+            compatibleMass: z.number().finite().nonnegative(),
+            equity: z.number().finite(),
+            ev: z.number().finite(),
+            strategy: z
+              .array(z.number().finite().min(0).max(1.000001))
+              .max(3)
+              .nullable(),
+            actionEv: z.array(z.number().finite()).max(3).nullable(),
+          })
+          .strict(),
+      )
+      .max(100),
+    aggregate: z
+      .object({
+        denominator: z.number().finite().nonnegative(),
+        frequencies: z
+          .array(
+            z
+              .object({
+                action: z.string(),
+                frequency: z.number().finite().min(0).max(1.000001).nullable(),
+              })
+              .strict(),
+          )
+          .max(3),
+        classes: z
+          .array(
+            z
+              .object({
+                hand: z.string(),
+                probability: z.number().finite().min(0).max(1).nullable(),
+              })
+              .strict(),
+          )
+          .max(169),
+      })
+      .strict(),
+  })
+  .strict();
+export type TurnPage = z.infer<typeof turnPageSchema>;

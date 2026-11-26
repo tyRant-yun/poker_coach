@@ -16,7 +16,7 @@ import type { RealCase } from "../../src/modules/analysis/real-domain.ts";
 import type { Reply } from "../../src/modules/analysis/domain.ts";
 
 test(
-  "whole-hand MCP: all 14 tools, shared HTTP state, reference guards and replay backup",
+  "whole-hand MCP: all 15 tools, shared HTTP state, reference guards and replay backup",
   { timeout: 30000 },
   async () => {
     const directory = mkdtempSync(join(tmpdir(), "hands-mcp-")),
@@ -66,6 +66,7 @@ test(
       for (const name of Object.keys(gameTools))
         assert(list.tools.some((t) => t.name === name));
       assert.deepEqual(await call("game_list"), []);
+      assert.equal((await call<unknown[]>("game_bot_list")).length, 2);
       let h = await call<HandView>("game_create", { players: 2 });
       const session = (await (
         await fetch(`${address}/api/analysis/session`)
@@ -146,7 +147,11 @@ test(
       await call("game_import", { backup });
       const next = await call<HandView>("game_next", { handId: h.id });
       assert.notEqual(next.id, h.id);
-      assert.notEqual(next.hero, h.hero, "the next hand rotates Hero position");
+      assert.equal(next.hero, h.hero, "Hero physical seat stays fixed");
+      assert.notEqual(
+        next.session!.positions[next.hero],
+        h.session!.positions[h.hero],
+      );
       await call("game_get", { handId: next.id });
       for (const tool of Object.keys(gameTools)) assert(called.has(tool), tool);
     } finally {

@@ -21,6 +21,7 @@ import type {
   RealJob,
   RealSolution,
   RealTool,
+  ResearchView,
 } from "./real-domain";
 import s from "./RealAnalysisPage.module.css";
 import { ProductNav } from "../play/ProductNav";
@@ -28,6 +29,7 @@ import { gameCall } from "../play/client";
 import type { ResearchSource } from "../play/domain";
 
 type Workspace = {
+  browse?: ResearchView;
   revision: number;
   restricted: boolean;
   cases: RealCase[];
@@ -62,6 +64,8 @@ type NodeView = {
   returnedBb: number[];
 };
 type Query = {
+  solution: Ref;
+  player: 0 | 1;
   node: NodeView;
   aggregate?: Aggregate;
   items: Row[];
@@ -189,6 +193,7 @@ async function invoke<T>(
     | "artifact_page"
     | "artifact_inspect",
   input: Record<string, unknown> = {},
+  attempt = 0,
 ): Promise<T> {
   const connection = await connectAnalysis();
   const response = await fetch("/api/analysis/call", {
@@ -208,6 +213,19 @@ async function invoke<T>(
     }),
   });
   const reply = (await response.json()) as Reply;
+  if (
+    !reply.ok &&
+    reply.code === "RESOURCE_LIMIT" &&
+    [
+      "real_solution_query",
+      "real_turn_solution_query",
+      "real_range_aggregate",
+    ].includes(tool) &&
+    attempt < 20
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    return invoke<T>(tool, input, attempt + 1);
+  }
   if (!reply.ok) throw Error(`${reply.code} · ${reply.message}`);
   return reply.data as T;
 }
@@ -232,7 +250,11 @@ async function readRange(reference: Ref) {
 
 export function RealAnalysisPage() {
   const [pendingBoard, setPendingBoard] = useState<string[]>(),
-    [pathLabels, setPathLabels] = useState<string[]>([]);
+    [pathLabels, setPathLabels] = useState<string[]>([]),
+    [inputsCollapsed, setInputsCollapsed] = useState(false);
+  const openTicket = useRef(0),
+    heroChosen = useRef(false),
+    lastSaved = useRef("");
   const follow = useRef<
     { jobId: string; caseHash: string; opened?: boolean } | undefined
   >(
@@ -296,6 +318,14 @@ export function RealAnalysisPage() {
       )
         return;
       setSelected(c);
+      if (selectedId.current !== c.ref.id) {
+        ++openTicket.current;
+        solutionId.current = "";
+        setSolution(undefined);
+        setSolutionSpec(undefined);
+        setQuery(undefined);
+        setAggregate(undefined);
+      }
       selectedId.current = c.ref.id;
       loaded.current = c.ref.contentHash;
       loadedRanges.current = [oop, ip];
@@ -365,7 +395,16 @@ export function RealAnalysisPage() {
     }
     const current = state.selectedCase;
     if (current && current.ref.contentHash !== loaded.current && !dirty.current)
-      void adopt(current);
+      await adopt(current);
+    if (
+      !solutionId.current &&
+      !follow.current &&
+      !dirty.current &&
+      current &&
+      state.browse &&
+      loaded.current === current.ref.contentHash
+    )
+      await openSolution(state.browse.solution.id);
     const tracking = follow.current;
     if (tracking && !tracking.opened && !dirty.current) {
       const job = state.jobs.find((j) => j.ref.id === tracking.jobId),
@@ -514,7 +553,7 @@ export function RealAnalysisPage() {
       ...(draft.model === "turn"
         ? {
             turn: {
-              kind: "hu-turn/3",
+              kind: "hu-turn/4",
               turnBets: [centibb(draft.turnOop), centibb(draft.turnIp)],
               riverBets: [centibb(draft.riverOop), centibb(draft.riverIp)],
             },
@@ -594,26 +633,40 @@ export function RealAnalysisPage() {
     history.replaceState(null, "", url.pathname + url.search);
   }
   async function openSolution(id: string, autoCaseHash?: string) {
+    const ticket = ++openTicket.current;
     const result = await invoke<RealSolution>("real_solution_load", {
       solutionId: id,
     });
     const source = await invoke<RealSpec>("artifact_inspect", {
       artifactId: `${result.spec.id}@${result.spec.version}`,
     });
-    if (restricted.current) return;
+    const saved = await invoke<ResearchView | null>("real_browse_get", {
+      solutionId: id,
+    });
+    if (!alive.current || restricted.current || ticket !== openTicket.current)
+      return;
     if (autoCaseHash && (dirty.current || loaded.current !== autoCaseHash))
       return;
     setSolution(result);
     solutionId.current = result.ref.id;
     setSolutionSpec(source);
-    setPath([]);
-    setTurnPath([]);
-    setPathLabels([]);
-    setHand("");
-    setOffset(0);
+    heroChosen.current = !!saved;
+    lastSaved.current = saved ? JSON.stringify(saved) : "";
+    setQuery(undefined);
+    setPath(saved?.path ?? []);
+    setTurnPath(saved?.turnPath ?? []);
+    setPathLabels(saved?.labels ?? []);
+    setHand(saved?.hand ?? "");
+    setOffset(saved?.offset ?? 0);
+    setPlayer(saved?.player ?? 0);
+    setMatrixMetric(saved?.metric ?? "strategy");
+    setShowAll(saved?.showAll ?? false);
+    if (saved) setHero(saved.hero);
     setMessage(
       result.quality === "target-met"
-        ? "已读取固定真实解，质量目标达标。"
+        ? saved
+          ? "已恢复上次研究位置，固定真实解质量达标。"
+          : "已读取固定真实解，质量目标达标。"
         : "执行已结束，但预算内未达到所请求的质量目标。请结合指标使用。",
     );
   }
@@ -623,7 +676,9 @@ export function RealAnalysisPage() {
     setQuery(undefined);
     setAggregate(undefined);
     setMatrixRows([]);
-    const turn = solution.queryModel === "native-turn/3",
+    const turn =
+        solution.queryModel === "native-turn/3" ||
+        solution.queryModel === "native-turn-paged/4",
       tool = turn ? "real_turn_solution_query" : "real_solution_query",
       nodePath = turn ? turnPath : path;
     const read = async () => {
@@ -645,6 +700,18 @@ export function RealAnalysisPage() {
           inRangeOnly: true,
         }),
       ]);
+      while (m.nextOffset !== null && m.nextOffset !== undefined) {
+        const next = await invoke<Query>(tool, {
+          solutionId: solution.ref.id,
+          path: nodePath,
+          player,
+          offset: m.nextOffset,
+          limit: turn ? 100 : 200,
+          inRangeOnly: true,
+        });
+        m.items.push(...next.items);
+        m.nextOffset = next.nextOffset;
+      }
       const a = turn
         ? q.aggregate!
         : await invoke<Aggregate>("real_range_aggregate", {
@@ -660,18 +727,32 @@ export function RealAnalysisPage() {
           setQuery(q);
           setAggregate(a);
           setMatrixRows(m.items);
-          setHero((old) =>
-            m.items.some(
-              (r) => r.combo === old && r.availability === "available",
-            )
-              ? old
-              : (m.items.find((r) => r.availability === "available")?.combo ??
-                old),
-          );
+          if (!heroChosen.current) {
+            heroChosen.current = true;
+            setHero(
+              (old) =>
+                m.items.find((r) => r.availability === "available")?.combo ??
+                old,
+            );
+          }
         }
       })
       .catch((e) => {
-        if (active) setMessage(String(e));
+        if (active) {
+          setMessage(
+            String(e).includes("RESOURCE_LIMIT")
+              ? "查询暂时繁忙，已保留当前路径，可重新读取。"
+              : nodePath.length
+                ? `保存的路径不可读取，已回到该固定解根节点。${String(e)}`
+                : String(e),
+          );
+          if (nodePath.length && !String(e).includes("RESOURCE_LIMIT")) {
+            setPath([]);
+            setTurnPath([]);
+            setPathLabels([]);
+            setOffset(0);
+          }
+        }
       });
     return () => {
       active = false;
@@ -686,6 +767,62 @@ export function RealAnalysisPage() {
     showAll,
     queryTick,
   ]);
+  useEffect(() => {
+    if (
+      !solution ||
+      !query ||
+      restricted.current ||
+      query.solution.contentHash !== solution.ref.contentHash
+    )
+      return;
+    const turn =
+      solution.queryModel === "native-turn/3" ||
+      solution.queryModel === "native-turn-paged/4";
+    if (
+      JSON.stringify(query.node.path) !== JSON.stringify(turn ? turnPath : path)
+    )
+      return;
+    const view: ResearchView = {
+      solution: solution.ref,
+      path: turn ? [] : path,
+      turnPath: turn ? turnPath : [],
+      labels: pathLabels,
+      player,
+      hand,
+      hero,
+      metric: matrixMetric,
+      showAll,
+      offset,
+    };
+    const key = JSON.stringify(view);
+    if (key === lastSaved.current) return;
+    let active = true;
+    const timer = setTimeout(() => {
+      void invoke("real_browse_save", { view })
+        .then(() => {
+          if (active) lastSaved.current = key;
+        })
+        .catch((e) => {
+          if (active) setMessage(`浏览位置尚未保存：${String(e)}`);
+        });
+    }, 350);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [
+    solution?.ref.contentHash,
+    query,
+    JSON.stringify(path),
+    JSON.stringify(turnPath),
+    player,
+    hand,
+    hero,
+    matrixMetric,
+    showAll,
+    offset,
+    JSON.stringify(pathLabels),
+  ]);
   const [heroRow, setHeroRow] = useState<Row>();
   useEffect(() => {
     let active = true;
@@ -693,14 +830,31 @@ export function RealAnalysisPage() {
       setHeroRow(undefined);
       return;
     }
+    const currentPath =
+      solution.queryModel === "native-turn/3" ||
+      solution.queryModel === "native-turn-paged/4"
+        ? turnPath
+        : path;
+    if (
+      !query ||
+      query.solution.contentHash !== solution.ref.contentHash ||
+      query.player !== player ||
+      JSON.stringify(query.node.path) !== JSON.stringify(currentPath)
+    )
+      return;
     setHeroRow(undefined);
     void invoke<Query>(
-      solution.queryModel === "native-turn/3"
+      solution.queryModel === "native-turn/3" ||
+        solution.queryModel === "native-turn-paged/4"
         ? "real_turn_solution_query"
         : "real_solution_query",
       {
         solutionId: solution.ref.id,
-        path: solution.queryModel === "native-turn/3" ? turnPath : path,
+        path:
+          solution.queryModel === "native-turn/3" ||
+          solution.queryModel === "native-turn-paged/4"
+            ? turnPath
+            : path,
         inRangeOnly: false,
         player,
         combos: [hero],
@@ -722,6 +876,7 @@ export function RealAnalysisPage() {
     player,
     hero,
     queryTick,
+    query,
   ]);
   async function backup() {
     const item = await invoke<{ ref: Ref; pages: number }>("workspace_export");
@@ -919,8 +1074,14 @@ export function RealAnalysisPage() {
           {message}
         </div>
       )}
-      <div className={s.layout}>
-        <aside className={s.panel}>
+      <button
+        aria-expanded={!inputsCollapsed}
+        onClick={() => setInputsCollapsed(!inputsCollapsed)}
+      >
+        {inputsCollapsed ? "展开研究输入" : "收起研究输入"}
+      </button>
+      <div className={`${s.layout} ${inputsCollapsed ? s.wide : ""}`}>
+        <aside className={s.panel} hidden={inputsCollapsed}>
           <fieldset
             disabled={busy || practiceSource?.eligible === false}
             style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
@@ -989,7 +1150,7 @@ export function RealAnalysisPage() {
             </label>
             {draft.model === "turn" && (
               <p className={s.muted}>
-                每方最多 16
+                每方最多 128
                 个组合；每街一个固定下注尺寸，无再加注。切换到转牌会移除原河牌，后续按合法河牌枚举。
               </p>
             )}
@@ -1140,7 +1301,7 @@ export function RealAnalysisPage() {
               }
               return (
                 <RangeInput
-                  maxCombos={draft.model === "turn" ? 16 : 200}
+                  maxCombos={draft.model === "turn" ? 128 : 200}
                   key={key}
                   label={key.toUpperCase()}
                   weights={weights}
@@ -1437,6 +1598,7 @@ export function RealAnalysisPage() {
                                 c.probability === null || c.probability === 0
                               }
                               onClick={() => {
+                                setQuery(undefined);
                                 setTurnPath([
                                   ...turnPath,
                                   { kind: "deal", card: c.card },
@@ -1464,7 +1626,11 @@ export function RealAnalysisPage() {
                         <button
                           key={a}
                           onClick={() => {
-                            if (solution.queryModel === "native-turn/3")
+                            setQuery(undefined);
+                            if (
+                              solution.queryModel === "native-turn/3" ||
+                              solution.queryModel === "native-turn-paged/4"
+                            )
                               setTurnPath([
                                 ...turnPath,
                                 { kind: "action", index: i },

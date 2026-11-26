@@ -145,15 +145,15 @@ pub fn serve_model(directory: &Path, model: u8) -> Result<(), String> {
             seq += 1;
         }
     };
-    let result = if model == 3 {
+    let result = if model >= 3 {
         let input: riverline_solver::turn::TurnInput =
             serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
-        if input
-            .ranges
-            .iter()
-            .any(|r| r.values().filter(|&&w| w > 0.0).count() > 16)
+        if input.schema_version != model as u32
+            || input.ranges.iter().any(|r| {
+                r.values().filter(|&&w| w > 0.0).count() > if model == 3 { 16 } else { 128 }
+            })
         {
-            return Err("unsupported-input: turn product limit 16 combos per side".into());
+            return Err("unsupported-input: turn product range/schema limit".into());
         }
         riverline_solver::turn::run_turn(input, || cancelled.load(Ordering::SeqCst), progress)
             .and_then(|(g, r)| Ok((g, serde_json::to_value(r).map_err(|e| e.to_string())?)))
@@ -191,8 +191,8 @@ pub fn serve_model(directory: &Path, model: u8) -> Result<(), String> {
             if cancelled.load(Ordering::SeqCst) {
                 return emit("cancelled", Some(&identity), seq, serde_json::json!({}));
             }
-            let memo = if model == 3 {
-                format!("riverline-turn/3:{}", identity.spec_hash)
+            let memo = if model >= 3 {
+                format!("riverline-turn/{model}:{}", identity.spec_hash)
             } else if explicit {
                 format!("riverline-river-tree/2:{}", identity.spec_hash)
             } else {
@@ -205,7 +205,7 @@ pub fn serve_model(directory: &Path, model: u8) -> Result<(), String> {
             // a general/multistreet tree must use a separate on-demand native reader.
             let paths = [vec![], vec![0], vec![0, 0], vec![1], vec![1, 0], vec![1, 1]];
             let mut pages = vec![];
-            if model == 3 {
+            if model >= 3 {
                 riverline_solver::turn::query_turn(&mut loaded, &[])?;
             } else {
                 query(&mut loaded, &[])?;
@@ -222,7 +222,7 @@ pub fn serve_model(directory: &Path, model: u8) -> Result<(), String> {
                 pages.push(serde_json::json!({"path":path,"file":filename,"hash":format!("{:x}",Sha256::digest(&bytes)),"bytes":bytes.len()}));
             }
             let mut summary = report;
-            if model == 3 {
+            if model >= 3 {
                 summary["input"] = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
             }
             summary["nodes"] = pages.into();

@@ -40,6 +40,21 @@ export const caseTreeSchema = z
   })
   .strict();
 export type CaseTree = z.infer<typeof caseTreeSchema>;
+export const researchViewSchema = z
+  .object({
+    solution: refSchema,
+    path: z.array(z.number().int().min(0).max(128)).max(16),
+    turnPath: turnPathSchema,
+    labels: z.array(z.string().max(80)).max(24),
+    player: z.union([z.literal(0), z.literal(1)]),
+    hand: z.string().max(3),
+    hero: z.string().regex(/^(?:[2-9TJQKA][cdhs]){2}$/),
+    metric: z.enum(["strategy", "weight", "equity", "ev"]),
+    showAll: z.boolean(),
+    offset: z.number().int().min(0).max(1326),
+  })
+  .strict();
+export type ResearchView = z.infer<typeof researchViewSchema>;
 const configuration = {
   name: z.string().min(1).max(200),
   board: z
@@ -64,6 +79,8 @@ const configuration = {
     .max(8),
 };
 export const realSchemas = {
+  real_browse_save: writeInput.extend({ view: researchViewSchema }).strict(),
+  real_browse_get: baseInput.extend({ solutionId: id }).strict(),
   real_capabilities: baseInput.strict(),
   real_workspace_get: baseInput
     .extend({ caseId: id.optional(), solutionId: id.optional() })
@@ -150,6 +167,9 @@ export const realSchemas = {
 export type RealTool = keyof typeof realSchemas;
 export type RealInputs = { [K in RealTool]: z.infer<(typeof realSchemas)[K]> };
 export const realTools: Record<RealTool, string> = {
+  real_browse_save:
+    "保存固定解的节点、玩家、牌类与Hero观察上下文，不改变输入或策略",
+  real_browse_get: "读取同一固定解的上次浏览上下文",
   real_capabilities: "查询真实引擎的已验证模型、五类能力和运行限制",
   real_workspace_get: "读取同一工作区的真实作品、固定规格、作业及解摘要",
   real_case_create:
@@ -169,6 +189,7 @@ export const realTools: Record<RealTool, string> = {
   real_range_derive: "沿真实固定策略创建有来源的派生范围，不覆盖原解",
 };
 export const realReadTools = new Set<RealTool>([
+  "real_browse_get",
   "real_capabilities",
   "real_workspace_get",
   "real_preflight",
@@ -246,7 +267,7 @@ export type RealSolution = {
   native: Ref;
   summary: Ref;
   nodes: { path: number[]; artifact: Ref }[];
-  queryModel?: "native-paged/2" | "native-turn/3";
+  queryModel?: "native-paged/2" | "native-turn/3" | "native-turn-paged/4";
   handCounts: [number, number];
   metricDefinition: {
     unit: "bb";
@@ -264,6 +285,7 @@ export type RealState = {
   specs: Record<string, RealSpec>;
   jobs: Record<string, RealJob>;
   solutions: Record<string, RealSolution>;
+  views?: Record<string, ResearchView>;
 };
 export const realStateSchema = z
   .object({
@@ -272,5 +294,6 @@ export const realStateSchema = z
     specs: z.record(z.string(), z.object({ ref: refSchema }).passthrough()),
     jobs: z.record(z.string(), z.object({ ref: refSchema }).passthrough()),
     solutions: z.record(z.string(), z.object({ ref: refSchema }).passthrough()),
+    views: z.record(z.string(), researchViewSchema).optional(),
   })
   .strict();

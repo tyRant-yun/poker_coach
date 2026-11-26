@@ -9,7 +9,7 @@ import { hash } from "../store.ts";
 export type SolverInput = RiverInput | ExplicitRiverInput | TurnInput;
 export function parseSolverInput(value: unknown): SolverInput {
   const raw = value as { schemaVersion: number };
-  return raw?.schemaVersion === 3
+  return raw?.schemaVersion === 3 || raw?.schemaVersion === 4
     ? turnInputSchema.parse(value)
     : raw?.schemaVersion === 2
       ? explicitRiverSchema.parse(value)
@@ -22,7 +22,7 @@ export function caseTreeHash(c: RealCase) {
     c.stack,
     c.turn ?? c.tree ?? c.betPercent,
     c.turn
-      ? "hu-turn/3"
+      ? c.turn.kind
       : c.tree
         ? "explicit-river/v2"
         : "river-check-bet-call/v1",

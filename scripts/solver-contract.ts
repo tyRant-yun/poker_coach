@@ -4,6 +4,8 @@ import {
   turnInputSchema,
   turnNodeSchema,
   turnPathSchema,
+  turnPageSchema,
+  turnPageQuerySchema,
 } from "../contracts/solver/turn.ts";
 import {
   explicitRiverSchema,
@@ -30,6 +32,8 @@ for (const [name, schema] of Object.entries({
   turn: turnInputSchema,
   "turn-node": turnNodeSchema,
   "turn-path": turnPathSchema,
+  "turn-page": turnPageSchema,
+  "turn-page-query": turnPageQuerySchema,
 })) {
   writeFileSync(
     new URL(`../contracts/solver/${name}.schema.json`, import.meta.url),

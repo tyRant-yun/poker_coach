@@ -27,6 +27,23 @@ export function PlayPage() {
     [decision, setDecision] = useState<number>(),
     [raise, setRaise] = useState(""),
     [players, setPlayers] = useState<2 | 6>(6),
+    [positionMode, setPositionMode] = useState<"rotate" | "fixed" | "random">(
+      "rotate",
+    ),
+    [fixedPosition, setFixedPosition] = useState(0),
+    [botId, setBotId] = useState("baseline-heuristic/1"),
+    [bots, setBots] = useState<
+      {
+        id: string;
+        name: string;
+        available: boolean;
+        tableSizes: number[];
+        description: string;
+      }[]
+    >([]),
+    [filterPosition, setFilterPosition] = useState(""),
+    [filterStreet, setFilterStreet] = useState(""),
+    [markedOnly, setMarkedOnly] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const selected = new URLSearchParams(location.search).get("hand");
@@ -40,8 +57,25 @@ export function PlayPage() {
       mounted.current = false;
     };
   }, []);
+  const listInput = () =>
+    reviewMode
+      ? {
+          position: filterPosition || undefined,
+          street: filterStreet === "" ? undefined : Number(filterStreet),
+          markedOnly,
+        }
+      : {};
+  useEffect(() => {
+    void gameCall<typeof bots>("game_bot_list")
+      .then(setBots)
+      .catch(() => {});
+  }, []);
+  const setFilter = (fn: () => void) => {
+    fn();
+    navigate("/hands");
+  };
   async function load() {
-    const list = await gameCall<HandSummary[]>("game_list");
+    const list = await gameCall<HandSummary[]>("game_list", listInput());
     setHands(list);
     const id = selected ?? list[0]?.id;
     if (id) {
@@ -56,7 +90,7 @@ export function PlayPage() {
     setDecision(undefined);
     setHand(undefined);
     setError("");
-    void gameCall<HandSummary[]>("game_list")
+    void gameCall<HandSummary[]>("game_list", listInput())
       .then(async (list) => {
         if (!alive) return;
         setHands(list);
@@ -66,6 +100,9 @@ export function PlayPage() {
           if (alive) {
             setHand(h);
             setPlayers(h.players);
+            setPositionMode(h.session?.mode ?? "rotate");
+            setFixedPosition(h.session?.fixedPosition ?? 0);
+            setBotId(h.session?.botId ?? "baseline-heuristic/1");
           }
         }
       })
@@ -75,7 +112,7 @@ export function PlayPage() {
     return () => {
       alive = false;
     };
-  }, [selected, reviewMode]);
+  }, [selected, reviewMode, filterPosition, filterStreet, markedOnly]);
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true);
@@ -90,17 +127,25 @@ export function PlayPage() {
   };
   const create = async () => {
     const origin = route.current;
-    const next = hand?.complete && players === hand.players;
+    const next =
+      hand?.complete &&
+      players === hand.players &&
+      (!hand.session ||
+        (positionMode === hand.session.mode &&
+          fixedPosition === hand.session.fixedPosition &&
+          botId === hand.session.botId));
     const h = await gameCall<HandView>(
       next ? "game_next" : "game_create",
-      next ? { handId: hand.id } : { players },
+      next
+        ? { handId: hand.id }
+        : { players, positionMode, fixedPosition, botId },
     );
     setSnapshot(undefined);
     setDecision(undefined);
     await playback.play(h, () => setHand(h));
     if (!mounted.current || route.current !== origin) return;
     navigate(`/play?hand=${h.id}`);
-    setHands(await gameCall<HandSummary[]>("game_list"));
+    setHands(await gameCall<HandSummary[]>("game_list", listInput()));
   };
   const exportHands = async () => {
     const backup = await gameCall("game_export"),
@@ -127,7 +172,7 @@ export function PlayPage() {
     });
     setRaise("");
     await playback.play(h, () => setHand(h));
-    setHands(await gameCall<HandSummary[]>("game_list"));
+    setHands(await gameCall<HandSummary[]>("game_list", listInput()));
   };
   const selectDecision = async (sequence: number) => {
     const view = await gameCall<HandView>("game_review", {
@@ -168,9 +213,12 @@ export function PlayPage() {
                   <select
                     aria-label="桌型"
                     value={players}
-                    onChange={(e) =>
-                      setPlayers(Number(e.target.value) as 2 | 6)
-                    }
+                    onChange={(e) => {
+                      setPlayers(Number(e.target.value) as 2 | 6);
+                      setFixedPosition(0);
+                      if (e.target.value === "6")
+                        setBotId("baseline-heuristic/1");
+                    }}
                   >
                     <option value={6}>6 人桌</option>
                     <option value={2}>单挑</option>
@@ -210,12 +258,119 @@ export function PlayPage() {
             <>
               <span role="status">
                 {playback.thinking !== undefined
-                  ? `${positions(hand!.players)[playback.thinking]} 正在行动…`
+                  ? `${(hand!.session?.positions ?? positions(hand!.players))[playback.thinking]} 正在行动…`
                   : frameText(playback.frame)}
               </span>
               <button onClick={() => playback.cancel()}>跳过动作播放</button>
             </>
           )}
+        </div>
+      )}
+      {!reviewMode && (
+        <details className={s.sessionSettings}>
+          <summary>位置与对手</summary>
+          <fieldset disabled={busy || (!!hand && !hand.complete)}>
+            <label>
+              位置安排
+              <select
+                aria-label="位置安排"
+                value={positionMode}
+                onChange={(e) =>
+                  setPositionMode(e.target.value as typeof positionMode)
+                }
+              >
+                <option value="rotate">按钮轮转</option>
+                <option value="fixed">指定位置</option>
+                <option value="random">随机位置</option>
+              </select>
+            </label>
+            {positionMode === "fixed" && (
+              <label>
+                Hero位置
+                <select
+                  aria-label="Hero位置"
+                  value={fixedPosition}
+                  onChange={(e) => setFixedPosition(Number(e.target.value))}
+                >
+                  {positions(players).map((p, i) => (
+                    <option key={p} value={i}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <label>
+              对手
+              <select
+                aria-label="对手"
+                value={botId}
+                onChange={(e) => setBotId(e.target.value)}
+              >
+                <option value="baseline-heuristic/1">基础对手</option>
+                {bots
+                  .filter(
+                    (b) =>
+                      b.id !== "baseline-heuristic/1" &&
+                      b.tableSizes.includes(players),
+                  )
+                  .map((b) => (
+                    <option key={b.id} value={b.id} disabled={!b.available}>
+                      {b.name} · {b.available ? "实验候选" : "未安装"}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <p>
+              {botId === "hu-v2.2.2-experimental"
+                ? "HU 2.2.2为固定本地候选，整体强度未证明。"
+                : "基础对手使用轻量启发式，未作GTO声明。"}{" "}
+              更改设置将在下一手建立新会话。
+            </p>
+          </fieldset>
+        </details>
+      )}
+      {reviewMode && (
+        <div className={s.reviewFilters}>
+          <label>
+            筛选位置
+            <select
+              aria-label="筛选位置"
+              value={filterPosition}
+              onChange={(e) =>
+                setFilter(() => setFilterPosition(e.target.value))
+              }
+            >
+              <option value="">全部位置</option>
+              {["BB", "BTN/SB", "SB", "UTG", "HJ", "CO", "BTN"].map((p) => (
+                <option key={p}>{p}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            筛选街道
+            <select
+              aria-label="筛选街道"
+              value={filterStreet}
+              onChange={(e) => setFilter(() => setFilterStreet(e.target.value))}
+            >
+              <option value="">全部街道</option>
+              {streetNames.slice(0, 4).map((p, i) => (
+                <option key={p} value={i}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={markedOnly}
+              onChange={(e) => setFilter(() => setMarkedOnly(e.target.checked))}
+            />
+            只看有疑问的手牌
+          </label>
+          <small>最近1000手中筛选，最多显示100手。</small>
         </div>
       )}
       {(!hand || hand.complete) && !playback.playing && (
@@ -275,7 +430,7 @@ export function PlayPage() {
                   第 {h.number} 手
                   <span>
                     {h.complete
-                      ? `${h.decisions} 次决策 · ${h.marked} 个疑问`
+                      ? `${h.position ?? ""} · ${h.decisions} 次决策 · ${h.marked} 个疑问`
                       : "未完成"}
                   </span>
                   <small>
@@ -292,7 +447,14 @@ export function PlayPage() {
               <span>
                 第 {view.number} 手 · {streetNames[view.street]}
               </span>
-              <span>Hero · {positions(view.players)[view.hero]}</span>
+              <span>
+                Hero ·{" "}
+                {
+                  (view.session?.positions ?? positions(view.players))[
+                    view.hero
+                  ]
+                }
+              </span>
               {!reviewMode && playback.playing && (
                 <strong role="status" aria-live="polite">
                   {playback.thinking !== undefined
@@ -311,7 +473,23 @@ export function PlayPage() {
                 </button>
               )}
             </div>
-            <div className={s.table} aria-label="当前牌桌">
+            {view.session && (
+              <p className={s.opponent}>
+                对手：
+                {view.session.botId === "hu-v2.2.2-experimental"
+                  ? "HU Bot 2.2.2 · 实验候选"
+                  : "基础对手"}{" "}
+                · 本会话第 {view.session.handIndex} 手
+                {view.session.mode !== "rotate"
+                  ? ` · ${view.session.mode === "fixed" ? "指定位置练习" : "随机位置练习"}`
+                  : ""}
+              </p>
+            )}
+            <div
+              className={s.table}
+              aria-label="当前牌桌"
+              data-players={view.players}
+            >
               <div className={s.board}>
                 <span>
                   底池 <strong>{amount(view.pot)}</strong>
@@ -319,24 +497,48 @@ export function PlayPage() {
                 <Board cards={view.board} />
                 {!view.board.length && <span className={s.muted}>翻前</span>}
               </div>
-              <div
-                className={s.seats}
-                style={
-                  view.players === 2
-                    ? { gridTemplateColumns: "repeat(2,minmax(0,1fr))" }
-                    : undefined
-                }
-              >
+              <div className={s.seats}>
                 {view.stacks.map((stack, i) => (
                   <div
                     key={i}
+                    data-seat={i}
+                    data-position={
+                      (view.session?.positions ?? positions(view.players))[i]
+                    }
+                    data-hero={i === view.hero}
+                    data-dealer={
+                      i === (view.session?.dealerSeat ?? view.players - 1)
+                    }
+                    data-player-id={view.session?.playerIds[i] ?? `legacy-${i}`}
+                    style={{
+                      gridArea:
+                        view.players === 2
+                          ? i === view.hero
+                            ? "f"
+                            : "a"
+                          : ["f", "d", "a", "b", "c", "e"][
+                              (i - view.hero + view.players) % view.players
+                            ],
+                    }}
                     className={`${s.seat} ${i === (playback.thinking ?? view.actor) ? s.acting : ""} ${!view.active[i] && !view.complete ? s.folded : ""}`}
                   >
                     <div>
                       <strong>
                         {i === view.hero ? "Hero" : `对手 ${i + 1}`}
                       </strong>
-                      <span>{positions(view.players)[i]}</span>
+                      <span>
+                        {i ===
+                          (view.session?.dealerSeat ?? view.players - 1) && (
+                          <b className={s.dealer} title="按钮">
+                            D
+                          </b>
+                        )}{" "}
+                        {
+                          (view.session?.positions ?? positions(view.players))[
+                            i
+                          ]
+                        }
+                      </span>
                     </div>
                     <span>
                       {amount(stack)}
@@ -476,6 +678,31 @@ export function PlayPage() {
                   )}
                 </div>
               )}
+            {!!view.botDecisions?.some((d) => d.fallback) && (
+              <p role="status" className={s.opponent}>
+                本手有对手回退：
+                {view.botDecisions.filter((d) => d.fallback).at(-1)?.fallback}
+                。已记录实际执行版本。
+              </p>
+            )}
+            {!!view.botDecisions?.length && (
+              <details>
+                <summary>对手与运行记录</summary>
+                <p>所选对手固定版本只决定其行动，不是当前手牌的评分答案。</p>
+                {view.botDecisions.map((d) => (
+                  <p key={d.sequence}>
+                    {d.sequence + 1}号行动 ·{" "}
+                    {
+                      (view.session?.positions ?? positions(view.players))[
+                        d.actor
+                      ]
+                    }{" "}
+                    · {d.executed} · {d.elapsedMs.toFixed(1)}ms
+                    {d.fallback ? ` · ${d.fallback}` : ""}
+                  </p>
+                ))}
+              </details>
+            )}
             {reviewMode && !hand!.complete && (
               <div className={s.result}>
                 <span>本手尚未完成</span>
@@ -526,7 +753,11 @@ export function PlayPage() {
                     <li key={i}>
                       <span>
                         {streetNames[e.street]} ·{" "}
-                        {positions(view.players)[e.actor]}
+                        {
+                          (view.session?.positions ?? positions(view.players))[
+                            e.actor
+                          ]
+                        }
                       </span>
                       <strong>
                         {actionName(e.kind)}

@@ -5,6 +5,15 @@ import { z } from "zod";
 import { DiskStore, hash } from "../store.ts";
 import { contractVersion } from "../../src/modules/analysis/domain.ts";
 import type { Reply } from "../../src/modules/analysis/domain.ts";
+import { BotRegistry, botCatalog } from "../bots/registry.ts";
+import { makeSeating, validateSeating } from "./seating.ts";
+import {
+  seatContext,
+  seatingSchema,
+  positions,
+} from "../../src/modules/play/seating.ts";
+import type { Seating } from "../../src/modules/play/seating.ts";
+import type { BotDecisionRecord } from "../../src/modules/play/domain.ts";
 import { gameSchemas } from "../../src/modules/play/domain.ts";
 import type {
   GameAction,
@@ -18,6 +27,8 @@ import type {
 import { Rules } from "./rules.ts";
 
 type Hand = {
+  seating?: Seating;
+  botDecisions?: BotDecisionRecord[];
   transition?: Transition;
   id: string;
   number: number;
@@ -58,6 +69,7 @@ const shuffle = () => {
 export class GameService {
   private db: DatabaseSync;
   private rules = new Rules();
+  private providers = new BotRegistry();
   private queue: Promise<unknown> = Promise.resolve();
   constructor(private store: DiskStore) {
     this.db = new DatabaseSync(join(store.directory, "hands.sqlite"));
@@ -80,6 +92,7 @@ export class GameService {
   }
   close() {
     this.rules.close();
+    this.providers.close();
     this.db.close();
   }
   restricted() {
@@ -115,17 +128,39 @@ export class GameService {
     actions = hand.actions,
   ): HandView {
     const { holes, shown, ...safe } = state;
+    const physical = (r: number) => hand.seating?.ruleToPhysical[r] ?? r;
+    const reorder = <T>(values: T[]) => {
+      if (!values.length) return values;
+      const out = Array<T>(values.length);
+      values.forEach((v, r) => (out[physical(r)] = v));
+      return out;
+    };
     return {
       ...safe,
       ...(state === hand.state && actions === hand.actions && hand.transition
         ? { transition: hand.transition }
         : {}),
+      ...(hand.seating ? { session: seatContext(hand.seating) } : {}),
+      ...(hand.botDecisions
+        ? {
+            botDecisions: hand.botDecisions
+              .filter((d) => d.sequence < actions.length)
+              .map((d) => ({ ...d, actor: physical(d.actor) })),
+          }
+        : {}),
+      actor: state.actor === null ? null : physical(state.actor),
+      stacks: reorder(state.stacks),
+      bets: reorder(state.bets),
+      active: reorder(state.active),
+      payoffs: reorder(state.payoffs),
+      events: state.events.map((e) => ({ ...e, actor: physical(e.actor) })),
       id: hand.id,
       revision: hand.revision,
       number: hand.number,
-      hero: hand.hero,
+      hero: physical(hand.hero),
       heroCards: holes[hand.hero],
-      revealed: state.complete && state.board.length === 5 ? shown : [],
+      revealed:
+        state.complete && state.board.length === 5 ? reorder(shown) : [],
       marks: hand.marks.filter((n) => n <= actions.length),
       decisions: state.events.flatMap((action, sequence) =>
         action.actor === hand.hero
@@ -161,44 +196,62 @@ export class GameService {
       demand(i < 200, "对手行动超过本手限制");
       const s = hand.state,
         actor = s.actor!,
-        cards = s.holes[actor];
-      const rank = (c: string) => "23456789TJQKA".indexOf(c[0]);
-      const strength =
-        (rank(cards[0]) + rank(cards[1])) / 24 +
-        (cards[0][0] === cards[1][0] ? 0.35 : 0) +
-        (cards[0][1] === cards[1][1] ? 0.08 : 0);
-      const noise =
-        parseInt(
-          hash([hand.id, hand.actions.length, "bot-heuristic/1"]).slice(0, 8),
-          16,
-        ) / 0xffffffff;
-      const call = s.legal.find((a) => a.kind === "call"),
-        raise = s.legal.find((a) => a.kind === "raise"),
-        check = s.legal.find((a) => a.kind === "check");
-      let action: GameAction;
-      if (raise && ((strength > 0.85 && noise < 0.28) || noise < 0.035)) {
-        const wanted = Math.max(
-          raise.min!,
-          Math.max(...s.bets) + Math.round(s.pot * 0.65),
-        );
-        action = { actor, kind: "raise", amount: Math.min(raise.max!, wanted) };
-      } else if (
-        call &&
-        s.legal.some((a) => a.kind === "fold") &&
-        ((call.amount! > 150 && strength < 0.45 && noise < 0.65) ||
-          (call.amount! > 2000 && strength < 0.8))
-      )
-        action = { actor, kind: "fold" };
-      else action = { actor, kind: check ? "check" : "call" };
+        view = this.project(hand),
+        physical = hand.seating?.ruleToPhysical[actor] ?? actor;
+      const botId = hand.seating?.botId ?? "baseline-heuristic/1";
+      const reply = await this.providers.decide(botId, {
+        contract: "riverline-bot/1",
+        requestId: randomUUID(),
+        handId: hand.id,
+        sessionId: hand.seating?.sessionId ?? hand.id,
+        revision: hand.revision,
+        sequence: hand.actions.length,
+        playerId: hand.seating?.playerIds[physical] ?? `legacy-${actor}`,
+        originPlayers: hand.players,
+        actor: physical,
+        dealerSeat: hand.seating?.dealerSeat ?? hand.players - 1,
+        street: s.street,
+        ownCards: s.holes[actor],
+        board: s.board,
+        stacks: view.stacks,
+        bets: view.bets,
+        active: view.active,
+        pot: s.pot,
+        smallBlind: 50,
+        bigBlind: 100,
+        handIndex: hand.seating?.handIndex ?? hand.number,
+        history: view.events,
+        legal: s.legal,
+        seed: hash([hand.id, hand.actions.length, "bot-heuristic/1"]),
+        budgetMs: 300,
+      });
+      const action: GameAction = { actor, ...reply.action };
+      (hand.botDecisions ??= []).push({
+        sequence: hand.actions.length,
+        actor,
+        requested: botId,
+        executed: reply.executed,
+        elapsedMs: reply.elapsedMs,
+        ...(reply.fallback ? { fallback: reply.fallback } : {}),
+      });
       hand.actions.push(action);
       hand.state = await this.replay(hand);
     }
   }
   private summary(hand: Hand): HandSummary {
     return {
+      ...(hand.seating
+        ? {
+            position: seatContext(hand.seating).positions[
+              hand.seating.heroSeat
+            ],
+            sessionId: hand.seating.sessionId,
+            botId: hand.seating.botId,
+          }
+        : { position: positions(hand.players)[hand.hero] }),
       id: hand.id,
       number: hand.number,
-      hero: hand.hero,
+      hero: hand.seating?.heroSeat ?? hand.hero,
       players: hand.players,
       complete: hand.state.complete,
       decisions: hand.actions.filter((a) => a.actor === hand.hero).length,
@@ -226,6 +279,7 @@ export class GameService {
       );
       const write = ![
         "game_list",
+        "game_bot_list",
         "game_get",
         "game_transition_query",
         "game_review",
@@ -279,11 +333,18 @@ export class GameService {
         caseId?: string;
         note?: string;
         backup?: unknown;
+        positionMode?: "rotate" | "fixed" | "random";
+        fixedPosition?: number;
+        botId?: Seating["botId"];
+        position?: string;
+        street?: number;
+        markedOnly?: boolean;
       };
       if (this.restricted()) {
         demand(
           [
             "game_list",
+            "game_bot_list",
             "game_get",
             "game_transition_query",
             "game_act",
@@ -304,20 +365,42 @@ export class GameService {
         saveSource: ResearchSource | undefined;
       const importHands: Hand[] = [],
         importSources: ResearchSource[] = [];
-      if (name === "game_list") {
+      if (name === "game_bot_list") result = botCatalog();
+      else if (name === "game_list") {
         result = (
           this.db
             .prepare(
-              "SELECT document FROM hands ORDER BY number DESC LIMIT 100",
+              "SELECT document FROM hands ORDER BY number DESC LIMIT 1000",
             )
             .all() as { document: string }[]
-        ).map((r) => this.summary(JSON.parse(r.document)));
+        )
+          .map((r) => JSON.parse(r.document) as Hand)
+          .filter(
+            (h) =>
+              (!arg.position ||
+                (h.seating
+                  ? seatContext(h.seating).positions[h.seating.heroSeat]
+                  : positions(h.players)[h.hero]) === arg.position) &&
+              (!arg.markedOnly || h.marks.length > 0) &&
+              (arg.street === undefined ||
+                h.state.events.some(
+                  (e) => e.actor === h.hero && e.street === arg.street,
+                )),
+          )
+          .slice(0, 100)
+          .map((h) => this.summary(h));
       } else if (name === "game_create" || name === "game_next") {
         let players = arg.players ?? 6;
+        let previousLayout: Seating | undefined;
         if (name === "game_next") {
           const previous = this.get(arg.handId);
           demand(previous.state.complete, "请先完成当前这手牌");
           players = previous.players;
+          const latest = this.db
+            .prepare("SELECT id FROM hands ORDER BY number DESC LIMIT 1")
+            .get() as { id: string };
+          demand(latest.id === previous.id, "请从最近一手继续会话，或新建练习");
+          previousLayout = previous.seating;
         }
         const unfinished = this.db
           .prepare("SELECT document FROM hands ORDER BY number DESC LIMIT 1")
@@ -333,12 +416,33 @@ export class GameService {
               .get() as { n: number }
           ).n,
         );
+        const seating = makeSeating(
+          players,
+          {
+            positionMode: previousLayout?.mode ?? arg.positionMode ?? "rotate",
+            fixedPosition:
+              previousLayout?.fixedPosition ?? arg.fixedPosition ?? 0,
+            botId: previousLayout?.botId ?? arg.botId ?? "baseline-heuristic/1",
+          },
+          previousLayout,
+        );
+        demand(
+          players === 2 || seating.botId === "baseline-heuristic/1",
+          "HU候选只支持原生单挑桌",
+        );
+        demand(
+          botCatalog().some((b) => b.id === seating.botId && b.available),
+          "对手发行包不可用，请运行 npm run bot:setup",
+        );
+        await this.providers.warm(seating.botId);
         const hand: Hand = {
+          seating,
+          botDecisions: [],
           id: randomUUID(),
           number,
           revision: 0,
           players,
-          hero: (players - 1 - ((number - 1) % players) + players) % players,
+          hero: seating.ruleToPhysical.indexOf(seating.heroSeat),
           deck: shuffle(),
           actions: [],
           marks: [],
@@ -393,15 +497,41 @@ export class GameService {
               id: `${t!.batchId}:${f.sequence}`,
               sequence: f.sequence,
               kind: f.kind,
-              actor: f.actor,
+              actor:
+                f.actor === null
+                  ? null
+                  : (hand.seating?.ruleToPhysical[f.actor] ?? f.actor),
               amount: f.amount,
-              returned: f.returned,
+              returned:
+                f.returned && hand.seating
+                  ? physicalArray(f.returned, hand.seating)
+                  : f.returned,
               view: {
                 ...base,
                 ...safe,
-                actor: f.actor,
+                actor:
+                  f.actor === null
+                    ? null
+                    : (hand.seating?.ruleToPhysical[f.actor] ?? f.actor),
+                stacks: hand.seating
+                  ? physicalArray(f.snapshot.stacks, hand.seating)
+                  : f.snapshot.stacks,
+                bets: hand.seating
+                  ? physicalArray(f.snapshot.bets, hand.seating)
+                  : f.snapshot.bets,
+                active: hand.seating
+                  ? physicalArray(f.snapshot.active, hand.seating)
+                  : f.snapshot.active,
+                payoffs: hand.seating
+                  ? physicalArray(f.snapshot.payoffs, hand.seating)
+                  : f.snapshot.payoffs,
+                botDecisions: base.botDecisions?.filter(
+                  (d) => d.sequence < f.actionCount,
+                ),
                 legal: [],
-                revealed: shown,
+                revealed: hand.seating
+                  ? physicalArray(shown, hand.seating)
+                  : shown,
                 events: base.events.slice(0, f.actionCount),
                 decisions: base.decisions.filter(
                   (d) => d.sequence < f.actionCount,
@@ -520,7 +650,10 @@ export class GameService {
                 stack: Math.min(
                   ...root.stacks.filter((_, i) => root.active[i]),
                 ),
-                path: hand.actions.slice(start, seq),
+                path: hand.actions.slice(start, seq).map((a) => ({
+                  ...a,
+                  actor: hand.seating?.ruleToPhysical[a.actor] ?? a.actor,
+                })),
               };
             }
             const existing = this.db
@@ -601,6 +734,22 @@ export class GameService {
                         marks: z.array(z.number().int().nonnegative()).max(100),
                         state: z.unknown(),
                         created: z.string().datetime(),
+                        seating: seatingSchema.optional(),
+                        botDecisions: z
+                          .array(
+                            z
+                              .object({
+                                sequence: z.number().int().nonnegative(),
+                                actor: z.number().int().min(0).max(5),
+                                requested: z.string(),
+                                executed: z.string(),
+                                elapsedMs: z.number().finite().nonnegative(),
+                                fallback: z.string().max(120).optional(),
+                              })
+                              .strict(),
+                          )
+                          .max(300)
+                          .optional(),
                         transition: z
                           .object({
                             batchId: z.string(),
@@ -634,8 +783,24 @@ export class GameService {
           unique.add(value.id);
           demand(!numbers.has(value.number), "备份含重复手牌序号");
           numbers.add(value.number);
-          const hand = value as Hand,
-            replayed = await this.replay(hand);
+          const hand = value as Hand;
+          if (hand.seating)
+            validateSeating(hand.seating, hand.players, hand.hero);
+          if (hand.botDecisions)
+            demand(
+              hand.botDecisions.every(
+                (d, i, all) =>
+                  d.requested ===
+                    (hand.seating?.botId ?? "baseline-heuristic/1") &&
+                  (d.executed === d.requested ||
+                    d.executed === "legal-safe/1") &&
+                  d.actor !== hand.hero &&
+                  hand.actions[d.sequence]?.actor === d.actor &&
+                  (i === 0 || d.sequence > all[i - 1].sequence),
+              ),
+              "Bot记录与行动前缀不一致",
+            );
+          const replayed = await this.replay(hand);
           if (hand.transition) {
             const t = hand.transition;
             demand(
@@ -727,7 +892,10 @@ export class GameService {
               board: root.board,
               pot: root.pot,
               stack: Math.min(...root.stacks.filter((_, i) => root.active[i])),
-              path: hand!.actions.slice(start, source.sequence),
+              path: hand!.actions.slice(start, source.sequence).map((a) => ({
+                ...a,
+                actor: hand!.seating?.ruleToPhysical[a.actor] ?? a.actor,
+              })),
             };
           } else delete source.root;
           delete source.caseRef; // Analysis is a separate backup, never silently bind a local similarly named case.
@@ -793,4 +961,11 @@ export class GameService {
       };
     }
   }
+}
+
+function physicalArray<T>(values: T[], layout: Seating): T[] {
+  if (!values.length) return values;
+  const result = Array<T>(values.length);
+  values.forEach((v, r) => (result[layout.ruleToPhysical[r]] = v));
+  return result;
 }

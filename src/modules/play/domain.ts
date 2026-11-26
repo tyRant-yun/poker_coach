@@ -1,10 +1,19 @@
 import { z } from "zod";
 import { baseInput } from "../analysis/domain";
+import { botIdSchema } from "./seating";
+import type { SeatContext } from "./seating";
 
 const identity = { handId: z.string().min(1) };
 const write = baseInput.required({ requestId: true, expectedRevision: true });
 export const gameSchemas = {
-  game_list: baseInput.strict(),
+  game_list: baseInput
+    .extend({
+      position: z.string().optional(),
+      street: z.number().int().min(0).max(3).optional(),
+      markedOnly: z.boolean().optional(),
+    })
+    .strict(),
+  game_bot_list: baseInput.strict(),
   game_get: baseInput.extend(identity).strict(),
   game_transition_query: baseInput
     .extend({
@@ -16,7 +25,12 @@ export const gameSchemas = {
     })
     .strict(),
   game_create: write
-    .extend({ players: z.union([z.literal(2), z.literal(6)]).default(6) })
+    .extend({
+      players: z.union([z.literal(2), z.literal(6)]).default(6),
+      positionMode: z.enum(["rotate", "fixed", "random"]).default("rotate"),
+      fixedPosition: z.number().int().min(0).max(5).default(0),
+      botId: botIdSchema.default("baseline-heuristic/1"),
+    })
     .strict(),
   game_next: write.extend(identity).strict(),
   game_act: write
@@ -51,6 +65,7 @@ export const gameSchemas = {
 };
 export type GameTool = keyof typeof gameSchemas;
 export const gameTools: Record<GameTool, string> = {
+  game_bot_list: "读取本地对手发行版本、支持桌型与实际可用状态，不返回策略答案",
   game_list: "列出整手练习摘要，不返回私牌或未来信息",
   game_get: "读取整手练习的当前安全视角及合法行动",
   game_transition_query:
@@ -96,6 +111,8 @@ export type RuleView = {
   events: (GameAction & { street: number })[];
 };
 export type HandView = Omit<RuleView, "holes" | "shown"> & {
+  session?: SeatContext;
+  botDecisions?: BotDecisionRecord[];
   transition?: Transition;
   id: string;
   revision: number;
@@ -160,6 +177,9 @@ export type RuleTrace = {
   nextOffset: number | null;
 };
 export type HandSummary = {
+  position?: string;
+  sessionId?: string;
+  botId?: string;
   id: string;
   number: number;
   hero: number;
@@ -182,6 +202,13 @@ export type ResearchSource = {
   caseRef?: { id: string; version: number; contentHash: string; kind: string };
   note?: string;
 };
-export const positions = (players: number) =>
-  players === 2 ? ["BB", "BTN/SB"] : ["SB", "BB", "UTG", "HJ", "CO", "BTN"];
+export { positions } from "./seating";
+export type BotDecisionRecord = {
+  sequence: number;
+  actor: number;
+  requested: string;
+  executed: string;
+  elapsedMs: number;
+  fallback?: string;
+};
 export const streetNames = ["翻前", "翻牌", "转牌", "河牌", "已结束"];

@@ -241,6 +241,9 @@ test("NJ09: genuine turn solve → conditional river choice → strategy branch 
   await expect(
     page.getByRole("button", { name: "下注至 7 bb", exact: true }),
   ).toBeVisible();
+  // Hero remains fixed when changing branches/players; choose an explicit live IP observation.
+  await page.getByText("Hero牌码输入", { exact: true }).click();
+  await page.getByLabel("Hero 具体组合", { exact: true }).fill("KdKh");
   await expect(page.getByLabel("Hero行动EV图", { exact: true })).toBeVisible();
   await page.screenshot({
     path: ".artifacts/round2/screenshots/turn-river.png",
@@ -304,6 +307,7 @@ test("NJ09: genuine turn solve → conditional river choice → strategy branch 
     .getByLabel("研究问题", { exact: true })
     .fill("只研究转牌前缀，不固定实际河牌。");
   await page.getByRole("button", { name: "保存笔记", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("研究问题已保存");
   await page.reload();
   await expect(page.getByLabel("研究问题", { exact: true })).toHaveValue(
     "只研究转牌前缀，不固定实际河牌。",

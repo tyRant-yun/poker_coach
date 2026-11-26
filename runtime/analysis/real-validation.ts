@@ -20,6 +20,17 @@ export function validateRealState(s: RuntimeState) {
       throw Error("真实备份固定引用缺失");
     return value;
   };
+  for (const [id, view] of Object.entries(s.real.views ?? {})) {
+    const solution = fixed(s.real.solutions, view.solution),
+      turn =
+        solution.queryModel === "native-turn/3" ||
+        solution.queryModel === "native-turn-paged/4";
+    if (
+      id !== solution.ref.id ||
+      (turn ? view.path.length !== 0 : view.turnPath.length !== 0)
+    )
+      throw Error("浏览上下文固定身份或路径模型不同");
+  }
   for (const group of [s.real.cases, s.real.specs, s.real.solutions])
     for (const [key, value] of Object.entries(group)) {
       const { ref: reference, ...payload } = value;
@@ -73,7 +84,8 @@ export function validateRealState(s: RuntimeState) {
     if (
       solution.dataKind !== "engine-computed" ||
       (solution.queryModel === "native-paged/2" ||
-      solution.queryModel === "native-turn/3"
+      solution.queryModel === "native-turn/3" ||
+      solution.queryModel === "native-turn-paged/4"
         ? solution.nodes.length !== 0
         : solution.queryModel !== undefined || solution.nodes.length !== 6) ||
       solution.engineCommit !== "9d1509fe5077d019825f833eed04b16d342dfda1"

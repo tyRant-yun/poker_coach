@@ -1,6 +1,7 @@
 import type { RuntimeState, Ref } from "../../src/modules/analysis/domain.ts";
 import { verifyNativeRoot } from "../engines/native-access.ts";
 import { verifyTurnRoot } from "../engines/turn-access.ts";
+import { verifyTurnPageRoot } from "../engines/turn-page-access.ts";
 import { parseSolverInput, caseTreeHash } from "./model.ts";
 import { allCombos } from "../../src/modules/analysis/content.ts";
 import { hash } from "../store.ts";
@@ -43,18 +44,22 @@ export function validateRealArtifacts(
       hash(input.board) !== hash(c.board) ||
       input.pot !== c.pot ||
       input.stack !== c.stack ||
-      (input.schemaVersion === 3
+      (input.schemaVersion === 3 || input.schemaVersion === 4
         ? !c.turn ||
+          (input.schemaVersion === 4) !== (c.turn.kind === "hu-turn/4") ||
           !!c.tree ||
           hash(input.turnBets) !== hash(c.turn.turnBets) ||
           hash(input.riverBets) !== hash(c.turn.riverBets)
         : input.schemaVersion === 2
           ? !!c.turn || !c.tree || hash(input.treeLines) !== hash(c.tree.lines)
-          : !!c.turn || !!c.tree || input.sizes[0][0] !== `${c.betPercent}%`) ||
+          : input.schemaVersion !== 1 ||
+            !!c.turn ||
+            !!c.tree ||
+            input.sizes[0][0] !== `${c.betPercent}%`) ||
       input.locks.length ||
       spec.treeHash !== caseTreeHash(c) ||
       spec.scope !==
-        (input.schemaVersion === 3
+        (input.schemaVersion === 3 || input.schemaVersion === 4
           ? "given-range-turn-subgame"
           : "given-range-river-subgame") ||
       input.limits.targetExploitability !==
@@ -113,15 +118,18 @@ export function validateRealArtifacts(
       )
         throw Error("ARTIFACT_INCOMPLETE: private-card mapping differs");
     }
-    if (input.schemaVersion === 3) {
+    if (input.schemaVersion === 3 || input.schemaVersion === 4) {
       if (hash(summary.input) !== hash(input))
         throw Error("ARTIFACT_INCOMPLETE: turn summary input differs");
       if (
-        solution.queryModel !== "native-turn/3" ||
+        solution.queryModel !==
+          (input.schemaVersion === 4
+            ? "native-turn-paged/4"
+            : "native-turn/3") ||
         solution.nodes.length !== 0
       )
         throw Error("ARTIFACT_INCOMPLETE: unexpected turn projection");
-      verifyTurnRoot({
+      (input.schemaVersion === 4 ? verifyTurnPageRoot : verifyTurnRoot)({
         bytes: native,
         nativeHash: hash(native),
         inputHash: spec.inputHash,

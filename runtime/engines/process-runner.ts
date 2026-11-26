@@ -55,7 +55,7 @@ export function startEngine(
   interrupt: () => void;
 } {
   const parsed =
-    input.schemaVersion === 3
+    input.schemaVersion === 3 || input.schemaVersion === 4
       ? turnInputSchema.parse(input)
       : input.schemaVersion === 2
         ? explicitRiverSchema.parse(input)
@@ -81,11 +81,13 @@ export function startEngine(
   const child = spawn(
     binary,
     [
-      parsed.schemaVersion === 3
-        ? "worker-turn"
-        : parsed.schemaVersion === 2
-          ? "worker-tree"
-          : "worker",
+      parsed.schemaVersion === 4
+        ? "worker-turn-page"
+        : parsed.schemaVersion === 3
+          ? "worker-turn"
+          : parsed.schemaVersion === 2
+            ? "worker-tree"
+            : "worker",
       directory,
     ],
     {

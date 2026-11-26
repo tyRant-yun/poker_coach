@@ -50,7 +50,7 @@ pub struct TurnNode {
 }
 pub fn build_turn(input: &TurnInput) -> Result<PostFlopGame, String> {
     if !input.locks.is_empty()
-        || input.schema_version != 3
+        || ![3, 4].contains(&input.schema_version)
         || input.board.len() != 4
         || input.case_id.is_empty()
         || input.case_id.len() > 200

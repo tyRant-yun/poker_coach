@@ -1,0 +1,293 @@
+{
+  "capacity": {
+    "model": "m1-turn-capacity/1",
+    "runs": [
+      {
+        "caseId": "m1-rainbow-16",
+        "iterations": 120,
+        "nashConvPotFraction": 0.0007238693237304688,
+        "computeMs": 41,
+        "estimatedBytes": 395616,
+        "nativeBytes": 121247,
+        "inputSha256": "bb2e40080c85043eaafa7f5401a8596f1a959407313194e3a0623c5ad0f9f8a2"
+      },
+      {
+        "caseId": "m1-rainbow-32",
+        "iterations": 90,
+        "nashConvPotFraction": 0.0008785324096679687,
+        "computeMs": 50,
+        "estimatedBytes": 562720,
+        "nativeBytes": 195753,
+        "inputSha256": "2845983b003138dbb0c788299a4eee375327b7f9d50b3a8dc39fae8d08db2595"
+      },
+      {
+        "caseId": "m1-rainbow-64",
+        "iterations": 90,
+        "nashConvPotFraction": 0.0007918834686279297,
+        "computeMs": 77,
+        "estimatedBytes": 896928,
+        "nativeBytes": 344685,
+        "inputSha256": "d588853b096a6ed526815f1e17f75ccdbaaba660e540bf3d494bfadc03ad184c"
+      },
+      {
+        "caseId": "m1-rainbow-128",
+        "iterations": 90,
+        "nashConvPotFraction": 0.0009095268249511718,
+        "computeMs": 125,
+        "estimatedBytes": 1565344,
+        "nativeBytes": 643287,
+        "inputSha256": "cf94739a1a90486372328b58f19734244aa1526d3defd95b42164c4648c11ffa"
+      },
+      {
+        "caseId": "m1-rainbow-200",
+        "iterations": 90,
+        "nashConvPotFraction": 0.0008822097778320312,
+        "computeMs": 164,
+        "estimatedBytes": 2317536,
+        "nativeBytes": 977723,
+        "inputSha256": "eeb362efbd309dd0d63c76b2fbf78ac939c1e46be1e88b077460195337ef8002"
+      },
+      {
+        "caseId": "m1-two-tone-16",
+        "iterations": 120,
+        "nashConvPotFraction": 0.00084967041015625,
+        "computeMs": 42,
+        "estimatedBytes": 395616,
+        "nativeBytes": 121247,
+        "inputSha256": "64f38dc69ff74eab474e193b5f983ccdee4e6d1146ad25e0cb9428a526adc834"
+      },
+      {
+        "caseId": "m1-two-tone-32",
+        "iterations": 100,
+        "nashConvPotFraction": 0.0007760810852050781,
+        "computeMs": 53,
+        "estimatedBytes": 562720,
+        "nativeBytes": 195753,
+        "inputSha256": "dd6ba43f33b8a8089d83b8187e930b77ac5827ae2963115458be48425953e0be"
+      },
+      {
+        "caseId": "m1-two-tone-64",
+        "iterations": 130,
+        "nashConvPotFraction": 0.00089111328125,
+        "computeMs": 121,
+        "estimatedBytes": 896928,
+        "nativeBytes": 344685,
+        "inputSha256": "64ea7a537ea435726e0379781239cc0eb264e576e28cdfa68dfd391260b30ade"
+      },
+      {
+        "caseId": "m1-two-tone-128",
+        "iterations": 110,
+        "nashConvPotFraction": 0.0009187946319580079,
+        "computeMs": 154,
+        "estimatedBytes": 1565344,
+        "nativeBytes": 643287,
+        "inputSha256": "93b372f8ed19238f1e1a8b2cf769a8d9c1175fce1f3190aa408eaa9ff8ebff64"
+      },
+      {
+        "caseId": "m1-two-tone-200",
+        "iterations": 120,
+        "nashConvPotFraction": 0.0009675817489624023,
+        "computeMs": 216,
+        "estimatedBytes": 2317536,
+        "nativeBytes": 977723,
+        "inputSha256": "ad3d103a7a077e94b0d37b166aedd420b0486cc3acaa05b0ae61edff131b6d02"
+      },
+      {
+        "caseId": "m1-checkdown-64",
+        "iterations": 0,
+        "nashConvPotFraction": -1.9073486328125e-9,
+        "computeMs": 0,
+        "estimatedBytes": 253984,
+        "nativeBytes": 39799,
+        "inputSha256": "6faac79986d698be19fb1d79555bab9382c0d6f83dd9a435ed4dc37f7b2b4f32"
+      }
+    ],
+    "independentCheckdown": {
+      "combos": [
+        64,
+        64
+      ],
+      "equityMaxError": 4.639351958157789e-8,
+      "evBbMaxError": 7.304217248815803e-7,
+      "evaluator": "stdlib rank5, exact compatible pair and 44-river enumeration"
+    }
+  },
+  "execution": {
+    "memoryMethod": "PeakWorkingSet64 sampled every 5ms; includes computation and native/root serialization",
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "cpu": "Intel(R) Core(TM) i7-14700HX",
+    "threads": 1,
+    "runs": [
+      {
+        "caseId": "m1-rainbow-16",
+        "wallMs": 51.2467,
+        "peakWorkingSetBytes": 5025792,
+        "exitCode": 0,
+        "killed": false,
+        "error": "",
+        "inputSha256": "bb2e40080c85043eaafa7f5401a8596f1a959407313194e3a0623c5ad0f9f8a2",
+        "binarySha256": "f7ffae266c1af8400ee21dd3bacb0fde48f58d16d50c9a427ac1b2671c2b5ad8"
+      },
+      {
+        "caseId": "m1-rainbow-32",
+        "wallMs": 68.7972,
+        "peakWorkingSetBytes": 5226496,
+        "exitCode": 0,
+        "killed": false,
+        "error": "",
+        "inputSha256": "2845983b003138dbb0c788299a4eee375327b7f9d50b3a8dc39fae8d08db2595",
+        "binarySha256": "f7ffae266c1af8400ee21dd3bacb0fde48f58d16d50c9a427ac1b2671c2b5ad8"
+      },
+      {
+        "caseId": "m1-rainbow-64",
+        "wallMs": 90.2116,
+        "peakWorkingSetBytes": 5586944,
+        "exitCode": 0,
+        "killed": false,
+        "error": "",
+        "inputSha256": "d588853b096a6ed526815f1e17f75ccdbaaba660e540bf3d494bfadc03ad184c",
+        "binarySha256": "f7ffae266c1af8400ee21dd3bacb0fde48f58d16d50c9a427ac1b2671c2b5ad8"
+      },
+      {
+        "caseId": "m1-rainbow-128",
+        "wallMs": 142.9497,
+        "peakWorkingSetBytes": 6369280,
+        "exitCode": 0,
+        "killed": false,
+        "error": "",
+        "inputSha256": "cf94739a1a90486372328b58f19734244aa1526d3defd95b42164c4648c11ffa",
+        "binarySha256": "f7ffae266c1af8400ee21dd3bacb0fde48f58d16d50c9a427ac1b2671c2b5ad8"
+      },
+      {
+        "caseId": "m1-rainbow-200",
+        "wallMs": 176.6266,
+        "peakWorkingSetBytes": 7102464,
+        "exitCode": 0,
+        "killed": false,
+        "error": "",
+        "inputSha256": "eeb362efbd309dd0d63c76b2fbf78ac939c1e46be1e88b077460195337ef8002",
+        "binarySha256": "f7ffae266c1af8400ee21dd3bacb0fde48f58d16d50c9a427ac1b2671c2b5ad8"
+      },
+      {
+        "caseId": "m1-two-tone-16",
+        "wallMs": 63.7026,
+        "peakWorkingSetBytes": 5025792,
+        "exitCode": 0,
+        "killed": false,
+        "error": "",
+        "inputSha256": "64f38dc69ff74eab474e193b5f983ccdee4e6d1146ad25e0cb9428a526adc834",
+        "binarySha256": "f7ffae266c1af8400ee21dd3bacb0fde48f58d16d50c9a427ac1b2671c2b5ad8"
+      },
+      {
+        "caseId": "m1-two-tone-32",
+        "wallMs": 70.5732,
+        "peakWorkingSetBytes": 5214208,
+        "exitCode": 0,
+        "killed": false,
+        "error": "",
+        "inputSha256": "dd6ba43f33b8a8089d83b8187e930b77ac5827ae2963115458be48425953e0be",
+        "binarySha256": "f7ffae266c1af8400ee21dd3bacb0fde48f58d16d50c9a427ac1b2671c2b5ad8"
+      },
+      {
+        "caseId": "m1-two-tone-64",
+        "wallMs": 137.5803,
+        "peakWorkingSetBytes": 5619712,
+        "exitCode": 0,
+        "killed": false,
+        "error": "",
+        "inputSha256": "64ea7a537ea435726e0379781239cc0eb264e576e28cdfa68dfd391260b30ade",
+        "binarySha256": "f7ffae266c1af8400ee21dd3bacb0fde48f58d16d50c9a427ac1b2671c2b5ad8"
+      },
+      {
+        "caseId": "m1-two-tone-128",
+        "wallMs": 168.1615,
+        "peakWorkingSetBytes": 6369280,
+        "exitCode": 0,
+        "killed": false,
+        "error": "",
+        "inputSha256": "93b372f8ed19238f1e1a8b2cf769a8d9c1175fce1f3190aa408eaa9ff8ebff64",
+        "binarySha256": "f7ffae266c1af8400ee21dd3bacb0fde48f58d16d50c9a427ac1b2671c2b5ad8"
+      },
+      {
+        "caseId": "m1-two-tone-200",
+        "wallMs": 233.0016,
+        "peakWorkingSetBytes": 7081984,
+        "exitCode": 0,
+        "killed": false,
+        "error": "",
+        "inputSha256": "ad3d103a7a077e94b0d37b166aedd420b0486cc3acaa05b0ae61edff131b6d02",
+        "binarySha256": "f7ffae266c1af8400ee21dd3bacb0fde48f58d16d50c9a427ac1b2671c2b5ad8"
+      },
+      {
+        "caseId": "m1-checkdown-64",
+        "wallMs": 14.904,
+        "peakWorkingSetBytes": 0,
+        "exitCode": 0,
+        "killed": false,
+        "error": "",
+        "inputSha256": "6faac79986d698be19fb1d79555bab9382c0d6f83dd9a435ed4dc37f7b2b4f32",
+        "binarySha256": "f7ffae266c1af8400ee21dd3bacb0fde48f58d16d50c9a427ac1b2671c2b5ad8"
+      }
+    ]
+  },
+  "reader": {
+    "method": "fresh reader process per sample, native checksum and reload, alternating root/chance, 100 selected rows; no Node cache; 6 invalid identity/version/page/path probes per solution rejected",
+    "runs": [
+      {
+        "caseId": "m1-rainbow-128",
+        "samples": 50,
+        "p50": 34.202499999999986,
+        "p95": 36.37709999999993,
+        "max": 38.098200000000006,
+        "maxOutputBytes": 25941
+      },
+      {
+        "caseId": "m1-two-tone-128",
+        "samples": 50,
+        "p50": 34.33589999999958,
+        "p95": 37.839100000000144,
+        "max": 41.98900000000003,
+        "maxOutputBytes": 25786
+      }
+    ]
+  },
+  "load": {
+    "method": "loopback HTTP including session roundtrip and JSON parse; separate isolated practice/research workspaces preserve active-hand information gate; fixed HU candidate; concurrent real solve and cached native root query",
+    "nodes": {
+      "samples": 100,
+      "p50": 3.7723000000000866,
+      "p95": 5.764400000000023,
+      "max": 28.979799999999955
+    },
+    "actionsEndToEnd": {
+      "samples": 100,
+      "p50": 4.966800000000148,
+      "p95": 7.763999999999896,
+      "max": 10.97569999999996
+    },
+    "actionsExcludingMeasuredBot": {
+      "samples": 100,
+      "p50": 4.566299999999956,
+      "p95": 7.036399999999958,
+      "max": 8.513699999999744
+    },
+    "botWaitPerAction": {
+      "samples": 100,
+      "p50": 0.3928000000000793,
+      "p95": 0.7794000000001233,
+      "max": 2.4620000000002165
+    },
+    "cancel": {
+      "status": "cancelled",
+      "ms": 30.633699999999862
+    },
+    "nodeProcessPeakRss": 137879552,
+    "limitations": "HTTP loopback and isolated workspaces; UI render latency excluded; aggregate RSS sampled with CIM overhead",
+    "aggregateRss": {
+      "method": "Win32_Process current WorkingSetSize sum across root and descendant processes, excluding observer; 50ms sleep plus CIM overhead; observed aggregate peak, not per-process maxima added",
+      "samples": 7,
+      "peakBytes": 256077824,
+      "maxProcesses": 10
+    }
+  }
+}
