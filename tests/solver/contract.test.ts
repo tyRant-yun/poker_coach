@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 import {
+  turnInputSchema,
+  turnNodeSchema,
+  turnPathSchema,
+} from "../../contracts/solver/turn.ts";
+import {
   explicitRiverSchema,
   nativeQuerySchema,
   nativePageSchema,
@@ -37,6 +42,9 @@ test("versioned JSON schemas match TS and the golden Rust command", () => {
     "river-tree": explicitRiverSchema,
     "native-query": nativeQuerySchema,
     "native-page": nativePageSchema,
+    turn: turnInputSchema,
+    "turn-node": turnNodeSchema,
+    "turn-path": turnPathSchema,
   })) {
     assert.deepEqual(
       z.toJSONSchema(schema),

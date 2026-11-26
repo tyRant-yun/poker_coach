@@ -1,5 +1,7 @@
 # R2-A 真实引擎进程边界
 
+2026-11-26 更新：新增`turn.ts`/schema3、`turn/turn-node/turn-path.schema.json`。`real_turn_solution_query`使用`action(index)`/`deal(card)`类型化路径，返回decision/chance/terminal节点与物理牌面、兼容权重、概率及指标。真实worker、预检、作业发布、取消/中断/固定规格重试与恢复沿用同一服务；MCP共75工具（14整手、15真实研究）。产品转牌每方≤16正组合、每街每方≤1固定尺寸、无再加注；`query-turn`是内部原生reader命令，≤16KiB请求/128KiB结果/5秒，读取槽与河牌共享2个，各模型LRU8。旧schema1/2和数字路径不改义。实际独立验证、信息边界与资源见[第二轮交付](../../docs/riverline-round2-delivery-2026-11-26.md)。
+
 2026-11-25 更新：一般河牌树已接入产品合同/worker/UI/MCP与原生按需查询、派生范围及恢复，实际证据见 [第一轮交付](../../docs/riverline-first-round-delivery-2026-11-25.md)。MCP现为73工具（含13个整手工具）；下文六节点投影仅指原受限模型，不得用于一般树。最新 [N06–N08计划](../../docs/riverline-round2-task-design-2026-11-25.md) 将在独立验证后扩展转牌机会节点/类型化路径，当前未实施，旧存档合同不改义。
 
 一般河牌前置更新（2026-11-18）：新增 `river-tree.ts` 的显式树 schema 2 与原生分页请求/响应 schema，支持内部 `validate-river-tree`/`query-river-tree` 研究命令；六个独立质量问题通过，未改变原 worker、业务 `real-analysis/1` 或产品能力。语义、预算与下一步见 [一般河牌验证](../../docs/solver/validation/r2-river-tree-2026-11-18.md)。生成 schema 由同一 `npm run solver:contract` 更新并测试。

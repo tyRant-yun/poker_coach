@@ -1,0 +1,136 @@
+.distribution {
+  margin: 14px 0;
+}
+.distribution figcaption,
+.ev figcaption {
+  font-weight: 650;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.stack {
+  display: flex;
+  min-height: 20px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #e0e5eb;
+}
+.legend {
+  display: flex;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+  margin-top: 9px;
+  font-size: 12px;
+}
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend i {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+}
+.matrix {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+  gap: 3px;
+  margin: 16px 0;
+}
+.matrix button {
+  font-size: 11px !important;
+  min-width: 0;
+  padding: 7px 0 !important;
+  border-color: #bdcbd7 !important;
+  border-radius: 3px !important;
+  min-height: 36px;
+}
+.matrix small {
+  display: block;
+  font-size: 10px;
+}
+.matrix button[aria-pressed="true"] {
+  outline: 3px solid #173f57;
+  outline-offset: -3px;
+}
+.scale {
+  font-size: 12px;
+  color: #526478;
+  margin: 10px 0;
+}
+.ev {
+  margin: 16px 0;
+  padding: 14px;
+  background: #f6f8fa;
+  border: 1px solid #d2dbe3;
+  border-radius: 8px;
+}
+.ev figcaption small {
+  font-weight: 400;
+  color: #526478;
+  margin-left: 12px;
+}
+.evRow {
+  display: grid;
+  grid-template-columns: 125px minmax(50px, 1fr) 65px;
+  gap: 12px;
+  align-items: center;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.evRow > span small {
+  display: block;
+  color: #526478;
+}
+.evRow b {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.plot {
+  position: relative;
+  height: 18px;
+  background: #e6ebf0;
+}
+.plot i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 2px;
+}
+.plot .axis {
+  left: 50%;
+  width: 1px;
+  background: #7c8c9a;
+  z-index: 1;
+}
+.path {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin: 14px 0;
+}
+.path button {
+  font-size: 12px !important;
+  padding: 6px 8px !important;
+}
+.path button[aria-current="step"] {
+  border-color: #19715a;
+  background: #e4f0eb;
+}
+@media (max-width: 500px) {
+  .matrix button {
+    font-size: 9px !important;
+  }
+  .matrix {
+    gap: 2px;
+  }
+  .matrix small {
+    font-size: 8px;
+  }
+  .evRow {
+    grid-template-columns: 90px minmax(40px, 1fr) 50px;
+    gap: 6px;
+    font-size: 11px;
+  }
+}

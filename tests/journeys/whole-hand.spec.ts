@@ -66,6 +66,7 @@ test("full hand → historical decision → saved question → actual river tree
 }) => {
   await finish(request);
   await page.goto("/play");
+  await page.getByLabel("行动节奏", { exact: true }).selectOption("instant");
   await page.getByLabel("桌型", { exact: true }).selectOption("2");
   await page.getByRole("button", { name: /^(开始练习|下一手)$/ }).click();
   await expect(
@@ -119,6 +120,7 @@ test("full hand → historical decision → saved question → actual river tree
   await expect(page.getByLabel("OOP 输入范围", { exact: true })).toHaveValue(
     "",
   );
+  await page.getByText("范围文本输入", { exact: true }).click();
   const board = (
     await page.getByLabel("公共牌", { exact: true }).inputValue()
   ).split(" ");
@@ -131,6 +133,7 @@ test("full hand → historical decision → saved question → actual river tree
   await page
     .getByLabel("IP 输入范围", { exact: true })
     .fill(`${cards[2]}${cards[3]}:100`);
+  await page.getByText("分步保存与计算", { exact: true }).click();
   await page
     .getByRole("button", { name: "保存局面与范围", exact: true })
     .click();
@@ -166,6 +169,7 @@ test("6-max full hand: API/DOM references blocked until terminal, legal custom a
 }) => {
   await finish(request);
   await page.goto("/play");
+  await page.getByLabel("行动节奏", { exact: true }).selectOption("instant");
   await page.getByLabel("桌型", { exact: true }).selectOption("6");
   await page.getByRole("button", { name: /^(开始练习|下一手)$/ }).click();
   await expect(

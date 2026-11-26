@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Board } from "../../shared/ui";
 import { ProductNav } from "./ProductNav";
@@ -11,6 +11,7 @@ import type {
   ResearchSource,
 } from "./domain";
 import s from "./Play.module.css";
+import { usePlayback } from "./presentation";
 
 const amount = (n: number) => `${(n / 100).toFixed(n % 100 ? 2 : 0)} bb`;
 const actionName = (kind: string) =>
@@ -29,6 +30,16 @@ export function PlayPage() {
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const selected = new URLSearchParams(location.search).get("hand");
+  const playback = usePlayback(setError);
+  const mounted = useRef(true),
+    route = useRef(location.pathname + location.search);
+  route.current = location.pathname + location.search;
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   async function load() {
     const list = await gameCall<HandSummary[]>("game_list");
     setHands(list);
@@ -39,6 +50,7 @@ export function PlayPage() {
     }
   }
   useEffect(() => {
+    playback.cancel(false);
     let alive = true;
     setSnapshot(undefined);
     setDecision(undefined);
@@ -77,14 +89,16 @@ export function PlayPage() {
     }
   };
   const create = async () => {
+    const origin = route.current;
     const next = hand?.complete && players === hand.players;
     const h = await gameCall<HandView>(
       next ? "game_next" : "game_create",
       next ? { handId: hand.id } : { players },
     );
-    setHand(h);
     setSnapshot(undefined);
     setDecision(undefined);
+    await playback.play(h, () => setHand(h));
+    if (!mounted.current || route.current !== origin) return;
     navigate(`/play?hand=${h.id}`);
     setHands(await gameCall<HandSummary[]>("game_list"));
   };
@@ -111,8 +125,8 @@ export function PlayPage() {
       kind: a.kind,
       ...extra,
     });
-    setHand(h);
     setRaise("");
+    await playback.play(h, () => setHand(h));
     setHands(await gameCall<HandSummary[]>("game_list"));
   };
   const selectDecision = async (sequence: number) => {
@@ -130,7 +144,7 @@ export function PlayPage() {
     });
     navigate(`/solver/real?source=${encodeURIComponent(source.id)}`);
   };
-  const view = snapshot ?? hand,
+  const view = snapshot ?? playback.frame?.view ?? hand,
     raiseAction = hand?.legal.find((a) => a.kind === "raise"),
     callAction = hand?.legal.find((a) => a.kind === "call");
   return (
@@ -174,7 +188,37 @@ export function PlayPage() {
           </div>
         )}
       </div>
-      {(!hand || hand.complete) && (
+      {!reviewMode && (
+        <div className={s.playbackControls}>
+          <label>
+            行动节奏{" "}
+            <select
+              aria-label="行动节奏"
+              value={playback.speed}
+              onChange={(e) =>
+                playback.setSpeed(
+                  e.target.value as "comfort" | "fast" | "instant",
+                )
+              }
+            >
+              <option value="comfort">舒适</option>
+              <option value="fast">快速</option>
+              <option value="instant">即时</option>
+            </select>
+          </label>
+          {playback.playing && (
+            <>
+              <span role="status">
+                {playback.thinking !== undefined
+                  ? `${positions(hand!.players)[playback.thinking]} 正在行动…`
+                  : frameText(playback.frame)}
+              </span>
+              <button onClick={() => playback.cancel()}>跳过动作播放</button>
+            </>
+          )}
+        </div>
+      )}
+      {(!hand || hand.complete) && !playback.playing && (
         <details className={s.backup}>
           <summary>练习备份</summary>
           <p>备份包含重放所需的完整发牌数据，不用于未见题。</p>
@@ -249,6 +293,13 @@ export function PlayPage() {
                 第 {view.number} 手 · {streetNames[view.street]}
               </span>
               <span>Hero · {positions(view.players)[view.hero]}</span>
+              {!reviewMode && playback.playing && (
+                <strong role="status" aria-live="polite">
+                  {playback.thinking !== undefined
+                    ? `对手 ${playback.thinking + 1} 正在行动…`
+                    : frameText(playback.frame)}
+                </strong>
+              )}
               {snapshot && (
                 <button
                   onClick={() => {
@@ -279,7 +330,7 @@ export function PlayPage() {
                 {view.stacks.map((stack, i) => (
                   <div
                     key={i}
-                    className={`${s.seat} ${i === view.actor ? s.acting : ""} ${!view.active[i] && !view.complete ? s.folded : ""}`}
+                    className={`${s.seat} ${i === (playback.thinking ?? view.actor) ? s.acting : ""} ${!view.active[i] && !view.complete ? s.folded : ""}`}
                   >
                     <div>
                       <strong>
@@ -301,6 +352,26 @@ export function PlayPage() {
                       <span className={s.cardBack}>▧ ▧</span>
                     )}
                     {!view.active[i] && !view.complete && <small>已弃牌</small>}
+                    {playback.frame?.actor === i &&
+                      playback.frame.kind === "player-acted" &&
+                      !!playback.frame.amount && (
+                        <i
+                          key={playback.frame.id}
+                          className={s.chipMove}
+                          aria-hidden="true"
+                        >
+                          ● ●
+                        </i>
+                      )}
+                    {playback.thinking === i ? (
+                      <strong className={s.actionCue}>正在行动…</strong>
+                    ) : (
+                      playback.frame?.actor === i && (
+                        <strong className={s.actionCue}>
+                          {frameText(playback.frame)}
+                        </strong>
+                      )
+                    )}
                   </div>
                 ))}
               </div>
@@ -309,8 +380,8 @@ export function PlayPage() {
               <section className={s.actionArea} aria-label="行动区">
                 <div className={s.actionHeading}>
                   <strong>
-                    轮到你
-                    {callAction
+                    {playback.playing ? "对手动作播放中" : "轮到你"}
+                    {!playback.playing && callAction
                       ? ` · 待跟注 ${amount(callAction.amount!)}`
                       : ""}
                   </strong>
@@ -332,72 +403,79 @@ export function PlayPage() {
                       : "标记疑问"}
                   </button>
                 </div>
-                <div className={s.actions}>
-                  {hand!.legal
-                    .filter((a) => a.kind !== "raise")
-                    .map((a) => (
-                      <button
-                        key={a.kind}
-                        disabled={busy}
-                        onClick={() => void run(() => act(a))}
-                      >
-                        {actionName(a.kind)}
-                        {a.kind === "call" ? ` ${amount(a.amount!)}` : ""}
-                      </button>
-                    ))}
-                  {raiseAction && (
-                    <>
-                      <label>
-                        下注/加注至 bb
-                        <input
-                          aria-label="下注/加注至 bb"
-                          type="number"
-                          step="0.01"
-                          min={raiseAction.min! / 100}
-                          max={raiseAction.max! / 100}
-                          value={raise}
-                          placeholder={String(raiseAction.min! / 100)}
-                          onChange={(e) => setRaise(e.target.value)}
-                        />
-                      </label>
-                      <button
-                        className={s.primary}
-                        disabled={busy}
-                        onClick={() => void run(() => act(raiseAction))}
-                      >
-                        下注/加注
-                      </button>
-                      <button
-                        disabled={busy}
-                        onClick={() => {
-                          setRaise(String(raiseAction.max! / 100));
-                        }}
-                      >
-                        填入全下额
-                      </button>
-                    </>
-                  )}
-                </div>
-                {busy && <span role="status">正在处理行动…</span>}
+                {!playback.playing && (
+                  <div className={s.actions}>
+                    {hand!.legal
+                      .filter((a) => a.kind !== "raise")
+                      .map((a) => (
+                        <button
+                          key={a.kind}
+                          disabled={busy}
+                          onClick={() => void run(() => act(a))}
+                        >
+                          {actionName(a.kind)}
+                          {a.kind === "call" ? ` ${amount(a.amount!)}` : ""}
+                        </button>
+                      ))}
+                    {raiseAction && (
+                      <>
+                        <label>
+                          下注/加注至 bb
+                          <input
+                            aria-label="下注/加注至 bb"
+                            type="number"
+                            step="0.01"
+                            min={raiseAction.min! / 100}
+                            max={raiseAction.max! / 100}
+                            value={raise}
+                            placeholder={String(raiseAction.min! / 100)}
+                            onChange={(e) => setRaise(e.target.value)}
+                          />
+                        </label>
+                        <button
+                          className={s.primary}
+                          disabled={busy}
+                          onClick={() => void run(() => act(raiseAction))}
+                        >
+                          下注/加注
+                        </button>
+                        <button
+                          disabled={busy}
+                          onClick={() => {
+                            setRaise(String(raiseAction.max! / 100));
+                          }}
+                        >
+                          填入全下额
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+                {busy && !playback.playing && (
+                  <span role="status">正在处理行动…</span>
+                )}
               </section>
             )}
-            {hand!.complete && !snapshot && (
-              <div className={s.result}>
-                <strong>
-                  本手结束 · Hero {hand!.payoffs[hand!.hero] >= 0 ? "+" : ""}
-                  {amount(hand!.payoffs[hand!.hero])}
-                </strong>
-                <span>已保存 {hand!.decisions.length} 次原始决策</span>
-                {!reviewMode && (
-                  <button
-                    className={s.primary}
-                    onClick={() => navigate(`/hands?hand=${hand!.id}`)}
-                  >
-                    复盘这手牌
-                  </button>
-                )}
-              </div>
-            )}
+            {view.complete &&
+              !snapshot &&
+              (!playback.playing || playback.frame?.kind === "hand-closed") && (
+                <div className={s.result}>
+                  <strong>
+                    本手结束 · Hero {hand!.payoffs[hand!.hero] >= 0 ? "+" : ""}
+                    {amount(hand!.payoffs[hand!.hero])}
+                  </strong>
+                  <span>已保存 {hand!.decisions.length} 次原始决策</span>
+                  {!reviewMode && (
+                    <button
+                      className={s.primary}
+                      disabled={playback.playing || busy}
+                      onClick={() => navigate(`/hands?hand=${hand!.id}`)}
+                    >
+                      复盘这手牌
+                    </button>
+                  )}
+                </div>
+              )}
             {reviewMode && !hand!.complete && (
               <div className={s.result}>
                 <span>本手尚未完成</span>
@@ -472,6 +550,29 @@ export function PlayPage() {
         </div>
       )}
     </main>
+  );
+}
+function frameText(frame?: import("./domain").PublicFrame) {
+  if (!frame) return "正在准备动作…";
+  if (frame.kind === "player-acted") {
+    const action = frame.view.events.at(-1);
+    return action
+      ? `${actionName(action.kind)}${frame.amount ? ` ${amount(frame.amount)}` : ""}`
+      : "行动已提交";
+  }
+  return (
+    (
+      {
+        "bets-collected": "筹码收进底池",
+        "board-dealt": `${streetNames[frame.view.street]}发牌`,
+        "cards-tabled": "亮牌",
+        "uncalled-returned": "退还未跟注筹码",
+        "pot-awarded": "派发底池",
+        "hand-closed": "本手结算",
+        "hand-started": "开始本手",
+        ready: "轮到你",
+      } as Record<string, string>
+    )[frame.kind] ?? "行动中"
   );
 }
 function parseAmount(text: string) {

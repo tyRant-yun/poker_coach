@@ -1,7 +1,7 @@
 param(
     [string]$OutputDirectory = '.artifacts/solver/r1',
-    [ValidateSet('river-cases.json', 'river-tree-cases.json')][string]$Manifest = 'river-cases.json',
-    [ValidateSet('validate-river', 'validate-river-tree')][string]$Command = 'validate-river'
+    [ValidateSet('river-cases.json', 'river-tree-cases.json', 'turn-cases.json')][string]$Manifest = 'river-cases.json',
+    [ValidateSet('validate-river', 'validate-river-tree', 'validate-turn')][string]$Command = 'validate-river'
 )
 $ErrorActionPreference = 'Stop'
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
@@ -14,7 +14,8 @@ if (-not (Test-Path -LiteralPath $binary)) { throw 'Build the pinned solver firs
 $measurements = @()
 foreach ($case in $caseManifest.cases) {
     $inputPath = Join-Path $output ($case.caseId + '.input.json')
-    $outputPath = Join-Path $output ($case.caseId + '.output.json')
+    $suffix = if ($Command -eq 'validate-turn') { '.json' } else { '.output.json' }
+    $outputPath = Join-Path $output ($case.caseId + $suffix)
     $inputValue = [ordered]@{ schemaVersion = $caseManifest.schemaVersion }
     foreach ($property in $case.PSObject.Properties) { $inputValue[$property.Name] = $property.Value }
     $inputValue['limits'] = $caseManifest.limits

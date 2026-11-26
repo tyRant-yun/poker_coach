@@ -13,10 +13,12 @@ import type {
   HandView,
   ResearchSource,
   RuleView,
+  Transition,
 } from "../../src/modules/play/domain.ts";
 import { Rules } from "./rules.ts";
 
 type Hand = {
+  transition?: Transition;
   id: string;
   number: number;
   revision: number;
@@ -115,6 +117,9 @@ export class GameService {
     const { holes, shown, ...safe } = state;
     return {
       ...safe,
+      ...(state === hand.state && actions === hand.actions && hand.transition
+        ? { transition: hand.transition }
+        : {}),
       id: hand.id,
       revision: hand.revision,
       number: hand.number,
@@ -222,6 +227,7 @@ export class GameService {
       const write = ![
         "game_list",
         "game_get",
+        "game_transition_query",
         "game_review",
         "game_study_get",
         "game_export",
@@ -276,11 +282,17 @@ export class GameService {
       };
       if (this.restricted()) {
         demand(
-          ["game_list", "game_get", "game_act", "game_mark"].includes(name),
+          [
+            "game_list",
+            "game_get",
+            "game_transition_query",
+            "game_act",
+            "game_mark",
+          ].includes(name),
           "完成当前整手后再查看历史、研究或开始下一手",
           "INFORMATION_RESTRICTED",
         );
-        if (name === "game_get")
+        if (name === "game_get" || name === "game_transition_query")
           demand(
             !this.get(arg.handId).state.complete,
             "完成当前整手后再查看历史手牌",
@@ -335,12 +347,80 @@ export class GameService {
         };
         hand.state = await this.replay(hand);
         await this.bots(hand);
+        hand.transition = {
+          batchId: hash([hand.id, hand.revision, hand.actions]),
+          fromRevision: -1,
+          toRevision: hand.revision,
+          fromAction: 0,
+          toAction: hand.actions.length,
+        };
         saveHand = hand;
         result = this.project(hand);
+      } else if (name === "game_transition_query") {
+        const query = gameSchemas.game_transition_query.parse(input),
+          hand = this.get(query.handId),
+          t = hand.transition;
+        demand(
+          t &&
+            t.batchId === query.batchId &&
+            t.toRevision === query.handRevision &&
+            hand.revision === query.handRevision,
+          "动作批次已变化，请同步当前回合",
+          "REVISION_CONFLICT",
+        );
+        const replayed = await this.rules.replay({
+          players: hand.players,
+          deck: hand.deck,
+          actions: hand.actions.slice(0, t!.toAction),
+          trace: {
+            afterActions: t!.fromAction,
+            includeInitial: t!.fromRevision === -1,
+            offset: query.offset,
+            limit: query.limit,
+          },
+        });
+        const page = replayed.trace!;
+        demand(query.offset <= page.total, "动作帧游标超出范围");
+        const { transition: _, ...base } = this.project(hand);
+        result = {
+          batchId: t!.batchId,
+          revision: hand.revision,
+          total: page.total,
+          nextOffset: page.nextOffset,
+          items: page.frames.map((f) => {
+            const { shown, ...safe } = f.snapshot;
+            return {
+              id: `${t!.batchId}:${f.sequence}`,
+              sequence: f.sequence,
+              kind: f.kind,
+              actor: f.actor,
+              amount: f.amount,
+              returned: f.returned,
+              view: {
+                ...base,
+                ...safe,
+                actor: f.actor,
+                legal: [],
+                revealed: shown,
+                events: base.events.slice(0, f.actionCount),
+                decisions: base.decisions.filter(
+                  (d) => d.sequence < f.actionCount,
+                ),
+                marks: base.marks.filter((n) => n < f.actionCount),
+              },
+            };
+          }),
+        };
+        demand(
+          Buffer.byteLength(JSON.stringify(result)) <= 65536,
+          "动作帧分页超过64KiB，请缩小页数",
+        );
       } else if (name === "game_get")
         result = this.project(this.get(arg.handId));
       else if (name === "game_act" || name === "game_mark") {
         const hand = this.get(arg.handId);
+        const fromRevision = hand.revision,
+          fromAction = hand.actions.length;
         demand(
           !hand.state.complete && hand.state.actor === hand.hero,
           "当前不是你的行动节点",
@@ -377,6 +457,14 @@ export class GameService {
           await this.bots(hand);
         }
         hand.revision++;
+        if (name === "game_act")
+          hand.transition = {
+            batchId: hash([hand.id, hand.revision, hand.actions]),
+            fromRevision,
+            toRevision: hand.revision,
+            fromAction,
+            toAction: hand.actions.length,
+          };
         saveHand = hand;
         result = this.project(hand);
       } else if (name === "game_review" || name === "game_research") {
@@ -410,14 +498,17 @@ export class GameService {
                 handHash: hash([hand.deck, hand.actions]),
                 snapshot,
                 eligible:
-                  state.board.length === 5 &&
+                  [4, 5].includes(state.board.length) &&
                   state.active.filter(Boolean).length === 2,
                 reason:
-                  "当前可计算两人河牌局部模型；输入范围需要你设定，其余节点可保存研究笔记。",
+                  "当前可计算两人转牌或河牌局部模型；输入范围需要你设定，其余节点可保存研究笔记。",
               };
             if (source.eligible) {
               let start = seq;
-              while (start > 0 && hand.state.events[start - 1].street === 3)
+              while (
+                start > 0 &&
+                hand.state.events[start - 1].street === state.street
+              )
                 start--;
               const root = await this.replay(
                 hand,
@@ -510,6 +601,16 @@ export class GameService {
                         marks: z.array(z.number().int().nonnegative()).max(100),
                         state: z.unknown(),
                         created: z.string().datetime(),
+                        transition: z
+                          .object({
+                            batchId: z.string(),
+                            fromRevision: z.number().int().min(-1),
+                            toRevision: z.number().int().nonnegative(),
+                            fromAction: z.number().int().nonnegative(),
+                            toAction: z.number().int().nonnegative(),
+                          })
+                          .strict()
+                          .optional(),
                       })
                       .strict(),
                   )
@@ -535,6 +636,17 @@ export class GameService {
           numbers.add(value.number);
           const hand = value as Hand,
             replayed = await this.replay(hand);
+          if (hand.transition) {
+            const t = hand.transition;
+            demand(
+              t.toAction === hand.actions.length &&
+                t.fromAction <= t.toAction &&
+                t.fromRevision < t.toRevision &&
+                t.toRevision <= hand.revision &&
+                t.batchId === hash([hand.id, t.toRevision, hand.actions]),
+              "备份动作批次身份无效",
+            );
+          }
           demand(
             replayed.complete && hash(replayed) === hash(hand.state),
             "备份规则重放不一致或含未完成手牌",
@@ -598,11 +710,14 @@ export class GameService {
           );
           // Recreate the research origin using the rule replay rather than trusting imported model metadata.
           source.eligible =
-            prior.board.length === 5 &&
+            [4, 5].includes(prior.board.length) &&
             prior.active.filter(Boolean).length === 2;
           if (source.eligible) {
             let start = source.sequence;
-            while (start > 0 && hand!.state.events[start - 1].street === 3)
+            while (
+              start > 0 &&
+              hand!.state.events[start - 1].street === prior.street
+            )
               start--;
             const root = await this.replay(
               hand!,

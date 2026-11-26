@@ -1,7 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { connectAnalysis } from "./client";
 import { Board, ComboCards } from "../../shared/ui";
-import { handClasses } from "../study/domain";
+import { CardSlots } from "../../shared/CardSlots";
+import { RangeInput } from "./RangeInput";
+import {
+  ActionDistribution,
+  ResultMatrix,
+  HeroEvChart,
+  NodePath,
+  actionLabel as label,
+} from "./ResultViews";
+import type { TurnPath } from "../../../contracts/solver/turn";
+import { researchExamples } from "./research-examples";
+
 import type { Reply, Ref } from "./domain";
 import type {
   CaseTree,
@@ -39,7 +50,9 @@ type Row = {
   actionEvBb: number[] | null;
 };
 type NodeView = {
-  path: number[];
+  path: number[] | TurnPath;
+  kind?: "decision" | "chance" | "terminal";
+  chanceCards?: { card: string; probability: number | null }[];
   terminal: boolean;
   actor: 0 | 1 | null;
   actions: string[];
@@ -50,6 +63,7 @@ type NodeView = {
 };
 type Query = {
   node: NodeView;
+  aggregate?: Aggregate;
   items: Row[];
   total: number;
   nextOffset: number | null;
@@ -66,6 +80,10 @@ const initial = {
   stack: "10",
   betPercent: "100",
   model: "simple",
+  turnOop: "5",
+  turnIp: "5",
+  riverOop: "5",
+  riverIp: "5",
   treeText: "下注至 5\n下注至 10\n过牌 > 下注至 5",
   oop: "AcAd:100\n5c4c:100",
   ip: "KhKd:100\n8c8d:100",
@@ -83,13 +101,6 @@ const statuses: Record<RealJob["status"], string> = {
 const pct = (n: number | null) =>
   n === null ? "—" : `${(n * 100).toFixed(2)}%`;
 const bb = (n: number | null) => (n === null ? "—" : `${n.toFixed(4)} bb`);
-function label(action: string) {
-  if (action === "Check") return "过牌";
-  if (action === "Fold") return "弃牌";
-  if (action === "Call") return "跟注";
-  const amount = /\((\d+)\)/.exec(action);
-  return `${action.startsWith("AllIn") ? "全下至" : action.startsWith("Raise") ? "加注至" : "下注至"} ${amount ? Number(amount[1]) / 100 : ""} bb`;
-}
 function centibb(text: string) {
   if (!/^\d+(?:\.\d{1,2})?$/.test(text))
     throw Error("金额最多支持小数点后两位 bb，不会自动舍入");
@@ -220,6 +231,18 @@ async function readRange(reference: Ref) {
 }
 
 export function RealAnalysisPage() {
+  const [pendingBoard, setPendingBoard] = useState<string[]>(),
+    [pathLabels, setPathLabels] = useState<string[]>([]);
+  const follow = useRef<
+    { jobId: string; caseHash: string; opened?: boolean } | undefined
+  >(
+    new URLSearchParams(location.search).get("job")
+      ? {
+          jobId: new URLSearchParams(location.search).get("job")!,
+          caseHash: "",
+        }
+      : undefined,
+  );
   const [practiceSource, setPracticeSource] = useState<ResearchSource>();
   const [researchNote, setResearchNote] = useState("");
   const [accessError, setAccessError] = useState("");
@@ -242,6 +265,7 @@ export function RealAnalysisPage() {
     [busy, setBusy] = useState(false),
     [player, setPlayer] = useState<0 | 1>(0),
     [path, setPath] = useState<number[]>([]),
+    [turnPath, setTurnPath] = useState<TurnPath>([]),
     [hand, setHand] = useState(""),
     [offset, setOffset] = useState(0),
     [showAll, setShowAll] = useState(false),
@@ -281,7 +305,11 @@ export function RealAnalysisPage() {
         pot: String(c.pot / 100),
         stack: String(c.stack / 100),
         betPercent: c.betPercent,
-        model: c.tree ? "explicit" : "simple",
+        model: c.turn ? "turn" : c.tree ? "explicit" : "simple",
+        turnOop: String((c.turn?.turnBets[0] ?? 500) / 100),
+        turnIp: String((c.turn?.turnBets[1] ?? 500) / 100),
+        riverOop: String((c.turn?.riverBets[0] ?? 500) / 100),
+        riverIp: String((c.turn?.riverBets[1] ?? 500) / 100),
         treeText: c.tree ? formatTree(c.tree) : initial.treeText,
         oop,
         ip,
@@ -289,7 +317,7 @@ export function RealAnalysisPage() {
       history.replaceState(
         null,
         "",
-        `/solver/real?case=${encodeURIComponent(c.ref.id)}${sourceId.current ? `&source=${encodeURIComponent(sourceId.current)}` : ""}`,
+        `/solver/real?case=${encodeURIComponent(c.ref.id)}${sourceId.current ? `&source=${encodeURIComponent(sourceId.current)}` : ""}${follow.current ? `&job=${encodeURIComponent(follow.current.jobId)}` : ""}`,
       );
     } catch (e) {
       if (alive.current) setMessage(String(e));
@@ -338,6 +366,21 @@ export function RealAnalysisPage() {
     const current = state.selectedCase;
     if (current && current.ref.contentHash !== loaded.current && !dirty.current)
       void adopt(current);
+    const tracking = follow.current;
+    if (tracking && !tracking.opened && !dirty.current) {
+      const job = state.jobs.find((j) => j.ref.id === tracking.jobId),
+        jobSpec = state.specs.find((sp) => sp.ref.id === job?.spec.id);
+      if (
+        job?.result &&
+        jobSpec?.situation.id === selectedId.current &&
+        (!tracking.caseHash ||
+          tracking.caseHash === jobSpec.situation.contentHash) &&
+        loaded.current === jobSpec.situation.contentHash
+      ) {
+        tracking.opened = true;
+        await openSolution(job.result.id, jobSpec.situation.contentHash);
+      }
+    }
   }
   useEffect(() => {
     if (!sourceId.current) return;
@@ -396,7 +439,11 @@ export function RealAnalysisPage() {
                 ),
               )) / 100,
           ),
-          model: "explicit",
+          model: root?.board.length === 4 ? "turn" : "explicit",
+          turnOop: String(bet),
+          turnIp: String(bet),
+          riverOop: String(bet),
+          riverIp: String(bet),
           treeText: lines.length
             ? lines.join("\n")
             : `下注至 ${bet}\n过牌 > 下注至 ${bet}`,
@@ -443,7 +490,7 @@ export function RealAnalysisPage() {
       clearInterval(timer);
     };
   }, []);
-  const run = async (task: () => Promise<void>) => {
+  const run = async (task: () => Promise<unknown>) => {
     setBusy(true);
     setMessage("正在处理，请稍候…");
     try {
@@ -464,6 +511,17 @@ export function RealAnalysisPage() {
       pot,
       stack,
       betPercent: draft.betPercent,
+      ...(draft.model === "turn"
+        ? {
+            turn: {
+              kind: "hu-turn/3",
+              turnBets: [centibb(draft.turnOop), centibb(draft.turnIp)],
+              riverBets: [centibb(draft.riverOop), centibb(draft.riverIp)],
+            },
+          }
+        : selected
+          ? { turn: null }
+          : {}),
       ...(draft.model === "explicit"
         ? { tree: parseTree(draft.treeText) }
         : selected
@@ -496,13 +554,14 @@ export function RealAnalysisPage() {
     }
     setSpec(undefined);
     setMessage("局面与范围版本已保存。旧规格和旧解保持固定。");
+    return c;
   }
-  async function freeze() {
-    if (!selected) throw Error("请先保存局面和范围");
+  async function freeze(current = selected) {
+    if (!current) throw Error("请先保存局面和范围");
     if (dirty.current)
       throw Error("请先保存草稿，避免把未保存输入当成求解规格");
     const fixed = await invoke<RealSpec>("real_spec_create", {
-      caseId: `${selected.ref.id}@${selected.ref.version}`,
+      caseId: `${current.ref.id}@${current.ref.version}`,
     });
     setSpec(fixed);
     const check = await invoke<{ supported: boolean; reason?: string }>(
@@ -514,15 +573,27 @@ export function RealAnalysisPage() {
         ? "原生引擎预检通过，可以发起真实分析。"
         : `未支持：${check.reason}`,
     );
+    if (!check.supported) throw Error(`未支持：${check.reason}`);
+    return fixed;
   }
-  async function start() {
-    if (!spec) throw Error("请先固定规格并预检");
+  async function start(current = spec) {
+    if (!current) throw Error("请先固定规格并预检");
     const j = await invoke<RealJob>("real_analysis_start", {
-      specId: spec.ref.id,
+      specId: current.ref.id,
     });
     setMessage(`真实作业已保存：${statuses[j.status]}。刷新页面不会取消计算。`);
+    return j;
   }
-  async function openSolution(id: string) {
+  async function analyze() {
+    const current = !selected || dirty.current ? await saveCase() : selected;
+    const fixed = await freeze(current),
+      job = await start(fixed);
+    follow.current = { jobId: job.ref.id, caseHash: current.ref.contentHash };
+    const url = new URL(location.href);
+    url.searchParams.set("job", job.ref.id);
+    history.replaceState(null, "", url.pathname + url.search);
+  }
+  async function openSolution(id: string, autoCaseHash?: string) {
     const result = await invoke<RealSolution>("real_solution_load", {
       solutionId: id,
     });
@@ -530,10 +601,14 @@ export function RealAnalysisPage() {
       artifactId: `${result.spec.id}@${result.spec.version}`,
     });
     if (restricted.current) return;
+    if (autoCaseHash && (dirty.current || loaded.current !== autoCaseHash))
+      return;
     setSolution(result);
     solutionId.current = result.ref.id;
     setSolutionSpec(source);
     setPath([]);
+    setTurnPath([]);
+    setPathLabels([]);
     setHand("");
     setOffset(0);
     setMessage(
@@ -548,34 +623,51 @@ export function RealAnalysisPage() {
     setQuery(undefined);
     setAggregate(undefined);
     setMatrixRows([]);
-    void Promise.all([
-      invoke<Query>("real_solution_query", {
-        solutionId: solution.ref.id,
-        path,
-        player,
-        offset,
-        limit: 30,
-        inRangeOnly: !showAll,
-        hand: hand || undefined,
-      }),
-      invoke<Aggregate>("real_range_aggregate", {
-        solutionId: solution.ref.id,
-        path,
-        player,
-      }),
-      invoke<Query>("real_solution_query", {
-        solutionId: solution.ref.id,
-        path,
-        player,
-        limit: 200,
-        inRangeOnly: true,
-      }),
-    ])
-      .then(([q, a, m]) => {
+    const turn = solution.queryModel === "native-turn/3",
+      tool = turn ? "real_turn_solution_query" : "real_solution_query",
+      nodePath = turn ? turnPath : path;
+    const read = async () => {
+      const [q, m] = await Promise.all([
+        invoke<Query>(tool, {
+          solutionId: solution.ref.id,
+          path: nodePath,
+          player,
+          offset,
+          limit: 30,
+          inRangeOnly: !showAll,
+          hand: hand || undefined,
+        }),
+        invoke<Query>(tool, {
+          solutionId: solution.ref.id,
+          path: nodePath,
+          player,
+          limit: turn ? 100 : 200,
+          inRangeOnly: true,
+        }),
+      ]);
+      const a = turn
+        ? q.aggregate!
+        : await invoke<Aggregate>("real_range_aggregate", {
+            solutionId: solution.ref.id,
+            path,
+            player,
+          });
+      return { q, m, a };
+    };
+    void read()
+      .then(({ q, m, a }) => {
         if (active && !restricted.current) {
           setQuery(q);
           setAggregate(a);
           setMatrixRows(m.items);
+          setHero((old) =>
+            m.items.some(
+              (r) => r.combo === old && r.availability === "available",
+            )
+              ? old
+              : (m.items.find((r) => r.availability === "available")?.combo ??
+                old),
+          );
         }
       })
       .catch((e) => {
@@ -587,6 +679,7 @@ export function RealAnalysisPage() {
   }, [
     solution?.ref.contentHash,
     JSON.stringify(path),
+    JSON.stringify(turnPath),
     player,
     offset,
     hand,
@@ -601,12 +694,18 @@ export function RealAnalysisPage() {
       return;
     }
     setHeroRow(undefined);
-    void invoke<Query>("real_solution_query", {
-      solutionId: solution.ref.id,
-      path,
-      player,
-      combos: [hero],
-    })
+    void invoke<Query>(
+      solution.queryModel === "native-turn/3"
+        ? "real_turn_solution_query"
+        : "real_solution_query",
+      {
+        solutionId: solution.ref.id,
+        path: solution.queryModel === "native-turn/3" ? turnPath : path,
+        inRangeOnly: false,
+        player,
+        combos: [hero],
+      },
+    )
       .then((q) => {
         if (active && !restricted.current) setHeroRow(q.items[0]);
       })
@@ -619,6 +718,7 @@ export function RealAnalysisPage() {
   }, [
     solution?.ref.contentHash,
     JSON.stringify(path),
+    JSON.stringify(turnPath),
     player,
     hero,
     queryTick,
@@ -645,8 +745,53 @@ export function RealAnalysisPage() {
   }
   const update = (key: keyof typeof initial, value: string) => {
     dirty.current = true;
+    follow.current = undefined;
+    const url = new URL(location.href);
+    url.searchParams.delete("job");
+    history.replaceState(null, "", url.pathname + url.search);
     setDraft((old) => ({ ...old, [key]: value }));
   };
+  function rangeText(weights: Record<string, number>) {
+    return Object.entries(weights)
+      .filter(([, w]) => w > 0)
+      .map(([c, w]) => `${c}:${w / 100}`)
+      .join("\n");
+  }
+  function changeBoard(board: string[]) {
+    const conflict = (["oop", "ip"] as const).some((key) => {
+      try {
+        return Object.keys(parseRange(draft[key])).some(
+          (c) => board.includes(c.slice(0, 2)) || board.includes(c.slice(2)),
+        );
+      } catch {
+        return false;
+      }
+    });
+    if (conflict) setPendingBoard(board);
+    else update("board", board.join(" "));
+  }
+  function loadExample(index: number) {
+    const { id: _, ...example } = researchExamples[index];
+    follow.current = undefined;
+    sourceId.current = "";
+    selectedId.current = "";
+    loaded.current = "";
+    dirty.current = true;
+    ++loadTicket.current;
+    setDraft({ ...initial, ...example });
+    setPracticeSource(undefined);
+    setResearchNote("");
+    setSelected(undefined);
+    setSpec(undefined);
+    setSolution(undefined);
+    setQuery(undefined);
+    setPendingBoard(undefined);
+    setPath([]);
+    setTurnPath([]);
+    setPathLabels([]);
+    history.replaceState(null, "", "/solver/real");
+    setMessage("研究输入已加载。点击开始分析，由本机引擎计算结果。");
+  }
   const conflict =
     workspace?.selectedCase &&
     selected &&
@@ -672,8 +817,11 @@ export function RealAnalysisPage() {
       <ProductNav />
       <header className={s.header}>
         <div>
-          <h1>河牌研究</h1>
-          <p>两人 · 给定范围 · 自定义行动树</p>
+          <h1>{draft.model === "turn" ? "转牌研究" : "河牌研究"}</h1>
+          <p>
+            两人 · 给定范围 ·{" "}
+            {draft.model === "turn" ? "转牌到河牌" : "自定义行动树"}
+          </p>
         </div>
         <nav>
           {practiceSource && (
@@ -684,6 +832,19 @@ export function RealAnalysisPage() {
           </button>
         </nav>
       </header>
+      <section className={s.examples} aria-label="研究案例">
+        <strong>研究案例</strong>
+        {researchExamples.map((example, i) => (
+          <button
+            key={example.id}
+            disabled={busy}
+            onClick={() => loadExample(i)}
+          >
+            {example.name}
+          </button>
+        ))}
+        <span>加载输入后，点击“开始分析”计算。</span>
+      </section>
       {practiceSource && (
         <details
           className={s.source}
@@ -698,7 +859,7 @@ export function RealAnalysisPage() {
             </strong>
             <span>
               {practiceSource.eligible
-                ? "以河牌开始时为根；双方范围需要你设定。"
+                ? `以${practiceSource.root?.board.length === 4 ? "转牌" : "河牌"}开始时为根；双方范围需要你设定。`
                 : "该节点暂不支持真实求解，可先保存研究问题。"}
             </span>
           </div>
@@ -749,7 +910,7 @@ export function RealAnalysisPage() {
             >
               保存笔记
             </button>
-            <a href="/solver/real">新建独立河牌研究</a>
+            <a href="/solver/real">新建独立研究</a>
           </div>
         </details>
       )}
@@ -807,13 +968,80 @@ export function RealAnalysisPage() {
               />
             </label>
             <label>
-              公共牌（以空格分隔）
-              <input
-                aria-label="公共牌"
-                value={draft.board}
-                onChange={(e) => update("board", e.target.value)}
-              />
+              研究起点
+              <select
+                aria-label="研究起点"
+                value={draft.model === "turn" ? "turn" : "river"}
+                onChange={(e) => {
+                  if (e.target.value === "turn") {
+                    update("model", "turn");
+                    update(
+                      "board",
+                      draft.board.trim().split(/\s+/).slice(0, 4).join(" "),
+                    );
+                  } else update("model", "explicit");
+                  setPendingBoard(undefined);
+                }}
+              >
+                <option value="river">河牌</option>
+                <option value="turn">转牌 → 河牌</option>
+              </select>
             </label>
+            {draft.model === "turn" && (
+              <p className={s.muted}>
+                每方最多 16
+                个组合；每街一个固定下注尺寸，无再加注。切换到转牌会移除原河牌，后续按合法河牌枚举。
+              </p>
+            )}
+            <CardSlots
+              label="公共牌"
+              cards={draft.board.trim().split(/\s+/).filter(Boolean)}
+              count={draft.model === "turn" ? 4 : 5}
+              onChange={changeBoard}
+            />
+            {pendingBoard && (
+              <div className={s.warning} role="alert">
+                新公共牌与已有范围组合冲突。
+                <button
+                  onClick={() => {
+                    const board = pendingBoard;
+                    for (const key of ["oop", "ip"] as const) {
+                      const weights = parseRange(draft[key]);
+                      update(
+                        key,
+                        rangeText(
+                          Object.fromEntries(
+                            Object.entries(weights).filter(
+                              ([c]) =>
+                                !board.includes(c.slice(0, 2)) &&
+                                !board.includes(c.slice(2)),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    update("board", board.join(" "));
+                    setPendingBoard(undefined);
+                  }}
+                >
+                  清除冲突组合并应用
+                </button>
+                <button onClick={() => setPendingBoard(undefined)}>
+                  取消更换
+                </button>
+              </div>
+            )}
+            <details>
+              <summary>公共牌牌码输入</summary>
+              <label>
+                公共牌
+                <input
+                  aria-label="公共牌"
+                  value={draft.board}
+                  onChange={(e) => update("board", e.target.value)}
+                />
+              </label>
+            </details>
             <div className={s.two}>
               <label>
                 根底池 bb
@@ -832,85 +1060,145 @@ export function RealAnalysisPage() {
                 />
               </label>
             </div>
-            <label>
-              河牌树模型
-              <select
-                aria-label="河牌树模型"
-                value={draft.model}
-                onChange={(e) => update("model", e.target.value)}
-              >
-                <option value="simple">单一下注</option>
-                <option value="explicit">自定义行动树</option>
-              </select>
-            </label>
-            {draft.model === "explicit" ? (
-              <>
+            {draft.model === "turn" ? (
+              <details open>
+                <summary>转牌与河牌下注</summary>
+                <p className={s.muted}>
+                  尺寸以 bb 计，0
+                  表示只过牌。河牌尺寸适用于每条路径，必须不超过跟注转牌后的剩余筹码。
+                </p>
+                {(
+                  [
+                    ["turnOop", "转牌 OOP 下注 bb"],
+                    ["turnIp", "转牌 IP 下注 bb"],
+                    ["riverOop", "河牌 OOP 下注 bb"],
+                    ["riverIp", "河牌 IP 下注 bb"],
+                  ] as const
+                ).map(([key, title]) => (
+                  <label key={key}>
+                    {title}
+                    <input
+                      aria-label={title}
+                      value={draft[key]}
+                      onChange={(e) => update(key, e.target.value)}
+                    />
+                  </label>
+                ))}
+              </details>
+            ) : (
+              <details>
+                <summary>行动树设置</summary>
                 <label>
-                  下注与加注路径
+                  河牌树模型
+                  <select
+                    aria-label="河牌树模型"
+                    value={draft.model}
+                    onChange={(e) => update("model", e.target.value)}
+                  >
+                    <option value="simple">单一下注</option>
+                    <option value="explicit">自定义行动树</option>
+                  </select>
+                </label>
+                {draft.model === "explicit" ? (
+                  <>
+                    <label>
+                      下注与加注路径
+                      <textarea
+                        aria-label="下注与加注路径"
+                        rows={8}
+                        value={draft.treeText}
+                        onChange={(e) => update("treeText", e.target.value)}
+                      />
+                    </label>
+                    <p className={s.muted}>
+                      每行新增一个进攻路径，父路径在前。例：下注至
+                      5；下一行可写「下注至 5 &gt; 加注至
+                      10」。金额为本街累计投入
+                      bb；全下需写「全下至」。过牌、弃牌、跟注由引擎保留。最多
+                      32 行、每行 12 个行动，不自动合并或缩树。
+                    </p>
+                  </>
+                ) : (
+                  <label>
+                    OOP 下注 / 底池 %
+                    <input
+                      aria-label="下注百分比"
+                      value={draft.betPercent}
+                      onChange={(e) => update("betPercent", e.target.value)}
+                    />
+                  </label>
+                )}
+              </details>
+            )}
+            {(["oop", "ip"] as const).map((key) => {
+              let weights: Record<string, number> = {},
+                error = "";
+              try {
+                weights = parseRange(draft[key]);
+              } catch (e) {
+                error = String(e);
+              }
+              return (
+                <RangeInput
+                  maxCombos={draft.model === "turn" ? 16 : 200}
+                  key={key}
+                  label={key.toUpperCase()}
+                  weights={weights}
+                  error={error}
+                  board={draft.board.split(/\s+/)}
+                  onChange={(next) => update(key, rangeText(next))}
+                />
+              );
+            })}
+            <details>
+              <summary>范围文本输入</summary>
+              {(["oop", "ip"] as const).map((key) => (
+                <label key={key}>
+                  {key.toUpperCase()} 输入范围
                   <textarea
-                    aria-label="下注与加注路径"
-                    rows={8}
-                    value={draft.treeText}
-                    onChange={(e) => update("treeText", e.target.value)}
+                    aria-label={key.toUpperCase() + " 输入范围"}
+                    rows={4}
+                    value={draft[key]}
+                    onChange={(e) => update(key, e.target.value)}
                   />
                 </label>
-                <p className={s.muted}>
-                  每行新增一个进攻路径，父路径在前。例：下注至
-                  5；下一行可写「下注至 5 &gt; 加注至 10」。金额为本街累计投入
-                  bb；全下需写「全下至」。过牌、弃牌、跟注由引擎保留。最多 32
-                  行、每行 12 个行动，不自动合并或缩树。
-                </p>
-              </>
-            ) : (
-              <label>
-                OOP 下注 / 底池 %
-                <input
-                  aria-label="下注百分比"
-                  value={draft.betPercent}
-                  onChange={(e) => update("betPercent", e.target.value)}
-                />
-              </label>
-            )}
-            <p className={s.muted}>
-              范围使用「具体组合:输入权重%」，每行一组。最多每方 200
-              个正权重组合；不会把未覆盖输入换成预置结果。
-            </p>
-            <label>
-              OOP 输入范围
-              <textarea
-                aria-label="OOP 输入范围"
-                rows={4}
-                value={draft.oop}
-                onChange={(e) => update("oop", e.target.value)}
-              />
-            </label>
-            <label>
-              IP 输入范围
-              <textarea
-                aria-label="IP 输入范围"
-                rows={4}
-                value={draft.ip}
-                onChange={(e) => update("ip", e.target.value)}
-              />
-            </label>
+              ))}
+              <p className={s.muted}>
+                每行一个具体组合与输入权重，如
+                AcAd:100。每方最多200个正权重组合。
+              </p>
+            </details>
             <button
               className={s.primary}
-              disabled={busy}
-              onClick={() => void run(saveCase)}
+              disabled={busy || !!pendingBoard}
+              onClick={() => void run(analyze)}
             >
-              保存局面与范围
+              开始分析
             </button>
-            <div className={s.actions}>
+            <details>
+              <summary>分步保存与计算</summary>
               <button
-                disabled={busy || !selected}
-                onClick={() => void run(freeze)}
+                className={s.primary}
+                disabled={busy}
+                onClick={() => void run(saveCase)}
               >
-                固定规格并预检
+                保存局面与范围
               </button>
-              <button disabled={busy || !spec} onClick={() => void run(start)}>
-                运行真实分析
-              </button>
-            </div>
+              <div className={s.actions}>
+                <button
+                  disabled={busy || !selected}
+                  onClick={() => void run(freeze)}
+                >
+                  固定规格并预检
+                </button>
+                <button
+                  disabled={busy || !spec}
+                  onClick={() => void run(start)}
+                >
+                  运行真实分析
+                </button>
+              </div>
+            </details>
             {selected && (
               <p className={s.muted}>
                 局面版本 {selected.ref.version} · 范围{" "}
@@ -1047,14 +1335,15 @@ export function RealAnalysisPage() {
                 <div className={s.sectionHead}>
                   <h2>全范围与 Hero</h2>
                 </div>
-                {selected &&
-                  solutionSpec &&
-                  selected.ref.contentHash !==
-                    solutionSpec.situation.contentHash && (
-                    <p className={s.warning}>
-                      当前局面或范围与此固定解不同。这里保留旧输入的真实解；请用新规格重新分析，不会把旧值套到新输入。
-                    </p>
-                  )}
+                {(dirty.current ||
+                  (selected &&
+                    solutionSpec &&
+                    selected.ref.contentHash !==
+                      solutionSpec.situation.contentHash)) && (
+                  <p className={s.warning}>
+                    当前局面或范围与此固定解不同。这里保留旧输入的真实解；请用新规格重新分析，不会把旧值套到新输入。
+                  </p>
+                )}
                 <p
                   className={
                     solution.quality === "target-met" ? s.muted : s.warning
@@ -1071,6 +1360,7 @@ export function RealAnalysisPage() {
                     <Board cards={query.node.board} />
                     <div className={s.actions}>
                       <button
+                        aria-pressed={player === 0}
                         onClick={() => {
                           setPlayer(0);
                           setOffset(0);
@@ -1079,6 +1369,7 @@ export function RealAnalysisPage() {
                         OOP
                       </button>
                       <button
+                        aria-pressed={player === 1}
                         onClick={() => {
                           setPlayer(1);
                           setOffset(0);
@@ -1089,6 +1380,8 @@ export function RealAnalysisPage() {
                       <button
                         onClick={() => {
                           setPath([]);
+                          setTurnPath([]);
+                          setPathLabels([]);
                           setOffset(0);
                         }}
                       >
@@ -1098,6 +1391,8 @@ export function RealAnalysisPage() {
                         <button
                           onClick={() => {
                             setPath(path.slice(0, -1));
+                            setTurnPath(turnPath.slice(0, -1));
+                            setPathLabels(pathLabels.slice(0, -1));
                             setOffset(0);
                           }}
                         >
@@ -1105,25 +1400,77 @@ export function RealAnalysisPage() {
                         </button>
                       )}
                     </div>
+                    <NodePath
+                      labels={pathLabels}
+                      onSelect={(depth) => {
+                        setPath(path.slice(0, depth));
+                        setTurnPath(turnPath.slice(0, depth));
+                        setPathLabels(pathLabels.slice(0, depth));
+                        setOffset(0);
+                      }}
+                    />
                     <p>
-                      当前路径：
-                      {path.length
-                        ? path.map((v, i) => `${i + 1}:${v}`).join(" → ")
-                        : "根节点"}{" "}
-                      ·{" "}
                       {query.node.terminal
-                        ? "终局"
-                        : query.node.actor === 0
-                          ? "OOP 行动"
-                          : "IP 行动"}{" "}
+                        ? query.node.board.length === 4 &&
+                          query.node.investedBb[0] === query.node.investedBb[1]
+                          ? "终局 · 已全下，后续河牌已枚举计入价值"
+                          : "终局"
+                        : query.node.kind === "chance"
+                          ? "选择河牌"
+                          : query.node.actor === 0
+                            ? "OOP 行动"
+                            : "IP 行动"}{" "}
                       · 底池 {query.node.potBb.toFixed(2)} bb
                     </p>
-                    <div className={s.actions}>
+                    {query.node.kind === "chance" && (
+                      <section aria-label="合法河牌" className={s.chance}>
+                        <p className={s.muted}>
+                          概率按双方兼容私牌和当前路径计算。— 表示路径不可达，0%
+                          表示该发牌在当前范围中不可能。
+                        </p>
+                        <div className={s.chanceCards}>
+                          {query.node.chanceCards?.map((c) => (
+                            <button
+                              key={c.card}
+                              aria-label={`河牌 ${c.card}`}
+                              disabled={
+                                c.probability === null || c.probability === 0
+                              }
+                              onClick={() => {
+                                setTurnPath([
+                                  ...turnPath,
+                                  { kind: "deal", card: c.card },
+                                ]);
+                                setPathLabels([
+                                  ...pathLabels,
+                                  `河牌 ${c.card}`,
+                                ]);
+                                setOffset(0);
+                              }}
+                            >
+                              <Board cards={[c.card]} />
+                              <small>{pct(c.probability)}</small>
+                            </button>
+                          ))}
+                        </div>
+                      </section>
+                    )}
+                    <div
+                      className={s.actions}
+                      role="group"
+                      aria-label="当前节点行动"
+                    >
                       {query.node.actions.map((a, i) => (
                         <button
                           key={a}
                           onClick={() => {
-                            setPath([...path, i]);
+                            if (solution.queryModel === "native-turn/3")
+                              setTurnPath([
+                                ...turnPath,
+                                { kind: "action", index: i },
+                              ]);
+                            else setPath([...path, i]);
+                            setPathLabels([...pathLabels, label(a)]);
                             setOffset(0);
                           }}
                         >
@@ -1154,107 +1501,55 @@ export function RealAnalysisPage() {
                     </button>
                   ))}
                 </div>
-                <div className={s.matrix}>
-                  {handClasses.map((h) => {
-                    const mass =
-                      aggregate?.classes.find((c) => c.hand === h.label)
-                        ?.probability ?? 0;
-                    const rows = matrixRows.filter(
-                        (r) =>
-                          r.hand === h.label &&
-                          (r.conditionalProbability ?? 0) > 0,
-                      ),
-                      weight = rows.reduce(
-                        (n, r) => n + r.conditionalProbability!,
-                        0,
-                      );
-                    const metric = (key: "equity" | "evBb") =>
-                      weight > 0 && rows.every((r) => r[key] !== null)
-                        ? rows.reduce(
-                            (n, r) => n + r.conditionalProbability! * r[key]!,
-                            0,
-                          ) / weight
-                        : null;
-                    let background: string | undefined;
-                    if (
-                      matrixMetric === "strategy" &&
-                      weight > 0 &&
-                      rows.every((r) => r.allocation)
-                    ) {
-                      let end = 0;
-                      const stops = query?.node.actions.map((action, i) => {
-                        const start = end;
-                        end +=
-                          (rows.reduce(
-                            (n, r) =>
-                              n + r.conditionalProbability! * r.allocation![i],
-                            0,
-                          ) /
-                            weight) *
-                          100;
-                        const color =
-                          action === "Fold"
-                            ? "#647386"
-                            : action === "Check" || action === "Call"
-                              ? "#256eab"
-                              : action.startsWith("AllIn")
-                                ? "#794291"
-                                : action.startsWith("Raise")
-                                  ? "#a43535"
-                                  : "#ac4c1a";
-                        return `${color} ${start}% ${end}%`;
-                      });
-                      if (stops?.length)
-                        background = `linear-gradient(to right,${stops.join(",")})`;
-                    } else if (matrixMetric === "weight" && mass > 0)
-                      background = `rgba(63,178,145,${Math.min(0.85, 0.2 + mass)})`;
-                    return (
-                      <button
-                        key={h.label}
-                        title={`${h.label} 条件占比 ${pct(mass)} · 权益 ${pct(metric("equity"))} · EV ${bb(metric("evBb"))}`}
-                        className={hand === h.label ? s.chosen : ""}
-                        style={{
-                          background,
-                          color:
-                            matrixMetric === "strategy" && background
-                              ? "#fff"
-                              : undefined,
-                        }}
-                        onClick={() => {
-                          setHand(hand === h.label ? "" : h.label);
-                          setOffset(0);
-                        }}
-                      >
-                        {h.label}
-                        {matrixMetric === "equity" && mass > 0 && (
-                          <small>
-                            {metric("equity") === null
-                              ? "—"
-                              : `${(metric("equity")! * 100).toFixed(0)}%`}
-                          </small>
-                        )}
-                        {matrixMetric === "ev" && mass > 0 && (
-                          <small>{metric("evBb")?.toFixed(1) ?? "—"}</small>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className={s.muted}>
-                  {matrixMetric === "strategy"
-                    ? "分段表示当前行动频率；非行动方仅可查看范围与数值。"
-                    : matrixMetric === "weight"
-                      ? "各牌类在当前兼容组合分布中的占比。"
-                      : "格内数值按当前兼容组合权重汇总；EV 单位 bb。"}
-                </p>
-                <label>
-                  Hero 具体组合
-                  <input
-                    aria-label="Hero 具体组合"
-                    value={hero}
-                    onChange={(e) => setHero(e.target.value)}
+                {aggregate && (
+                  <ActionDistribution
+                    values={aggregate.frequencies}
+                    emptyMessage={
+                      query?.node.kind === "chance"
+                        ? "选择河牌后继续研究行动。"
+                        : query?.node.terminal
+                          ? "已到终局，无后续行动。"
+                          : aggregate.denominator === 0
+                            ? "当前路径不可达，没有可用的策略分布。"
+                            : undefined
+                    }
                   />
-                </label>
+                )}
+                <ResultMatrix
+                  rows={matrixRows}
+                  classes={aggregate?.classes ?? []}
+                  actions={query?.node.actions ?? []}
+                  metric={matrixMetric}
+                  selected={hand}
+                  onSelect={(value) => {
+                    setHand(value);
+                    setOffset(0);
+                  }}
+                />
+                <CardSlots
+                  label="Hero观察组合"
+                  cards={hero.match(/.{2}/g) ?? []}
+                  count={2}
+                  dead={query?.node.board ?? []}
+                  onChange={(cards) => setHero(cards.join(""))}
+                />
+                <details>
+                  <summary>Hero牌码输入</summary>
+                  <label>
+                    Hero 具体组合
+                    <input
+                      aria-label="Hero 具体组合"
+                      value={hero}
+                      onChange={(e) => setHero(e.target.value)}
+                    />
+                  </label>
+                </details>
+                {heroRow?.allocation && (
+                  <HeroEvChart
+                    row={heroRow}
+                    actions={query?.node.actions ?? []}
+                  />
+                )}
                 {heroRow && (
                   <div className={s.hero}>
                     <ComboCards combo={heroRow.combo} />
@@ -1284,139 +1579,146 @@ export function RealAnalysisPage() {
                   包含未跟注返还，无抽水。组合比例在兼容私牌与当前路径上条件化，不是从根到达概率。
                 </p>
                 {heroRow?.allocation && (
-                  <table aria-label="Hero 行动比较">
-                    <thead>
-                      <tr>
-                        <th>行动</th>
-                        <th>频率</th>
-                        <th>行动 EV</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {heroRow.allocation.map((f, i) => (
-                        <tr key={i}>
-                          <td>{label(query?.node.actions[i] ?? "")}</td>
-                          <td>{pct(f)}</td>
-                          <td>{bb(heroRow.actionEvBb?.[i] ?? null)}</td>
+                  <details>
+                    <summary>精确行动数值</summary>{" "}
+                    <table aria-label="Hero 行动比较">
+                      <thead>
+                        <tr>
+                          <th>行动</th>
+                          <th>频率</th>
+                          <th>行动 EV</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {heroRow.allocation.map((f, i) => (
+                          <tr key={i}>
+                            <td>{label(query?.node.actions[i] ?? "")}</td>
+                            <td>{pct(f)}</td>
+                            <td>{bb(heroRow.actionEvBb?.[i] ?? null)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </details>
                 )}
-                <div className={s.actions}>
-                  <button
-                    onClick={() => {
-                      setHand("");
-                      setOffset(0);
-                    }}
-                  >
-                    全部组合
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowAll(!showAll);
-                      setOffset(0);
-                    }}
-                  >
-                    {showAll ? "只看输入范围" : "显示全部 1,326 组合"}
-                  </button>
-                  {aggregate?.frequencies.map((a) => (
-                    <span className={s.stat} key={a.action}>
-                      {label(a.action)} {pct(a.frequency)}
-                    </span>
-                  ))}
-                </div>
-                <div
-                  className={s.tableWrap}
-                  role="region"
-                  aria-label="具体组合表"
-                >
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>具体组合</th>
-                        <th>输入 / 路径权重</th>
-                        <th>条件占比</th>
-                        <th>权益</th>
-                        <th>EV</th>
-                        <th>动作频率</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {query?.items.map((r) => (
-                        <tr key={r.combo} onClick={() => setHero(r.combo)}>
-                          <td>
-                            <ComboCards combo={r.combo} />
-                          </td>
-                          <td>
-                            {pct(r.inputWeight)} / {pct(r.ownReachWeight)}
-                          </td>
-                          <td>{pct(r.conditionalProbability)}</td>
-                          <td>{pct(r.equity)}</td>
-                          <td>{bb(r.evBb)}</td>
-                          <td>
-                            {r.allocation
-                              ? r.allocation
-                                  .map(
-                                    (n, i) =>
-                                      `${label(query.node.actions[i])} ${pct(n)}`,
-                                  )
-                                  .join(" / ")
-                              : r.availability === "dead"
-                                ? "牌面冲突"
-                                : r.availability === "unreachable"
-                                  ? "不可达"
-                                  : r.availability === "outside-input-range"
-                                    ? "不在输入范围"
-                                    : "该玩家当前不行动"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className={s.actions}>
-                  <button
-                    disabled={offset === 0}
-                    onClick={() => setOffset(Math.max(0, offset - 30))}
-                  >
-                    上一页
-                  </button>
-                  <span>
-                    {offset + 1}–{Math.min(offset + 30, query?.total ?? 0)} /{" "}
-                    {query?.total ?? 0}
-                  </span>
-                  <button
-                    disabled={query?.nextOffset === null}
-                    onClick={() => setOffset(query?.nextOffset ?? 0)}
-                  >
-                    下一页
-                  </button>
-                  {query &&
-                    !query.node.terminal &&
-                    query.node.actions.map((action, index) => (
-                      <button
-                        key={action}
-                        onClick={() =>
-                          void run(async () => {
-                            const r = await invoke<{ ref: Ref }>(
-                              "real_range_derive",
-                              {
-                                solutionId: solution.ref.id,
-                                path,
-                                action: index,
-                              },
-                            );
-                            setMessage(
-                              `已沿固定行动保存派生范围 ${r.ref.id}；来源与原解保留，编辑它会创建新假设。`,
-                            );
-                          })
-                        }
-                      >
-                        保存{label(action)}后的范围
-                      </button>
+                <details open={!!hand}>
+                  <summary>组合明细与派生范围</summary>
+                  <div className={s.actions}>
+                    <button
+                      onClick={() => {
+                        setHand("");
+                        setOffset(0);
+                      }}
+                    >
+                      全部组合
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAll(!showAll);
+                        setOffset(0);
+                      }}
+                    >
+                      {showAll ? "只看输入范围" : "显示全部 1,326 组合"}
+                    </button>
+                    {aggregate?.frequencies.map((a) => (
+                      <span className={s.stat} key={a.action}>
+                        {label(a.action)} {pct(a.frequency)}
+                      </span>
                     ))}
-                </div>
+                  </div>
+                  <div
+                    className={s.tableWrap}
+                    role="region"
+                    aria-label="具体组合表"
+                  >
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>具体组合</th>
+                          <th>输入 / 路径权重</th>
+                          <th>条件占比</th>
+                          <th>权益</th>
+                          <th>EV</th>
+                          <th>动作频率</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {query?.items.map((r) => (
+                          <tr key={r.combo} onClick={() => setHero(r.combo)}>
+                            <td>
+                              <ComboCards combo={r.combo} />
+                            </td>
+                            <td>
+                              {pct(r.inputWeight)} / {pct(r.ownReachWeight)}
+                            </td>
+                            <td>{pct(r.conditionalProbability)}</td>
+                            <td>{pct(r.equity)}</td>
+                            <td>{bb(r.evBb)}</td>
+                            <td>
+                              {r.allocation
+                                ? r.allocation
+                                    .map(
+                                      (n, i) =>
+                                        `${label(query.node.actions[i])} ${pct(n)}`,
+                                    )
+                                    .join(" / ")
+                                : r.availability === "dead"
+                                  ? "牌面冲突"
+                                  : r.availability === "unreachable"
+                                    ? "不可达"
+                                    : r.availability === "outside-input-range"
+                                      ? "不在输入范围"
+                                      : "该玩家当前不行动"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className={s.actions}>
+                    <button
+                      disabled={offset === 0}
+                      onClick={() => setOffset(Math.max(0, offset - 30))}
+                    >
+                      上一页
+                    </button>
+                    <span>
+                      {offset + 1}–{Math.min(offset + 30, query?.total ?? 0)} /{" "}
+                      {query?.total ?? 0}
+                    </span>
+                    <button
+                      disabled={query?.nextOffset === null}
+                      onClick={() => setOffset(query?.nextOffset ?? 0)}
+                    >
+                      下一页
+                    </button>
+                    {query &&
+                      solution.queryModel !== "native-turn/3" &&
+                      !query.node.terminal &&
+                      query.node.actions.map((action, index) => (
+                        <button
+                          key={action}
+                          onClick={() =>
+                            void run(async () => {
+                              const r = await invoke<{ ref: Ref }>(
+                                "real_range_derive",
+                                {
+                                  solutionId: solution.ref.id,
+                                  path,
+                                  action: index,
+                                },
+                              );
+                              setMessage(
+                                `已沿固定行动保存派生范围 ${r.ref.id}；来源与原解保留，编辑它会创建新假设。`,
+                              );
+                            })
+                          }
+                        >
+                          保存{label(action)}后的范围
+                        </button>
+                      ))}
+                  </div>
+                </details>
                 <details>
                   <summary>固定来源与计算说明</summary>
                   <p>

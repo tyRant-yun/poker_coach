@@ -16,7 +16,7 @@ import type { RealCase } from "../../src/modules/analysis/real-domain.ts";
 import type { Reply } from "../../src/modules/analysis/domain.ts";
 
 test(
-  "whole-hand MCP: all 13 tools, shared HTTP state, reference guards and replay backup",
+  "whole-hand MCP: all 14 tools, shared HTTP state, reference guards and replay backup",
   { timeout: 30000 },
   async () => {
     const directory = mkdtempSync(join(tmpdir(), "hands-mcp-")),
@@ -84,6 +84,12 @@ test(
         })
       ).json()) as { data: HandView };
       assert.deepEqual(http.data, h);
+      await call("game_transition_query", {
+        handId: h.id,
+        handRevision: h.revision,
+        batchId: h.transition!.batchId,
+        limit: 2,
+      });
       assert.equal((await raw("real_workspace_get")).ok, false);
       assert.equal((await raw("game_export")).ok, false);
       assert.equal((await client.listResources()).resources.length, 0);
@@ -140,7 +146,7 @@ test(
       await call("game_import", { backup });
       const next = await call<HandView>("game_next", { handId: h.id });
       assert.notEqual(next.id, h.id);
-    assert.notEqual(next.hero, h.hero, "the next hand rotates Hero position");
+      assert.notEqual(next.hero, h.hero, "the next hand rotates Hero position");
       await call("game_get", { handId: next.id });
       for (const tool of Object.keys(gameTools)) assert(called.has(tool), tool);
     } finally {

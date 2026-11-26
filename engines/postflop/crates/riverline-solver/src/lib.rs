@@ -6,6 +6,8 @@ use std::time::Instant;
 
 pub mod explicit;
 pub mod native_reader;
+pub mod turn;
+pub mod turn_reader;
 
 pub const ENGINE_COMMIT: &str = "9d1509fe5077d019825f833eed04b16d342dfda1";
 
@@ -135,7 +137,7 @@ pub(crate) fn build_with_tree(
         .map(|s| card_from_str(s))
         .collect::<Result<_, _>>()?;
     let unique: HashSet<u8> = board.iter().copied().collect();
-    if unique.len() != 5 {
+    if unique.len() != board.len() || !(4..=5).contains(&board.len()) {
         return Err("unsupported-input: duplicate board card".into());
     }
     let mut ranges = [Range::new(), Range::new()];
@@ -166,7 +168,7 @@ pub(crate) fn build_with_tree(
         range: ranges,
         flop: [board[0], board[1], board[2]],
         turn: board[3],
-        river: board[4],
+        river: board.get(4).copied().unwrap_or(NOT_DEALT),
     };
     PostFlopGame::with_config(cards, tree)
 }

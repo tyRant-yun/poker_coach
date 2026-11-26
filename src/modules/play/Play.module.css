@@ -132,6 +132,53 @@
 .main {
   min-width: 0;
 }
+.playbackControls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  min-height: 45px;
+  margin: -12px 0 18px;
+  color: #426051;
+}
+.playbackControls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.actionCue {
+  display: block;
+  color: #185e4e;
+  font-size: 14px;
+  min-height: 24px;
+}
+.seat {
+  position: relative;
+}
+.chipMove {
+  position: absolute;
+  right: 15px;
+  top: 65px;
+  color: #ac4c1a;
+  font-style: normal;
+  pointer-events: none;
+  animation: chipMove 0.22s ease-out both;
+}
+@keyframes chipMove {
+  from {
+    transform: translateY(18px);
+    opacity: 0.3;
+  }
+  to {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chipMove {
+    animation: none;
+  }
+}
 .context {
   display: flex;
   gap: 20px;

@@ -6,6 +6,15 @@ const write = baseInput.required({ requestId: true, expectedRevision: true });
 export const gameSchemas = {
   game_list: baseInput.strict(),
   game_get: baseInput.extend(identity).strict(),
+  game_transition_query: baseInput
+    .extend({
+      ...identity,
+      handRevision: z.number().int().nonnegative(),
+      batchId: z.string().min(1),
+      offset: z.number().int().min(0).max(4096).default(0),
+      limit: z.number().int().min(1).max(16).default(16),
+    })
+    .strict(),
   game_create: write
     .extend({ players: z.union([z.literal(2), z.literal(6)]).default(6) })
     .strict(),
@@ -44,6 +53,8 @@ export type GameTool = keyof typeof gameSchemas;
 export const gameTools: Record<GameTool, string> = {
   game_list: "列出整手练习摘要，不返回私牌或未来信息",
   game_get: "读取整手练习的当前安全视角及合法行动",
+  game_transition_query:
+    "按固定手牌版本分页读取规则产生的公共动作帧，不返回隐藏私牌",
   game_create: "创建从翻前开始的100BB整手练习",
   game_next: "完成后开始下一手，保留上一手及全部原始决策",
   game_act: "按当前手牌版本提交合法行动并推进对手行动",
@@ -85,6 +96,7 @@ export type RuleView = {
   events: (GameAction & { street: number })[];
 };
 export type HandView = Omit<RuleView, "holes" | "shown"> & {
+  transition?: Transition;
   id: string;
   revision: number;
   number: number;
@@ -99,6 +111,53 @@ export type HandView = Omit<RuleView, "holes" | "shown"> & {
     amount?: number;
     marked: boolean;
   }[];
+};
+export type Transition = {
+  batchId: string;
+  fromRevision: number;
+  toRevision: number;
+  fromAction: number;
+  toAction: number;
+};
+export type PublicFrame = {
+  id: string;
+  sequence: number;
+  kind: string;
+  actor: number | null;
+  amount: number | null;
+  returned: number[] | null;
+  view: HandView;
+};
+export type FramePage = {
+  batchId: string;
+  revision: number;
+  items: PublicFrame[];
+  total: number;
+  nextOffset: number | null;
+};
+export type RuleTrace = {
+  frames: {
+    sequence: number;
+    kind: string;
+    actor: number | null;
+    amount: number | null;
+    returned: number[] | null;
+    actionCount: number;
+    snapshot: Pick<
+      RuleView,
+      | "street"
+      | "board"
+      | "stacks"
+      | "bets"
+      | "active"
+      | "pot"
+      | "complete"
+      | "payoffs"
+      | "shown"
+    >;
+  }[];
+  total: number;
+  nextOffset: number | null;
 };
 export type HandSummary = {
   id: string;

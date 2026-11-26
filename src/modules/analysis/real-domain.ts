@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { baseInput, refSchema } from "./domain.ts";
 import type { Ref } from "./domain.ts";
+import {
+  turnProfileSchema,
+  turnPathSchema,
+} from "../../../contracts/solver/turn.ts";
+import type { TurnProfile } from "../../../contracts/solver/turn.ts";
 
 export const realContract = "riverline-real-analysis/1" as const;
 const id = z.string().min(1);
@@ -37,7 +42,10 @@ export const caseTreeSchema = z
 export type CaseTree = z.infer<typeof caseTreeSchema>;
 const configuration = {
   name: z.string().min(1).max(200),
-  board: z.array(z.string().regex(/^[2-9TJQKA][cdhs]$/)).length(5),
+  board: z
+    .array(z.string().regex(/^[2-9TJQKA][cdhs]$/))
+    .min(4)
+    .max(5),
   pot: z
     .number()
     .int()
@@ -64,6 +72,7 @@ export const realSchemas = {
     .extend({
       ...configuration,
       tree: caseTreeSchema.optional(),
+      turn: turnProfileSchema.optional(),
       ranges: z.tuple([weights, weights]),
     })
     .strict(),
@@ -76,6 +85,7 @@ export const realSchemas = {
       stack: configuration.stack.optional(),
       betPercent: configuration.betPercent.optional(),
       tree: caseTreeSchema.nullable().optional(),
+      turn: turnProfileSchema.nullable().optional(),
       rangeIds: z.tuple([id, id]).optional(),
       ranges: z.tuple([weights, weights]).optional(),
     })
@@ -117,6 +127,18 @@ export const realSchemas = {
       player: z.union([z.literal(0), z.literal(1)]).default(0),
     })
     .strict(),
+  real_turn_solution_query: baseInput
+    .extend({
+      solutionId: id,
+      path: turnPathSchema.default([]),
+      player: z.union([z.literal(0), z.literal(1)]).default(0),
+      offset: z.number().int().min(0).max(1326).default(0),
+      limit: z.number().int().min(1).max(100).default(30),
+      hand: z.string().optional(),
+      combos: z.array(z.string()).max(16).optional(),
+      inRangeOnly: z.boolean().default(true),
+    })
+    .strict(),
   real_range_derive: writeInput
     .extend({
       solutionId: id,
@@ -141,6 +163,8 @@ export const realTools: Record<RealTool, string> = {
   real_analysis_retry: "按原固定规格创建新的真实计算 attempt",
   real_solution_load: "读取固定真实解的版本、来源、质量和制品索引",
   real_solution_query: "按需读取真实节点、组合策略、指标和条件范围分布",
+  real_turn_solution_query:
+    "按版本化动作/发牌路径读取真实转牌节点、组合与机会概率，保留固定来源",
   real_range_aggregate: "按兼容组合分布汇总真实范围与策略，明确分母",
   real_range_derive: "沿真实固定策略创建有来源的派生范围，不覆盖原解",
 };
@@ -150,6 +174,7 @@ export const realReadTools = new Set<RealTool>([
   "real_preflight",
   "real_analysis_get",
   "real_solution_query",
+  "real_turn_solution_query",
   "real_range_aggregate",
 ]);
 export type RealCase = {
@@ -160,6 +185,7 @@ export type RealCase = {
   stack: number;
   betPercent: string;
   tree?: CaseTree;
+  turn?: TurnProfile;
   ranges: [Ref, Ref];
 };
 export type RealSpec = {
@@ -172,9 +198,9 @@ export type RealSpec = {
   targetNashConvPotFraction: number;
   engineCommit: string;
   algorithm: string;
-  scope: "given-range-river-subgame";
+  scope: "given-range-river-subgame" | "given-range-turn-subgame";
   operation: "solve-equilibrium";
-  valueModel: "exact-river-terminal";
+  valueModel: "exact-river-terminal" | "exact-turn-river-runouts";
   constraints: { kind: "none" };
   tableFormat: "HU";
   backgroundPlayers: 2;
@@ -220,7 +246,7 @@ export type RealSolution = {
   native: Ref;
   summary: Ref;
   nodes: { path: number[]; artifact: Ref }[];
-  queryModel?: "native-paged/2";
+  queryModel?: "native-paged/2" | "native-turn/3";
   handCounts: [number, number];
   metricDefinition: {
     unit: "bb";

@@ -80,6 +80,10 @@ fn emit(
 }
 
 pub fn serve(directory: &Path, explicit: bool) -> Result<(), String> {
+    serve_model(directory, if explicit { 2 } else { 1 })
+}
+pub fn serve_model(directory: &Path, model: u8) -> Result<(), String> {
+    let explicit = model == 2;
     let directory = directory.canonicalize().map_err(|e| e.to_string())?;
     let input_path = directory.join("input.json");
     let native_path = directory.join("solution.bin");
@@ -141,7 +145,19 @@ pub fn serve(directory: &Path, explicit: bool) -> Result<(), String> {
             seq += 1;
         }
     };
-    let result = if explicit {
+    let result = if model == 3 {
+        let input: riverline_solver::turn::TurnInput =
+            serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+        if input
+            .ranges
+            .iter()
+            .any(|r| r.values().filter(|&&w| w > 0.0).count() > 16)
+        {
+            return Err("unsupported-input: turn product limit 16 combos per side".into());
+        }
+        riverline_solver::turn::run_turn(input, || cancelled.load(Ordering::SeqCst), progress)
+            .and_then(|(g, r)| Ok((g, serde_json::to_value(r).map_err(|e| e.to_string())?)))
+    } else if explicit {
         let input: ExplicitRiverInput =
             serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
         run_explicit(input, || cancelled.load(Ordering::SeqCst), progress)
@@ -175,7 +191,9 @@ pub fn serve(directory: &Path, explicit: bool) -> Result<(), String> {
             if cancelled.load(Ordering::SeqCst) {
                 return emit("cancelled", Some(&identity), seq, serde_json::json!({}));
             }
-            let memo = if explicit {
+            let memo = if model == 3 {
+                format!("riverline-turn/3:{}", identity.spec_hash)
+            } else if explicit {
                 format!("riverline-river-tree/2:{}", identity.spec_hash)
             } else {
                 "riverline-engine/1".into()
@@ -187,8 +205,12 @@ pub fn serve(directory: &Path, explicit: bool) -> Result<(), String> {
             // a general/multistreet tree must use a separate on-demand native reader.
             let paths = [vec![], vec![0], vec![0, 0], vec![1], vec![1, 0], vec![1, 1]];
             let mut pages = vec![];
-            query(&mut loaded, &[])?;
-            for (index, path) in paths.iter().enumerate().filter(|_| !explicit) {
+            if model == 3 {
+                riverline_solver::turn::query_turn(&mut loaded, &[])?;
+            } else {
+                query(&mut loaded, &[])?;
+            }
+            for (index, path) in paths.iter().enumerate().filter(|_| model == 1) {
                 let node = query(&mut loaded, path)?;
                 let filename = format!("node-{index}.json");
                 let output = directory.join(&filename);
@@ -200,6 +222,9 @@ pub fn serve(directory: &Path, explicit: bool) -> Result<(), String> {
                 pages.push(serde_json::json!({"path":path,"file":filename,"hash":format!("{:x}",Sha256::digest(&bytes)),"bytes":bytes.len()}));
             }
             let mut summary = report;
+            if model == 3 {
+                summary["input"] = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+            }
             summary["nodes"] = pages.into();
             summary["identity"] = serde_json::to_value(&identity).map_err(|e| e.to_string())?;
             fs::write(

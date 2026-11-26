@@ -2,20 +2,30 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { createInterface } from "node:readline";
-import type { GameAction, RuleView } from "../../src/modules/play/domain.ts";
+import type {
+  GameAction,
+  RuleView,
+  RuleTrace,
+} from "../../src/modules/play/domain.ts";
 
 export type RuleInput = {
   players: 2 | 6;
   deck: string[];
   actions: GameAction[];
   stacks?: number[];
+  trace?: {
+    afterActions: number;
+    includeInitial: boolean;
+    offset: number;
+    limit: number;
+  };
 };
 export class Rules {
   private child?: ChildProcessWithoutNullStreams;
   private pending = new Map<
     number,
     {
-      resolve: (v: RuleView) => void;
+      resolve: (v: RuleView & { trace?: RuleTrace }) => void;
       reject: (e: Error) => void;
       timer: ReturnType<typeof setTimeout>;
     }
@@ -69,7 +79,7 @@ export class Rules {
     child.stdin.on("error", fail);
     return child;
   }
-  replay(input: RuleInput): Promise<RuleView> {
+  replay(input: RuleInput): Promise<RuleView & { trace?: RuleTrace }> {
     if (this.pending.size >= 16)
       return Promise.reject(Error("规则请求繁忙，请稍后重试"));
     const child = this.start(),

@@ -1,5 +1,7 @@
 # R1 独立河牌基准
 
+2026-11-26：`npm run benchmark:solver:turn`增加6个冻结转牌问题与4项oracle自测；独立序列式LP/BR不让转牌信息集获知未来河牌，逐节点核验权益、EV、行动价值与条件机会概率。Windows沿用资源runner采样进程峰值工作集。完整输出只保留`.artifacts/solver/turn-n06`，小型[数值/资源摘要](../../docs/solver/validation/round2-turn-evidence-2026-11-26.json)随源码保存。产品已开放有限转牌及一般河牌，实际边界见[第二轮交付](../../docs/riverline-round2-delivery-2026-11-26.md)；下文2026-11-18“尚未开放UI/MCP”为历史检查点。oracle虚拟环境仍按下文固定requirements安装，Linux运行路径适配未做部署验收。
+
 2026-11-18 扩展：[一般河牌树独立验证与原生查询](../../docs/solver/validation/r2-river-tree-2026-11-18.md)。`npm run benchmark:solver:tree` 运行新增六个固定问题和五项 oracle 自测；`npm run benchmark:solver:small` 保持下文原四个受限问题及两项自测。两套门槛与输入独立保存，一般树尚未开放给 UI/MCP。
 
 固定模型：两名玩家、完整五张公共牌、给定范围的独立权重乘积在合法不重叠私牌上条件化；OOP check 或一个显式下注，IP 面对下注 fold/call，check 后双方摊牌。无抽水、无 raise、无后续价值近似。不能由这些测试宣称全 HU 翻后/翻前/六人已通过。

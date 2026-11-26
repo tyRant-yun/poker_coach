@@ -1,0 +1,139 @@
+.slots {
+  border: 0;
+  padding: 0;
+  margin: 10px 0;
+  min-width: 0;
+}
+.slots legend {
+  font-size: 13px;
+  color: #465c72;
+  margin-bottom: 5px;
+}
+.slots > div {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.slots > div > button {
+  padding: 3px;
+  background: #fff;
+  min-width: 38px;
+}
+.slots > div > button > [data-suit] {
+  min-width: 30px;
+  width: 34px;
+  height: 45px;
+  font-size: 19px;
+}
+.empty {
+  display: grid;
+  place-items: center;
+  min-height: 46px;
+  color: #62768a;
+  font-size: 22px;
+}
+.dialog {
+  border: 1px solid #b0becb;
+  border-radius: 14px;
+  background: #f7f9fb;
+  color: #172638;
+  width: min(940px, 96vw);
+  padding: 20px;
+  max-height: 94vh;
+  overflow: auto;
+}
+.dialog::backdrop {
+  background: #152b4280;
+}
+.dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dialog h2 {
+  font-size: 19px;
+}
+.dialog button {
+  font: inherit;
+  border: 1px solid #b0becb;
+  border-radius: 6px;
+  padding: 7px;
+  background: white;
+  color: #172638;
+  cursor: pointer;
+}
+.dialog button:disabled {
+  opacity: 0.22;
+  cursor: not-allowed;
+}
+.dialog button:focus-visible {
+  outline: 3px solid #19715a;
+  outline-offset: 2px;
+}
+.dialog button[aria-pressed="true"] {
+  border-color: #19715a;
+  box-shadow: 0 0 0 2px #19715a;
+}
+.dialog footer {
+  display: flex;
+  gap: 12px;
+  justify-content: end;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.dialog footer button:last-child {
+  background: #17604e;
+  color: white;
+}
+.draft {
+  display: flex;
+  gap: 8px;
+  margin: 15px 0;
+}
+.deck {
+  display: grid;
+  gap: 8px;
+}
+.deck > div {
+  display: grid;
+  grid-template-columns: 20px repeat(13, minmax(0, 1fr));
+  gap: 5px;
+  align-items: center;
+}
+.dialog .deck button {
+  padding: 3px;
+  min-width: 0;
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+.dialog .deck button > [data-suit] {
+  min-width: 0;
+  width: 100%;
+  height: 48px;
+  box-sizing: border-box;
+}
+.deck button span {
+  max-width: 100%;
+  font-size: 18px;
+}
+.deck button span > span {
+  font-size: 20px;
+}
+@media (max-width: 650px) {
+  .dialog {
+    padding: 12px;
+  }
+  .deck > div {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+  .deck > div > b {
+    grid-column: 1/-1;
+  }
+  .deck button span {
+    min-width: 24px;
+  }
+  .dialog footer {
+    justify-content: start;
+  }
+}

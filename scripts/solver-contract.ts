@@ -1,6 +1,11 @@
 import { writeFileSync } from "node:fs";
 import { z } from "zod";
 import {
+  turnInputSchema,
+  turnNodeSchema,
+  turnPathSchema,
+} from "../contracts/solver/turn.ts";
+import {
   explicitRiverSchema,
   nativeQuerySchema,
   nativePageSchema,
@@ -22,6 +27,9 @@ for (const [name, schema] of Object.entries({
   "river-tree": explicitRiverSchema,
   "native-query": nativeQuerySchema,
   "native-page": nativePageSchema,
+  turn: turnInputSchema,
+  "turn-node": turnNodeSchema,
+  "turn-path": turnPathSchema,
 })) {
   writeFileSync(
     new URL(`../contracts/solver/${name}.schema.json`, import.meta.url),

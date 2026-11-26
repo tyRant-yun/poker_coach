@@ -18,6 +18,70 @@ fn read_bounded(path: &str, limit: usize) -> Result<Vec<u8>, String> {
 
 fn execute() -> Result<(), String> {
     let args: Vec<String> = env::args().collect();
+    if args.len() == 5 && args[1] == "query-turn" {
+        let request: riverline_solver::turn_reader::TurnQuery =
+            serde_json::from_slice(&read_bounded(&args[3], 16384)?).map_err(|e| e.to_string())?;
+        let node =
+            riverline_solver::turn_reader::read_turn(std::path::Path::new(&args[2]), &request)?;
+        let bytes = serde_json::to_vec(&node).map_err(|e| e.to_string())?;
+        if bytes.len() > 131072 {
+            return Err("budget-exceeded: turn node >128KiB".into());
+        }
+        fs::write(&args[4], bytes).map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+    if args.len() == 3 && args[1] == "preflight-turn" {
+        let input: riverline_solver::turn::TurnInput =
+            serde_json::from_slice(&read_bounded(&args[2], 65536)?).map_err(|e| e.to_string())?;
+        if input
+            .ranges
+            .iter()
+            .any(|r| r.values().filter(|&&w| w > 0.0).count() > 16)
+        {
+            return Err("unsupported-input: turn product limit 16 combos per side".into());
+        }
+        let game = riverline_solver::turn::build_turn(&input)?;
+        let memory = game.memory_usage().0;
+        if memory > input.limits.max_memory_bytes {
+            return Err("budget-exceeded: memory".into());
+        }
+        println!("{{\"ok\":true,\"estimatedBytes\":{memory}}}");
+        return Ok(());
+    }
+    if args.len() == 3 && args[1] == "worker-turn" {
+        return worker::serve_model(std::path::Path::new(&args[2]), 3);
+    }
+    if args.len() == 4 && args[1] == "validate-turn" {
+        use riverline_solver::turn::*;
+        let input: TurnInput =
+            serde_json::from_slice(&read_bounded(&args[2], 65536)?).map_err(|e| e.to_string())?;
+        if input.ranges.iter().any(|r| r.len() > 8) {
+            return Err("benchmark-only: at most 8 combos per side".into());
+        }
+        let (mut game, report) = run_turn(input, || false, |_, _| {})?;
+        let nodes = collect_turn(&mut game)?;
+        let archive = format!("{}.native.bin", &args[3]);
+        postflop_solver::save_data_to_file(&game, "riverline-turn/3-benchmark", &archive, None)?;
+        let (mut loaded, _): (postflop_solver::PostFlopGame, String) =
+            postflop_solver::load_data_from_file(&archive, Some(256 * 1024 * 1024))?;
+        if serde_json::to_value(query_turn(&mut loaded, &[])?).map_err(|e| e.to_string())?
+            != serde_json::to_value(query_turn(&mut game, &[])?).map_err(|e| e.to_string())?
+        {
+            return Err("turn native root differs".into());
+        }
+        let mut value = serde_json::to_value(report).map_err(|e| e.to_string())?;
+        // Preserve the exact declared input, rather than serde Value's f32-to-f64 expansion.
+        value["input"] =
+            serde_json::from_slice(&read_bounded(&args[2], 65536)?).map_err(|e| e.to_string())?;
+        value["turnNodes"] = serde_json::to_value(nodes).map_err(|e| e.to_string())?;
+        let bytes = serde_json::to_vec(&value).map_err(|e| e.to_string())?;
+        if bytes.len() > 16 * 1024 * 1024 {
+            return Err("benchmark-only: report >16MiB".into());
+        }
+        fs::write(&args[3], bytes).map_err(|e| e.to_string())?;
+        println!("{{\"ok\":true,\"model\":\"turn/3\"}}");
+        return Ok(());
+    }
     if args.len() == 5 && args[1] == "query-river-tree" {
         let bytes = read_bounded(&args[3], 16384)?;
         let request: riverline_solver::native_reader::NativeQuery =

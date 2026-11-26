@@ -221,9 +221,11 @@ test(
         "restart preserves independent gate",
       );
       let river: number | undefined;
+      let turnDecision: number | undefined;
       let lastActionInput: Record<string, unknown> | undefined;
       for (let turn = 0; !hand.complete && turn < 40; turn++) {
         if (hand.street === 3) river = hand.events.length;
+        if (hand.street === 2) turnDecision = hand.events.length;
         const a = hand.legal.find(
           (a) => a.kind === "check" || a.kind === "call",
         )!;
@@ -272,6 +274,26 @@ test(
       assert(prefix.events.length < hand.events.length);
       assert(!("deck" in prefix));
       assert(!("holes" in prefix));
+      assert.notEqual(turnDecision, undefined);
+      const turnSource = await call<ResearchSource>("game_research", {
+        handId: id,
+        decision: turnDecision,
+      });
+      assert(turnSource.eligible);
+      assert.equal(turnSource.root!.board.length, 4);
+      assert.deepEqual(turnSource.root!.board, hand.board.slice(0, 4));
+      assert.equal(turnSource.snapshot.board.length, 4);
+      assert.deepEqual(turnSource.snapshot.revealed, []);
+      const turnBackup = await call<any>("game_export");
+      await call("game_import", { backup: turnBackup });
+      assert.equal(
+        (
+          await call<ResearchSource>("game_study_get", {
+            studyId: turnSource.id,
+          })
+        ).root!.board.length,
+        4,
+      );
       if (river !== undefined) {
         const source = await call<ResearchSource>("game_research", {
           handId: id,

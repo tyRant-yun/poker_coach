@@ -71,9 +71,18 @@ test("R2 HU: new ranges and nonfixture input → real solve → Hero/full range 
     page.getByRole("heading", { name: "河牌研究", exact: true }),
   ).toBeVisible();
   await page.getByLabel("作品名称", { exact: true }).fill(name);
+  await page.getByText("公共牌牌码输入", { exact: true }).click();
+  await page.getByText("范围文本输入", { exact: true }).click();
   await page.getByLabel("根底池 bb", { exact: true }).fill("12.34");
   await page.getByLabel("有效后手 bb", { exact: true }).fill("20");
+  await page.getByText("行动树设置", { exact: true }).click();
   await page.getByLabel("下注百分比", { exact: true }).fill("50");
+  if (
+    !(await page
+      .getByRole("button", { name: "保存局面与范围", exact: true })
+      .isVisible())
+  )
+    await page.getByText("分步保存与计算", { exact: true }).click();
   await page
     .getByRole("button", { name: "保存局面与范围", exact: true })
     .click();
@@ -92,6 +101,7 @@ test("R2 HU: new ranges and nonfixture input → real solve → Hero/full range 
     page.getByRole("heading", { name: "全范围与 Hero", exact: true }),
   ).toBeVisible();
   await expect(page.locator('button[title*="条件占比"]')).toHaveCount(169);
+  await page.getByText("Hero牌码输入", { exact: true }).click();
   await page.getByLabel("Hero 具体组合", { exact: true }).fill("AcAd");
   await expect(page.getByText(/权益 100.00%/).first()).toBeVisible();
   await page
@@ -100,6 +110,7 @@ test("R2 HU: new ranges and nonfixture input → real solve → Hero/full range 
   await expect(page.getByText(/IP 行动/).first()).toBeVisible();
   await page.getByRole("button", { name: "IP", exact: true }).click();
   await page.getByLabel("Hero 具体组合", { exact: true }).fill("KhKd");
+  await page.getByText("组合明细与派生范围", { exact: true }).click();
   await page.getByRole("button", { name: "保存跟注后的范围" }).click();
   await expect(page.getByRole("status")).toContainText("来源与原解保留");
   const url = page.url();
@@ -165,6 +176,12 @@ test("R2 dual entry: UI → MCP revision → UI takeover, and concurrent edits p
   const name = `双入口 ${Date.now()}`;
   await page.goto("/solver/real");
   await page.getByLabel("作品名称", { exact: true }).fill(name);
+  if (
+    !(await page
+      .getByRole("button", { name: "保存局面与范围", exact: true })
+      .isVisible())
+  )
+    await page.getByText("分步保存与计算", { exact: true }).click();
   await page
     .getByRole("button", { name: "保存局面与范围", exact: true })
     .click();
@@ -189,6 +206,12 @@ test("R2 dual entry: UI → MCP revision → UI takeover, and concurrent edits p
       "14",
     );
     await page.getByLabel("作品名称", { exact: true }).fill(`UI ${name}`);
+    if (
+      !(await page
+        .getByRole("button", { name: "保存局面与范围", exact: true })
+        .isVisible())
+    )
+      await page.getByText("分步保存与计算", { exact: true }).click();
     await page
       .getByRole("button", { name: "保存局面与范围", exact: true })
       .click();
@@ -204,6 +227,12 @@ test("R2 dual entry: UI → MCP revision → UI takeover, and concurrent edits p
       name: "MCP 并发新版本",
     });
     await expect(page.getByText(/当前草稿保留/)).toBeVisible();
+    if (
+      !(await page
+        .getByRole("button", { name: "保存局面与范围", exact: true })
+        .isVisible())
+    )
+      await page.getByText("分步保存与计算", { exact: true }).click();
     await page
       .getByRole("button", { name: "保存局面与范围", exact: true })
       .click();
@@ -230,7 +259,14 @@ test("R2 exceptions: unsupported board is preserved, and independent mode blocks
   await page
     .getByLabel("作品名称", { exact: true })
     .fill(`未覆盖 ${Date.now()}`);
+  await page.getByText("公共牌牌码输入", { exact: true }).click();
   await page.getByLabel("公共牌", { exact: true }).fill("2c 2c 7h 9s Jc");
+  if (
+    !(await page
+      .getByRole("button", { name: "保存局面与范围", exact: true })
+      .isVisible())
+  )
+    await page.getByText("分步保存与计算", { exact: true }).click();
   await page
     .getByRole("button", { name: "保存局面与范围", exact: true })
     .click();
@@ -287,6 +323,12 @@ test("R2 restore: MCP restores the shared workspace, clears removed result conte
     await page.goto("/solver/real");
     const name = `恢复后保留草稿 ${Date.now()}`;
     await page.getByLabel("作品名称", { exact: true }).fill(name);
+    if (
+      !(await page
+        .getByRole("button", { name: "保存局面与范围", exact: true })
+        .isVisible())
+    )
+      await page.getByText("分步保存与计算", { exact: true }).click();
     await page
       .getByRole("button", { name: "保存局面与范围", exact: true })
       .click();

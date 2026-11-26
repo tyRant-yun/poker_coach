@@ -1,5 +1,7 @@
 import { explicitRiverSchema } from "../../contracts/solver/river-tree.ts";
 import type { ExplicitRiverInput } from "../../contracts/solver/river-tree.ts";
+import { turnInputSchema } from "../../contracts/solver/turn.ts";
+import type { TurnInput } from "../../contracts/solver/turn.ts";
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync, readFileSync, lstatSync } from "node:fs";
@@ -40,7 +42,7 @@ export type EngineRunResult = {
 
 /** No workspace state here: caller owns job transitions and atomic artifact publication. */
 export function startEngine(
-  input: RiverInput | ExplicitRiverInput,
+  input: RiverInput | ExplicitRiverInput | TurnInput,
   options: {
     directory: string;
     jobId?: string;
@@ -53,9 +55,11 @@ export function startEngine(
   interrupt: () => void;
 } {
   const parsed =
-    input.schemaVersion === 2
-      ? explicitRiverSchema.parse(input)
-      : riverInputSchema.parse(input);
+    input.schemaVersion === 3
+      ? turnInputSchema.parse(input)
+      : input.schemaVersion === 2
+        ? explicitRiverSchema.parse(input)
+        : riverInputSchema.parse(input);
   const directory = resolve(options.directory);
   // Exclusive fresh directory prevents retry artifacts and symlink substitutions being reused.
   mkdirSync(directory, { recursive: false });
@@ -76,7 +80,14 @@ export function startEngine(
   writeFileSync(join(directory, "input.json"), inputBytes, { flag: "wx" });
   const child = spawn(
     binary,
-    [parsed.schemaVersion === 2 ? "worker-tree" : "worker", directory],
+    [
+      parsed.schemaVersion === 3
+        ? "worker-turn"
+        : parsed.schemaVersion === 2
+          ? "worker-tree"
+          : "worker",
+      directory,
+    ],
     {
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,
@@ -252,7 +263,7 @@ export function startEngine(
         )
           throw Error("artifact identity mismatch");
         const paths =
-          parsed.schemaVersion === 2
+          parsed.schemaVersion !== 1
             ? []
             : [[], [0], [0, 0], [1], [1, 0], [1, 1]];
         if (

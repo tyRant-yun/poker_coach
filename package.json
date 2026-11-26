@@ -27,7 +27,8 @@
     "test:solver": "node --import tsx --test tests/solver/*.test.ts",
     "solver:contract": "node --import tsx scripts/solver-contract.ts",
     "benchmark:solver:small": "node scripts/solver-benchmark.mjs",
-    "benchmark:solver:tree": "node scripts/solver-benchmark.mjs --tree"
+    "benchmark:solver:tree": "node scripts/solver-benchmark.mjs --tree",
+    "benchmark:solver:turn": "node scripts/solver-turn-benchmark.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",

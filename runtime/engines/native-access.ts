@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { hash } from "../store.ts";
+import { takeNativeQuerySlot } from "./query-budget.ts";
 import { nativePageSchema } from "../../contracts/solver/river-tree.ts";
 import { validateNode } from "../analysis/native-node.ts";
 import type { NativeNode } from "../analysis/native-node.ts";
@@ -195,6 +196,7 @@ export class NativeNodeCache {
     if (existing) return existing;
     if (this.pending.size >= 2)
       throw Error("RESOURCE_LIMIT: 原生查询槽已满，请稍后重试");
+    const release = takeNativeQuerySlot();
     const work = (async () => {
       const files = stage(context, path);
       try {
@@ -224,6 +226,7 @@ export class NativeNodeCache {
       await work;
     } finally {
       this.pending.delete(key);
+      release();
     }
   }
 }

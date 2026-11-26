@@ -17,7 +17,7 @@ import type {
 import type { Reply } from "../../src/modules/analysis/domain.ts";
 
 test(
-  "real solver MCP: all 14 actions, same HTTP workspace, versioned artifacts, queue and permissions",
+  "real solver MCP: all 15 actions, same HTTP workspace, turn chance query, versioned artifacts, queue and permissions",
   { timeout: 30000 },
   async () => {
     const directory = mkdtempSync(join(tmpdir(), "riverline-real-mcp-")),
@@ -212,6 +212,35 @@ test(
       });
       assert.equal(retried.attempt, 2);
       assert.equal((await waitJob(retried.ref.id)).status, "completed");
+      const turnCase = await call<RealCase>("real_case_create", {
+        name: "MCP 转牌",
+        board: ["2c", "3d", "7h", "9s"],
+        pot: 1000,
+        stack: 2000,
+        betPercent: "100",
+        turn: { kind: "hu-turn/3", turnBets: [500, 0], riverBets: [0, 700] },
+        ranges: [
+          { AcAd: 10000, "5c4c": 10000 },
+          { KhKd: 10000, "8c8d": 10000 },
+        ],
+      });
+      const turnSpec = await call<RealSpec>("real_spec_create", {
+          caseId: turnCase.ref.id,
+        }),
+        turnJob = await call<RealJob>("real_analysis_start", {
+          specId: turnSpec.ref.id,
+        }),
+        turnDone = await waitJob(turnJob.ref.id);
+      assert.equal(turnDone.status, "completed", turnDone.error);
+      const chance = await call<any>("real_turn_solution_query", {
+        solutionId: turnDone.result!.id,
+        path: [
+          { kind: "action", index: 0 },
+          { kind: "action", index: 0 },
+        ],
+      });
+      assert.equal(chance.node.kind, "chance");
+      assert.ok(chance.node.chanceCards.length > 40);
       await call("teaching_begin");
       const denied = await raw("real_solution_query", {
         solutionId: solution.ref.id,

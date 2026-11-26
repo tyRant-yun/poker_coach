@@ -5,8 +5,13 @@ import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { DiskStore, hash, ref } from "../store.ts";
 import { NativeNodeCache } from "../engines/native-access.ts";
+import { TurnNodeCache } from "../engines/turn-access.ts";
+import { parseSolverInput, caseTreeHash } from "./model.ts";
+import type { SolverInput } from "./model.ts";
+import { turnInputSchema } from "../../contracts/solver/turn.ts";
+import type { TurnPath } from "../../contracts/solver/turn.ts";
+import { aggregateRows } from "./aggregate.ts";
 import { explicitRiverSchema } from "../../contracts/solver/river-tree.ts";
-import type { ExplicitRiverInput } from "../../contracts/solver/river-tree.ts";
 import { startEngine } from "../engines/process-runner.ts";
 import { validateNode, validateRealArtifacts } from "./native-projection.ts";
 import type { NativeNode } from "./native-projection.ts";
@@ -14,7 +19,6 @@ import {
   engineCommit,
   riverInputSchema,
 } from "../../contracts/solver/engine.ts";
-import type { RiverInput } from "../../contracts/solver/engine.ts";
 import {
   realContract,
   realSchemas,
@@ -95,6 +99,7 @@ export class RealAnalysisService {
   private active?: { jobId: string; run: ReturnType<typeof startEngine> };
   private stopped = false;
   private nativeNodes = new NativeNodeCache();
+  private turnNodes = new TurnNodeCache();
   constructor(private store: DiskStore) {
     mkdirSync(join(store.directory, "real-jobs"), { recursive: true });
     mkdirSync(join(store.directory, "real-preflight"), { recursive: true });
@@ -139,13 +144,13 @@ export class RealAnalysisService {
       engineCommit,
       installed: existsSync(binary),
       model:
-        "HU river: explicit discrete bet/raise/all-in trees or legacy single bet; no rake/bunching/locks",
+        "HU river: explicit bet/raise/all-in; HU turn: at most one fixed bet per player per street, no raises; no rake/bunching/locks",
       capabilities: [
         { id: "HU-preflop", status: "unsupported" },
         {
           id: "HU-postflop",
-          status: "verified-explicit-river",
-          streets: ["river"],
+          status: "verified-explicit-river-and-bounded-turn",
+          streets: ["river", "turn"],
         },
         { id: "6max-preflop", status: "unsupported" },
         { id: "6max-headsup-postflop", status: "unsupported" },
@@ -155,6 +160,7 @@ export class RealAnalysisService {
         computeSlots: 1,
         queued: 4,
         positiveCombosPerPlayer: 200,
+        turnPositiveCombosPerPlayer: 16,
         explicitTreeLines: 32,
         treeLineDepth: 12,
         queryPathDepth: 16,
@@ -200,10 +206,7 @@ export class RealAnalysisService {
     s.artifacts[a.ref.id] = a;
     return a.ref;
   }
-  private input(
-    s: RuntimeState,
-    spec: RealSpec,
-  ): RiverInput | ExplicitRiverInput {
+  private input(s: RuntimeState, spec: RealSpec): SolverInput {
     const a = getFixed(s.artifacts, spec.input);
     demand(
       a.hash === spec.inputHash,
@@ -211,9 +214,7 @@ export class RealAnalysisService {
       "规格输入指纹不匹配",
     );
     const raw = this.artifact<{ schemaVersion: number }>(s, spec.input);
-    return raw.schemaVersion === 2
-      ? explicitRiverSchema.parse(raw)
-      : riverInputSchema.parse(raw);
+    return parseSolverInput(raw);
   }
   private preflight(s: RuntimeState, spec: RealSpec) {
     const input = this.input(s, spec);
@@ -225,13 +226,15 @@ export class RealAnalysisService {
       };
     if (
       input.ranges.some(
-        (r) => Object.values(r).filter((w) => w > 0).length > 200,
+        (r) =>
+          Object.values(r).filter((w) => w > 0).length >
+          (input.schemaVersion === 3 ? 16 : 200),
       )
     )
       return {
         supported: false,
         code: "UNSUPPORTED_INPUT",
-        reason: "当前产品上限为每方 200 个正权重组合；未删减输入",
+        reason: `当前模型上限为每方 ${input.schemaVersion === 3 ? 16 : 200} 个正权重组合；未删减输入`,
       };
     const path = join(
       this.store.directory,
@@ -248,7 +251,11 @@ export class RealAnalysisService {
     const result = spawnSync(
       binary,
       [
-        input.schemaVersion === 2 ? "preflight-river-tree" : "preflight-river",
+        input.schemaVersion === 3
+          ? "preflight-turn"
+          : input.schemaVersion === 2
+            ? "preflight-river-tree"
+            : "preflight-river",
         path,
       ],
       {
@@ -271,7 +278,7 @@ export class RealAnalysisService {
     return {
       supported: true,
       estimatedBytes: data.estimatedBytes,
-      model: "given-range-river-subgame",
+      model: spec.scope,
       inputHash: spec.inputHash,
     };
   }
@@ -306,6 +313,32 @@ export class RealAnalysisService {
         this.store.state.receipts[`${name}:${parsed.data.requestId}`]
       )
         return this.execute(name, raw);
+      if (name === "real_turn_solution_query") {
+        const a = parsed.data as RealInputs["real_turn_solution_query"],
+          solution = this.find(this.store.state, "solutions", a.solutionId);
+        demand(
+          solution.queryModel === "native-turn/3",
+          "UNSUPPORTED_INPUT",
+          "此工具只读取转牌版本化路径",
+        );
+        const spec = getFixed(this.store.state.real!.specs, solution.spec),
+          native = getFixed(this.store.state.artifacts, solution.native),
+          summary = this.artifact<{ privateCards: [string[], string[]] }>(
+            this.store.state,
+            solution.summary,
+          );
+        await this.turnNodes.prepare(
+          {
+            bytes: this.store.getBytes(native.hash),
+            nativeHash: native.hash,
+            inputHash: spec.inputHash,
+            counts: solution.handCounts,
+            cards: summary.privateCards,
+            board: this.input(this.store.state, spec).board,
+          },
+          a.path,
+        );
+      }
       if (
         [
           "real_solution_query",
@@ -418,6 +451,7 @@ export class RealAnalysisService {
         [
           "real_solution_load",
           "real_solution_query",
+          "real_turn_solution_query",
           "real_range_aggregate",
           "real_range_derive",
         ].includes(name) && !next.exposures.includes("real-analysis:possible");
@@ -560,8 +594,14 @@ export class RealAnalysisService {
           stack: a.stack,
           betPercent: a.betPercent,
           ...(a.tree ? { tree: a.tree } : {}),
+          ...(a.turn ? { turn: a.turn } : {}),
           ranges,
         };
+        demand(
+          a.turn ? a.board.length === 4 && !a.tree : a.board.length === 5,
+          "UNSUPPORTED_INPUT",
+          "转牌需使用转牌模型与四张公共牌，河牌需五张",
+        );
         const c = { ...payload, ref: ref("real-case", payload) };
         state.cases[c.ref.id] = c;
         return returned(c);
@@ -587,6 +627,15 @@ export class RealAnalysisService {
         };
         if (a.tree === null) delete next.tree;
         else if (a.tree) next.tree = a.tree;
+        if (a.turn === null) delete next.turn;
+        else if (a.turn) next.turn = a.turn;
+        demand(
+          next.turn
+            ? next.board.length === 4 && !next.tree
+            : next.board.length === 5,
+          "UNSUPPORTED_INPUT",
+          "公共牌数量与模型不匹配",
+        );
         demand(
           !(a.rangeIds && a.ranges),
           "VALIDATION_ERROR",
@@ -668,20 +717,27 @@ export class RealAnalysisService {
           },
           locks: [],
         };
-        const input = c.tree
-          ? explicitRiverSchema.parse({
+        const input = c.turn
+          ? turnInputSchema.parse({
               ...commonInput,
-              schemaVersion: 2,
-              treeLines: c.tree.lines,
+              schemaVersion: 3,
+              turnBets: c.turn.turnBets,
+              riverBets: c.turn.riverBets,
             })
-          : riverInputSchema.parse({
-              ...commonInput,
-              schemaVersion: 1,
-              sizes: [
-                [`${c.betPercent}%`, ""],
-                ["", ""],
-              ],
-            });
+          : c.tree
+            ? explicitRiverSchema.parse({
+                ...commonInput,
+                schemaVersion: 2,
+                treeLines: c.tree.lines,
+              })
+            : riverInputSchema.parse({
+                ...commonInput,
+                schemaVersion: 1,
+                sizes: [
+                  [`${c.betPercent}%`, ""],
+                  ["", ""],
+                ],
+              });
         const bytes = Buffer.from(JSON.stringify(input)),
           inputRef = this.put(s, bytes),
           payload = {
@@ -689,19 +745,17 @@ export class RealAnalysisService {
             ranges: c.ranges,
             input: inputRef,
             inputHash: hash(bytes),
-            treeHash: hash([
-              c.board,
-              c.pot,
-              c.stack,
-              c.tree ?? c.betPercent,
-              c.tree ? "explicit-river/v2" : "river-check-bet-call/v1",
-            ]),
+            treeHash: caseTreeHash(c),
             targetNashConvPotFraction: a.targetNashConvPotFraction,
             engineCommit,
             algorithm: "upstream-dcfr-gamma3-v1",
-            scope: "given-range-river-subgame" as const,
+            scope: c.turn
+              ? ("given-range-turn-subgame" as const)
+              : ("given-range-river-subgame" as const),
             operation: "solve-equilibrium" as const,
-            valueModel: "exact-river-terminal" as const,
+            valueModel: c.turn
+              ? ("exact-turn-river-runouts" as const)
+              : ("exact-river-terminal" as const),
             constraints: { kind: "none" as const },
             tableFormat: "HU" as const,
             backgroundPlayers: 2 as const,
@@ -773,6 +827,36 @@ export class RealAnalysisService {
             .map(({ index: _, ...row }) => row),
           nextOffset:
             a.offset + a.limit < rows.length ? a.offset + a.limit : null,
+        };
+      }
+      case "real_turn_solution_query": {
+        const a = parse(name),
+          v = this.view(s, a.solutionId, [], a.player, a.path);
+        let rows = v.rows;
+        if (a.combos)
+          rows = a.combos.map(
+            (c) => v.rows.find((r) => r.combo === normalizeCombo(c))!,
+          );
+        if (a.hand) rows = rows.filter((r) => r.hand === a.hand);
+        if (a.inRangeOnly) rows = rows.filter((r) => r.inputWeight > 0);
+        return {
+          solution: v.solution.ref,
+          node: v.node,
+          definition: v.solution.metricDefinition,
+          player: a.player,
+          total: rows.length,
+          items: rows
+            .slice(a.offset, a.offset + a.limit)
+            .map(({ index: _, ...r }) => r),
+          nextOffset:
+            a.offset + a.limit < rows.length ? a.offset + a.limit : null,
+          aggregate: aggregateRows(
+            v.rows,
+            v.mass,
+            v.node.actions,
+            v.node.actor,
+            a.player,
+          ),
         };
       }
       case "real_range_aggregate": {
@@ -887,6 +971,11 @@ export class RealAnalysisService {
     solution: RealSolution,
     path: number[],
   ): NativeNode {
+    demand(
+      solution.queryModel !== "native-turn/3",
+      "UNSUPPORTED_INPUT",
+      "转牌解须使用 real_turn_solution_query 的行动/发牌路径",
+    );
     if (solution.queryModel === "native-paged/2") {
       const spec = getFixed(this.state(s).specs, solution.spec),
         native = getFixed(s.artifacts, solution.native);
@@ -907,11 +996,29 @@ export class RealAnalysisService {
     demand(page, "UNSUPPORTED_INPUT", "该路径不在固定树中");
     return validateNode(this.artifact(s, page!.artifact), solution.handCounts);
   }
-  private view(s: RuntimeState, id: string, path: number[], player: 0 | 1) {
+  private view(
+    s: RuntimeState,
+    id: string,
+    path: number[],
+    player: 0 | 1,
+    turnPath?: TurnPath,
+  ) {
     const solution = this.find(s, "solutions", id),
       spec = getFixed(this.state(s).specs, solution.spec),
       input = this.input(s, spec),
-      page = this.rawNode(s, solution, path),
+      turnNode =
+        solution.queryModel === "native-turn/3" && turnPath !== undefined
+          ? this.turnNodes.get(
+              {
+                nativeHash: getFixed(s.artifacts, solution.native).hash,
+                inputHash: spec.inputHash,
+              },
+              turnPath,
+            )
+          : undefined,
+      page = turnNode
+        ? { ...turnNode, path: [] }
+        : this.rawNode(s, solution, path),
       summary = this.artifact<{ privateCards: [string[], string[]] }>(
         s,
         solution.summary,
@@ -921,7 +1028,7 @@ export class RealAnalysisService {
     const mass = page.compatibleWeights[player].reduce((sum, w) => sum + w, 0);
     const rows = allCombos.map((combo) => {
       const i = indices.get(combo),
-        dead = !legalCombo(combo, input.board),
+        dead = !legalCombo(combo, turnNode?.board ?? input.board),
         weight = i === undefined ? 0 : page.weights[player][i],
         compatible = i === undefined ? 0 : page.compatibleWeights[player][i],
         reachable = !dead && i !== undefined && weight > 0 && compatible > 0;
@@ -967,11 +1074,14 @@ export class RealAnalysisService {
       rows,
       mass,
       node: {
-        path,
+        path: turnPath ?? path,
+        ...(turnNode
+          ? { kind: turnNode.kind, chanceCards: turnNode.chanceCards }
+          : {}),
         terminal: page.terminal,
         actor: page.player,
         actions: page.actions,
-        board: input.board,
+        board: turnNode?.board ?? input.board,
         potBb:
           (input.pot +
             page.invested[0] +
@@ -1045,7 +1155,7 @@ export class RealAnalysisService {
                 exploitability: number;
                 stopReason: string;
                 algorithm: string;
-                input: RiverInput | ExplicitRiverInput;
+                input: SolverInput;
               };
               demand(
                 report.input.locks.length === 0 &&
@@ -1092,9 +1202,11 @@ export class RealAnalysisService {
                 native,
                 summary,
                 nodes,
-                ...(report.input.schemaVersion === 2
-                  ? { queryModel: "native-paged/2" as const }
-                  : {}),
+                ...(report.input.schemaVersion === 3
+                  ? { queryModel: "native-turn/3" as const }
+                  : report.input.schemaVersion === 2
+                    ? { queryModel: "native-paged/2" as const }
+                    : {}),
                 handCounts: report.privateCards.map((c) => c.length) as [
                   number,
                   number,

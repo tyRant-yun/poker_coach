@@ -1,7 +1,7 @@
 import type { RuntimeState, Ref } from "../../src/modules/analysis/domain.ts";
-import { explicitRiverSchema } from "../../contracts/solver/river-tree.ts";
 import { verifyNativeRoot } from "../engines/native-access.ts";
-import { riverInputSchema } from "../../contracts/solver/engine.ts";
+import { verifyTurnRoot } from "../engines/turn-access.ts";
+import { parseSolverInput, caseTreeHash } from "./model.ts";
 import { allCombos } from "../../src/modules/analysis/content.ts";
 import { hash } from "../store.ts";
 
@@ -24,12 +24,8 @@ export function validateRealArtifacts(
       throw Error("ARTIFACT_INCOMPLETE: fixed reference missing");
     return v;
   };
-  const parseInput = (bytes: Buffer) => {
-    const raw = JSON.parse(bytes.toString());
-    return raw.schemaVersion === 2
-      ? explicitRiverSchema.parse(raw)
-      : riverInputSchema.parse(raw);
-  };
+  const parseInput = (bytes: Buffer) =>
+    parseSolverInput(JSON.parse(bytes.toString()));
   for (const spec of Object.values(state.real.specs)) {
     const bytes = read(spec.input);
     if (hash(bytes) !== spec.inputHash)
@@ -47,18 +43,20 @@ export function validateRealArtifacts(
       hash(input.board) !== hash(c.board) ||
       input.pot !== c.pot ||
       input.stack !== c.stack ||
-      (input.schemaVersion === 2
-        ? !c.tree || hash(input.treeLines) !== hash(c.tree.lines)
-        : !!c.tree || input.sizes[0][0] !== `${c.betPercent}%`) ||
+      (input.schemaVersion === 3
+        ? !c.turn ||
+          !!c.tree ||
+          hash(input.turnBets) !== hash(c.turn.turnBets) ||
+          hash(input.riverBets) !== hash(c.turn.riverBets)
+        : input.schemaVersion === 2
+          ? !!c.turn || !c.tree || hash(input.treeLines) !== hash(c.tree.lines)
+          : !!c.turn || !!c.tree || input.sizes[0][0] !== `${c.betPercent}%`) ||
       input.locks.length ||
-      spec.treeHash !==
-        hash([
-          c.board,
-          c.pot,
-          c.stack,
-          c.tree ?? c.betPercent,
-          c.tree ? "explicit-river/v2" : "river-check-bet-call/v1",
-        ]) ||
+      spec.treeHash !== caseTreeHash(c) ||
+      spec.scope !==
+        (input.schemaVersion === 3
+          ? "given-range-turn-subgame"
+          : "given-range-river-subgame") ||
       input.limits.targetExploitability !==
         (c.pot * spec.targetNashConvPotFraction) / 2
     )
@@ -82,6 +80,7 @@ export function validateRealArtifacts(
         iterations: number;
         exploitability: number;
         stopReason: string;
+        input?: unknown;
       };
     if (
       summary.engineCommit !== spec.engineCommit ||
@@ -113,6 +112,24 @@ export function validateRealArtifacts(
         hash([...cards].sort()) !== hash(expected.sort())
       )
         throw Error("ARTIFACT_INCOMPLETE: private-card mapping differs");
+    }
+    if (input.schemaVersion === 3) {
+      if (hash(summary.input) !== hash(input))
+        throw Error("ARTIFACT_INCOMPLETE: turn summary input differs");
+      if (
+        solution.queryModel !== "native-turn/3" ||
+        solution.nodes.length !== 0
+      )
+        throw Error("ARTIFACT_INCOMPLETE: unexpected turn projection");
+      verifyTurnRoot({
+        bytes: native,
+        nativeHash: hash(native),
+        inputHash: spec.inputHash,
+        counts: solution.handCounts,
+        cards: summary.privateCards,
+        board: input.board,
+      });
+      continue;
     }
     if (input.schemaVersion === 2) {
       if (
