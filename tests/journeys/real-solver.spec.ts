@@ -7,6 +7,7 @@ import type {
   RealCase,
   RealSolution,
 } from "../../src/modules/analysis/real-domain";
+import { hash } from "../../runtime/store";
 
 test.setTimeout(60000);
 async function connect() {
@@ -29,6 +30,7 @@ async function tool<T>(
   client: Client,
   name: string,
   input: Record<string, unknown> = {},
+  attempt = 0,
 ): Promise<T> {
   const workspace = await client.callTool({
     name: "workspace_get",
@@ -46,6 +48,13 @@ async function tool<T>(
     },
   });
   const reply = result.structuredContent as Reply;
+  if (
+    !reply.ok &&
+    reply.code === "REVISION_CONFLICT" &&
+    name === "workspace_import" &&
+    attempt < 5
+  )
+    return tool<T>(client, name, input, attempt + 1);
   expect(reply.ok, JSON.stringify(reply)).toBe(true);
   return (reply as Extract<Reply, { ok: true }>).data as T;
 }
@@ -346,7 +355,23 @@ test("R2 restore: MCP restores the shared workspace, clears removed result conte
         page.getByRole("heading", { name: "全范围与 Hero", exact: true }),
       ).toBeVisible();
     }
-    await tool(client, "workspace_import", { backup: snapshot });
+    const archive = Buffer.from(JSON.stringify(snapshot));
+    const session = await tool<{ ref: { id: string } }>(
+      client,
+      "workspace_import",
+      { backup: { phase: "begin", checksum: hash(archive) } },
+    );
+    for (let at = 0; at < archive.length; at += 65536)
+      await tool(client, "workspace_import", {
+        backup: {
+          phase: "chunk",
+          id: session.ref.id,
+          data: archive.subarray(at, at + 65536).toString("base64"),
+        },
+      });
+    await tool(client, "workspace_import", {
+      backup: { phase: "commit", id: session.ref.id },
+    });
     await expect(page.getByRole("status")).toContainText("草稿保留，可另存");
     await expect(
       page.getByRole("heading", { name: "全范围与 Hero", exact: true }),

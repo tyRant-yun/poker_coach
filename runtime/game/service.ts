@@ -25,6 +25,7 @@ import type {
   Transition,
 } from "../../src/modules/play/domain.ts";
 import { Rules } from "./rules.ts";
+import type { ReviewInput } from "../../src/modules/play/review.ts";
 
 type Hand = {
   seating?: Seating;
@@ -100,6 +101,33 @@ export class GameService {
       .prepare("SELECT document FROM hands ORDER BY number DESC LIMIT 1")
       .get() as { document: string } | undefined;
     return !!row && !JSON.parse(row.document).state.complete;
+  }
+  async reviewInputs(handId: string): Promise<ReviewInput[]> {
+    const hand = this.get(handId);
+    demand(hand.state.complete, "完成本手后生成报告", "INFORMATION_RESTRICTED");
+    const result: ReviewInput[] = [];
+    for (let sequence = 0; sequence < hand.actions.length; sequence++) {
+      if (hand.actions[sequence].actor !== hand.hero) continue;
+      const before = hand.actions.slice(0, sequence),
+        state = await this.replay(hand, before);
+      let start = sequence;
+      while (start > 0 && hand.state.events[start - 1].street === state.street)
+        start--;
+      const rootActions = hand.actions.slice(0, start),
+        root = await this.replay(hand, rootActions);
+      const physical = (a: GameAction) => ({
+        ...a,
+        actor: hand.seating?.ruleToPhysical[a.actor] ?? a.actor,
+      });
+      result.push({
+        sequence,
+        snapshot: this.project(hand, state, before),
+        root: this.project(hand, root, rootActions),
+        prefix: hand.actions.slice(start, sequence).map(physical),
+        chosen: physical(hand.actions[sequence]),
+      });
+    }
+    return result;
   }
   private get(id: string): Hand {
     const row = this.db
@@ -645,6 +673,7 @@ export class GameService {
                 hand.actions.slice(0, start),
               );
               source.root = {
+                heroPlayer: root.actor === hand.hero ? 0 : 1,
                 board: root.board,
                 pot: root.pot,
                 stack: Math.min(
@@ -889,6 +918,7 @@ export class GameService {
               hand!.actions.slice(0, start),
             );
             source.root = {
+              heroPlayer: root.actor === hand!.hero ? 0 : 1,
               board: root.board,
               pot: root.pot,
               stack: Math.min(...root.stacks.filter((_, i) => root.active[i])),

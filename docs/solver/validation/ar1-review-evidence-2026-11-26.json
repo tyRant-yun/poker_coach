@@ -1,0 +1,59 @@
+{
+  "fixture": "HU four-street checkdown, fixed deck and public decisions",
+  "profile": "standard",
+  "reportElapsedMs": 987.8839,
+  "nodeResults": [
+    {
+      "street": 0,
+      "status": "facts"
+    },
+    {
+      "street": 1,
+      "status": "facts"
+    },
+    {
+      "street": 2,
+      "status": "completed",
+      "quality": "target-met",
+      "elapsedMs": 193.60950000000003,
+      "actions": [
+        {
+          "action": "Check",
+          "evBb": 0.3853445053100586,
+          "frequency": 0.01082967221736908
+        },
+        {
+          "action": "Bet(100)",
+          "evBb": 0.3898166275024414,
+          "frequency": 0.9891703128814697
+        }
+      ],
+      "gapBb": 0.004472122192382799
+    },
+    {
+      "street": 3,
+      "status": "completed",
+      "quality": "target-met",
+      "elapsedMs": 232.40379999999982,
+      "actions": [
+        {
+          "action": "Check",
+          "evBb": 0.4489796,
+          "frequency": 0.4305712
+        },
+        {
+          "action": "Bet(100)",
+          "evBb": 0.46339675999999996,
+          "frequency": 0.5694288
+        }
+      ],
+      "gapBb": 0.014417159999999984
+    }
+  ],
+  "limits": {
+    "maxSeconds": 8,
+    "maxIterations": 5000,
+    "automaticNodes": 8
+  },
+  "note": "Isolated workspace; includes prefix replay, queue delay, Node commits and native queries. Not a full-range/flop or default large-journal performance guarantee."
+}

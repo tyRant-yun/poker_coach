@@ -14,6 +14,17 @@ export const gameSchemas = {
     })
     .strict(),
   game_bot_list: baseInput.strict(),
+  game_review_report: baseInput.extend(identity).strict(),
+  game_review_retry: write
+    .extend({
+      ...identity,
+      profile: z.enum(["tight", "standard", "wide"]).default("standard"),
+    })
+    .strict(),
+  game_review_cancel: write.extend(identity).strict(),
+  game_review_open: write
+    .extend({ ...identity, decision: z.number().int().nonnegative() })
+    .strict(),
   game_get: baseInput.extend(identity).strict(),
   game_transition_query: baseInput
     .extend({
@@ -65,6 +76,11 @@ export const gameSchemas = {
 };
 export type GameTool = keyof typeof gameSchemas;
 export const gameTools: Record<GameTool, string> = {
+  game_review_report:
+    "手后读取自动参考报告，包含四街事实、真实局部行动EV及未覆盖原因",
+  game_review_retry: "按选定自动参考范围重新生成报告，不宣称推断真实对手范围",
+  game_review_cancel: "取消该手后台自动报告并停止其在途真实作业",
+  game_review_open: "从报告打开同一固定真实研究案例与解，无需手动填写范围",
   game_bot_list: "读取本地对手发行版本、支持桌型与实际可用状态，不返回策略答案",
   game_list: "列出整手练习摘要，不返回私牌或未来信息",
   game_get: "读取整手练习的当前安全视角及合法行动",
@@ -198,7 +214,13 @@ export type ResearchSource = {
   snapshot: HandView;
   eligible: boolean;
   reason: string;
-  root?: { board: string[]; pot: number; stack: number; path: GameAction[] };
+  root?: {
+    board: string[];
+    pot: number;
+    stack: number;
+    path: GameAction[];
+    heroPlayer?: 0 | 1;
+  };
   caseRef?: { id: string; version: number; contentHash: string; kind: string };
   note?: string;
 };

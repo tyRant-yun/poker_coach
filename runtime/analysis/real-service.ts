@@ -309,7 +309,11 @@ export class RealAnalysisService {
       }
     }
   }
-  async executeAsync(name: RealTool, raw: unknown): Promise<Reply> {
+  async executeAsync(
+    name: RealTool,
+    raw: unknown,
+    exposeResults = true,
+  ): Promise<Reply> {
     try {
       const parsed = realSchemas[name].safeParse(raw);
       if (
@@ -388,7 +392,7 @@ export class RealAnalysisService {
         }
       }
       // Recheck current identity, permissions and revisions after the external reader returns.
-      return this.execute(name, raw);
+      return this.execute(name, raw, exposeResults);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const code =
@@ -408,7 +412,7 @@ export class RealAnalysisService {
       };
     }
   }
-  execute(name: RealTool, raw: unknown): Reply {
+  execute(name: RealTool, raw: unknown, exposeResults = true): Reply {
     try {
       const parsed = realSchemas[name].safeParse(raw);
       if (!parsed.success)
@@ -464,13 +468,15 @@ export class RealAnalysisService {
         refs: Ref[] = [];
       const data = this.dispatch(next, name, raw, refs);
       const expose =
+        exposeResults &&
         [
           "real_solution_load",
           "real_solution_query",
           "real_turn_solution_query",
           "real_range_aggregate",
           "real_range_derive",
-        ].includes(name) && !next.exposures.includes("real-analysis:possible");
+        ].includes(name) &&
+        !next.exposures.includes("real-analysis:possible");
       if (expose)
         next.exposures = [
           ...new Set([
@@ -772,7 +778,7 @@ export class RealAnalysisService {
             maxIterations: a.maxIterations,
             targetExploitability: (c.pot * a.targetNashConvPotFraction) / 2,
             maxMemoryBytes: 268435456,
-            maxSeconds: 120,
+            maxSeconds: a.maxSeconds,
           },
           locks: [],
         };

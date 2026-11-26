@@ -1,5 +1,7 @@
 # Riverline Poker Coach
 
+2026-11-26 AR1 实施：[手后自动复盘交付](docs/riverline-auto-review-delivery-2026-11-26.md)、[任务包](docs/riverline-auto-review-task-design-2026-11-26.md)。整手结束后台生成报告，四街原决定导航、价格/赔率、合格两人转牌/河牌真实行动EV、参考范围矩阵与同解图形研究已接入；58条浏览器整版通过。自动范围是有限参考假设，未推断真实对手范围；翻前/翻牌/多人仍无均衡评价。后端已更新，运行中的旧服务需重启 `npm start` 后刷新。下方历史记录按其日期解释。
+
 2026-11-26 M1 实施：固定 Hero 与位置会话、可选真实 HU 候选、128×128 真实转牌分页/图表、同解浏览恢复已接入。能力、自动验收、性能证据与限制见 [M1 交付](docs/riverline-m1-delivery-2026-11-26.md)。HU 强度未证明，六人仍为基础启发式；未完成翻牌/多人均衡或默认大 journal 迁移。以下“仅规划”保留历史检查点。
 
 2026-11-26 后续规划：[练习/研究/Bot三项目路线](docs/riverline-three-project-roadmap-2026-11-26.md)、[模块合同](docs/riverline-three-project-contracts-2026-11-26.md)、[下一轮任务包](docs/riverline-next-round-task-design-2026-11-26.md)。下一轮优先稳定座位/按钮/指定位置、固定HU候选接入、转牌容量与浏览恢复；再推进六人独立策略、真实实验和整手复练。当前仅规划，未实施这些新增任务、未迁移`E:\hu bot`或创建新仓库；下方第二轮已交付状态保持。

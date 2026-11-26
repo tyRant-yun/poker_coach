@@ -743,6 +743,12 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 100000
+        },
+        "maxSeconds": {
+          "default": 120,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120
         }
       },
       "required": [
@@ -751,7 +757,8 @@
         "expectedRevision",
         "caseId",
         "targetNashConvPotFraction",
-        "maxIterations"
+        "maxIterations",
+        "maxSeconds"
       ],
       "additionalProperties": false
     },

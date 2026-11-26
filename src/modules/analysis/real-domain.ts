@@ -117,6 +117,7 @@ export const realSchemas = {
         .max(0.1)
         .default(0.001),
       maxIterations: z.number().int().min(1).max(100000).default(100000),
+      maxSeconds: z.number().int().min(1).max(120).default(120),
     })
     .strict(),
   real_preflight: baseInput.extend({ specId: id }).strict(),

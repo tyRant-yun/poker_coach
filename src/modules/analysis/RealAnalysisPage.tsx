@@ -27,6 +27,7 @@ import s from "./RealAnalysisPage.module.css";
 import { ProductNav } from "../play/ProductNav";
 import { gameCall } from "../play/client";
 import type { ResearchSource } from "../play/domain";
+import { referenceRanges, rangeNotice } from "../play/review";
 
 type Workspace = {
   browse?: ResearchView;
@@ -226,6 +227,13 @@ async function invoke<T>(
     await new Promise((resolve) => setTimeout(resolve, 50));
     return invoke<T>(tool, input, attempt + 1);
   }
+  if (
+    !reply.ok &&
+    reply.code === "REVISION_CONFLICT" &&
+    reply.message === "工作区已变化，请保留输入并读取新版本" &&
+    attempt < 3
+  )
+    return invoke<T>(tool, input, attempt + 1);
   if (!reply.ok) throw Error(`${reply.code} · ${reply.message}`);
   return reply.data as T;
 }
@@ -267,6 +275,9 @@ export function RealAnalysisPage() {
   );
   const [practiceSource, setPracticeSource] = useState<ResearchSource>();
   const [researchNote, setResearchNote] = useState("");
+  const [sourceExpanded, setSourceExpanded] = useState(
+    !new URLSearchParams(location.search).get("case"),
+  );
   const [accessError, setAccessError] = useState("");
   const sourceId = useRef(
     new URLSearchParams(location.search).get("source") ?? "",
@@ -460,6 +471,15 @@ export function RealAnalysisPage() {
         const bet = root
           ? Math.max(1, Math.min(root.stack, Math.round(root.pot / 2))) / 100
           : 1;
+        const autoRanges =
+          root && root.heroPlayer !== undefined
+            ? referenceRanges(
+                root.board,
+                source.snapshot.heroCards,
+                root.heroPlayer,
+                "standard",
+              )
+            : undefined;
         setSelected(undefined);
         setSpec(undefined);
         setSolution(undefined);
@@ -486,8 +506,8 @@ export function RealAnalysisPage() {
           treeText: lines.length
             ? lines.join("\n")
             : `下注至 ${bet}\n过牌 > 下注至 ${bet}`,
-          oop: "",
-          ip: "",
+          oop: autoRanges ? rangeText(autoRanges[0]) : "",
+          ip: autoRanges ? rangeText(autoRanges[1]) : "",
         });
       })
       .catch((e) => {
@@ -1003,7 +1023,8 @@ export function RealAnalysisPage() {
       {practiceSource && (
         <details
           className={s.source}
-          open={!solution}
+          open={sourceExpanded}
+          onToggle={(e) => setSourceExpanded(e.currentTarget.open)}
           aria-label="原手牌研究来源"
         >
           <summary>原决策与研究笔记</summary>
@@ -1014,7 +1035,7 @@ export function RealAnalysisPage() {
             </strong>
             <span>
               {practiceSource.eligible
-                ? `以${practiceSource.root?.board.length === 4 ? "转牌" : "河牌"}开始时为根；双方范围需要你设定。`
+                ? `以${practiceSource.root?.board.length === 4 ? "转牌" : "河牌"}开始时为根；${practiceSource.caseRef ? "已带入固定研究范围与结果。" : practiceSource.root?.heroPlayer !== undefined ? rangeNotice : "旧来源未记录玩家映射，双方范围需要你设定。"}`
                 : "该节点暂不支持真实求解，可先保存研究问题。"}
             </span>
           </div>

@@ -7,6 +7,8 @@ import { DiskStore, canonical, hash, ref, emptyState } from "./store.ts";
 import { validateBackupState } from "./validation.ts";
 import { RealAnalysisService } from "./analysis/real-service.ts";
 import { GameService } from "./game/service.ts";
+import { AutoReviewService } from "./game/auto-review.ts";
+import { gameSchemas } from "../src/modules/play/domain.ts";
 import { gameTools, type GameTool } from "../src/modules/play/domain.ts";
 import { validateRealArtifacts } from "./analysis/native-projection.ts";
 import { realTools } from "../src/modules/analysis/real-domain.ts";
@@ -608,9 +610,14 @@ export class AnalysisService {
     worker.send({ outcome: job.outcome, attempt: job.attempt });
   }
   private game?: GameService;
+  private autoReview?: AutoReviewService;
+  private ensureGame() {
+    this.game ??= new GameService(this.store);
+    this.autoReview ??= new AutoReviewService(this.store, this.game, this.real);
+  }
   private handRestricted() {
     if (!this.game && existsSync(join(this.store.directory, "hands.sqlite")))
-      this.game = new GameService(this.store);
+      this.ensureGame();
     return this.game?.restricted() ?? false;
   }
   private handGuard(name: string): Reply | undefined {
@@ -634,8 +641,59 @@ export class AnalysisService {
   }
   async executeAsync(name: string, raw: unknown): Promise<Reply> {
     if (Object.hasOwn(gameTools, name)) {
-      this.game ??= new GameService(this.store);
-      return this.game.execute(name as GameTool, raw);
+      this.ensureGame();
+      if (
+        [
+          "game_review_report",
+          "game_review_retry",
+          "game_review_cancel",
+          "game_review_open",
+        ].includes(name)
+      ) {
+        try {
+          const input = gameSchemas[name as GameTool].parse(raw) as {
+            workspaceId: string;
+            handId: string;
+          };
+          if (input.workspaceId !== this.store.state.workspaceId)
+            throw Error("工作区不匹配");
+          const data = await this.autoReview!.execute(name, input);
+          if (this.game!.restricted() || this.state.independent)
+            throw Error("INFORMATION_RESTRICTED: 请先完成当前作答");
+          return {
+            ok: true,
+            contractVersion,
+            workspaceId: this.state.workspaceId,
+            revision: this.state.revision,
+            artifactRefs: [],
+            data,
+          };
+        } catch (e) {
+          const message = (e as Error).message;
+          return {
+            ok: false,
+            code: message.includes("INFORMATION_RESTRICTED")
+              ? "INFORMATION_RESTRICTED"
+              : message.includes("REVISION_CONFLICT")
+                ? "REVISION_CONFLICT"
+                : "VALIDATION_ERROR",
+            message,
+            retryable: false,
+          };
+        }
+      }
+      const reply = await this.game!.execute(name as GameTool, raw);
+      if (reply.ok && ["game_act", "game_create", "game_next"].includes(name)) {
+        const hand = reply.data as { id: string; complete: boolean };
+        if (hand.complete) {
+          try {
+            this.autoReview!.enqueue(hand.id);
+          } catch {
+            /* A full queue must never reject a saved action. Opening review retries registration. */
+          }
+        }
+      }
+      return reply;
     }
     const guard = this.handGuard(name);
     if (guard) return guard;
@@ -2550,6 +2608,7 @@ export class AnalysisService {
     }
   }
   close() {
+    this.autoReview?.close();
     this.game?.close();
     this.stopped = true;
     this.real.close();

@@ -107,6 +107,11 @@ test("full hand → historical decision → saved question → actual river tree
     .first()
     .click();
   await page.getByRole("button", { name: "研究此决策", exact: true }).click();
+  await expect(
+    page.getByText("原决策与研究笔记", { exact: true }),
+  ).toBeVisible();
+  if (!(await page.getByLabel("研究问题", { exact: true }).isVisible()))
+    await page.getByText("原决策与研究笔记", { exact: true }).click();
   await expect(page.getByLabel("研究问题", { exact: true })).toBeVisible();
   await page
     .getByLabel("研究问题", { exact: true })
@@ -114,12 +119,22 @@ test("full hand → historical decision → saved question → actual river tree
   await page.getByRole("button", { name: "保存笔记", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("研究问题已保存");
   await page.reload();
+  if (!(await page.getByLabel("研究问题", { exact: true }).isVisible()))
+    await page.getByText("原决策与研究笔记", { exact: true }).click();
   await expect(page.getByLabel("研究问题", { exact: true })).toHaveValue(
     "下注尺度改变后，我的回应范围如何变化？",
   );
-  await expect(page.getByLabel("OOP 输入范围", { exact: true })).toHaveValue(
-    "",
-  );
+  if (
+    await page
+      .getByRole("button", { name: "展开研究输入", exact: true })
+      .isVisible()
+  )
+    await page
+      .getByRole("button", { name: "展开研究输入", exact: true })
+      .click();
+  await expect(
+    page.getByLabel("OOP 输入范围", { exact: true }),
+  ).not.toHaveValue("");
   await page.getByText("范围文本输入", { exact: true }).click();
   const board = (
     await page.getByLabel("公共牌", { exact: true }).inputValue()

@@ -62,3 +62,14 @@ HU 候选是可选本地安装：`npm run bot:setup -- "E:\hu bot"`，也可通�
 本轮未交付多尺寸/加注转牌、翻牌/多人均衡、河牌产品锁定/BR、Finding→定向整手复练、六人独立策略升级、Bot 强度实验、预解库、安装包/Linux/云。按三项目路线继续 M2，不以 M1 接入替代这些能力验收。
 
 复跑：`npm run test:game`、`npm run test:solver`、`npm run test:mcp`、`npm run solver:check`、`npm run benchmark:solver:turn`、两项河牌 benchmark；`node scripts/solver-m1-capacity.mjs` → oracle Python `verify_m1_capacity.py` → `node scripts/solver-m1-reader.mjs`；`node --import tsx scripts/m1-load.ts`。Windows 全浏览器：`$env:RIVERLINE_ALL_JOURNEYS='1'; npm run e2e:first-round`。
+
+
+## 练习页布局修正（2026-11-26）
+
+按用户截图优化练习首屏：标题/桌型/节奏/位置与对手合并为紧凑工具栏，备份移到牌桌后；座位提示固定占位，播放时行动区保留布局并禁止交互，处理中状态合入标题，行动与结算区使用相同最小高度，关闭练习页滚动锚定。下一手导航保留已加载的同一手牌，设置自动收起并支持 Escape 返回摘要焦点。下一手作为牌桌下方结算区主操作，与复盘按钮并列。
+
+实际通过：类型检查与生产构建、105 状态测试、13 规则/整手/Bot 测试、最终对应浏览器旅程 6/6（含实际 HU Bot、播放/跳过/离页、整手到真实研究、六人窄屏及新增首屏检查）。新增旅程核对 1440×900、1024×768、1280×608 下完整行动区位于首屏；Bot 播放逐帧采样 scrollY=0，牌桌顶部/高度变化不超过 1px；下一手仅一个、位于牌桌下方且在首屏内；390×844 无横向溢出。实际查看首屏/结算/手机截图，位于 .artifacts/practice-layout/。本轮只跑对应旅程，未重跑全量浏览器测试。
+
+过程保留：首次新增矮窗口断言超出 17.875px，短窗口密度修正后通过；合并处理中提示时丢失 status 语义，使两个既有旅程提前读取下一回合，恢复标题内 status 后最终 6/6 通过。一次 Windows 浏览器运行器提前退出，随后复用本轮 5217 隔离服务完成验证并清理该服务。没有操作用户 5174 服务或默认数据。
+
+生产页面已重新构建，运行中的静态服务可通过强制刷新加载新页面；未推送或部署。

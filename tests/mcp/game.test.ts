@@ -14,9 +14,11 @@ import type {
 } from "../../src/modules/play/domain.ts";
 import type { RealCase } from "../../src/modules/analysis/real-domain.ts";
 import type { Reply } from "../../src/modules/analysis/domain.ts";
+import type { ReviewReport } from "../../src/modules/play/review.ts";
+import { setTimeout as wait } from "node:timers/promises";
 
 test(
-  "whole-hand MCP: all 15 tools, shared HTTP state, reference guards and replay backup",
+  "whole-hand MCP: all 19 tools, shared HTTP state, automatic review, reference guards and replay backup",
   { timeout: 30000 },
   async () => {
     const directory = mkdtempSync(join(tmpdir(), "hands-mcp-")),
@@ -104,6 +106,26 @@ test(
         });
       }
       assert(h.complete);
+      let report = await call<ReviewReport>("game_review_report", {
+        handId: h.id,
+      });
+      for (
+        let i = 0;
+        ["queued", "running"].includes(report.status) && i < 150;
+        i++
+      ) {
+        await wait(100);
+        report = await call("game_review_report", { handId: h.id });
+      }
+      assert.equal(report.status, "completed", JSON.stringify(report));
+      const analyzed = report.nodes.find((n) => n.solutionId);
+      assert(analyzed, "actual automatic solver result");
+      await call("game_review_open", {
+        handId: h.id,
+        decision: analyzed.sequence,
+      });
+      await call("game_review_retry", { handId: h.id, profile: "wide" });
+      await call("game_review_cancel", { handId: h.id });
       const sequence = h.decisions.find((d) => d.street === 3)!.sequence;
       const view = await call<HandView>("game_review", {
         handId: h.id,

@@ -12,6 +12,7 @@ import type {
 } from "./domain";
 import s from "./Play.module.css";
 import { usePlayback } from "./presentation";
+import { AutoReviewPanel } from "./AutoReviewPanel";
 
 const amount = (n: number) => `${(n / 100).toFixed(n % 100 ? 2 : 0)} bb`;
 const actionName = (kind: string) =>
@@ -49,7 +50,8 @@ export function PlayPage() {
   const selected = new URLSearchParams(location.search).get("hand");
   const playback = usePlayback(setError);
   const mounted = useRef(true),
-    route = useRef(location.pathname + location.search);
+    route = useRef(location.pathname + location.search),
+    settings = useRef<HTMLDetailsElement>(null);
   route.current = location.pathname + location.search;
   useEffect(() => {
     mounted.current = true;
@@ -88,7 +90,7 @@ export function PlayPage() {
     let alive = true;
     setSnapshot(undefined);
     setDecision(undefined);
-    setHand(undefined);
+    setHand((current) => (current?.id === selected ? current : undefined));
     setError("");
     void gameCall<HandSummary[]>("game_list", listInput())
       .then(async (list) => {
@@ -126,6 +128,7 @@ export function PlayPage() {
     }
   };
   const create = async () => {
+    if (settings.current) settings.current.open = false;
     const origin = route.current;
     const next =
       hand?.complete &&
@@ -183,6 +186,20 @@ export function PlayPage() {
     setDecision(sequence);
   };
   const study = async () => {
+    const report = await gameCall<import("./review").ReviewReport>(
+      "game_review_report",
+      { handId: hand!.id },
+    );
+    if (report.nodes.find((n) => n.sequence === decision)?.solutionId) {
+      const opened = await gameCall<{ sourceId: string; caseId: string }>(
+        "game_review_open",
+        { handId: hand!.id, decision },
+      );
+      navigate(
+        `/solver/real?case=${encodeURIComponent(opened.caseId)}&source=${encodeURIComponent(opened.sourceId)}`,
+      );
+      return;
+    }
     const source = await gameCall<ResearchSource>("game_research", {
       handId: hand!.id,
       decision,
@@ -193,12 +210,12 @@ export function PlayPage() {
     raiseAction = hand?.legal.find((a) => a.kind === "raise"),
     callAction = hand?.legal.find((a) => a.kind === "call");
   return (
-    <main className={s.page}>
+    <main className={`${s.page} ${!reviewMode ? s.practice : ""}`}>
       <ProductNav />
       <div className={s.heading}>
         <div>
           <h1>{reviewMode ? "手牌复盘" : "整手练习"}</h1>
-          <p>
+          <p hidden={!reviewMode}>
             {reviewMode
               ? "选一手牌，回到当时的决定。"
               : "从翻前打完一手，再看值得研究的决定。"}
@@ -206,130 +223,144 @@ export function PlayPage() {
         </div>
         {!reviewMode && (
           <div className={s.start}>
-            {(!hand || hand.complete) && (
-              <>
-                <label>
-                  桌型
-                  <select
-                    aria-label="桌型"
-                    value={players}
-                    onChange={(e) => {
-                      setPlayers(Number(e.target.value) as 2 | 6);
-                      setFixedPosition(0);
-                      if (e.target.value === "6")
-                        setBotId("baseline-heuristic/1");
-                    }}
-                  >
-                    <option value={6}>6 人桌</option>
-                    <option value={2}>单挑</option>
-                  </select>
-                </label>
+            <>
+              <label>
+                桌型
+                <select
+                  aria-label="桌型"
+                  value={players}
+                  disabled={
+                    busy || playback.playing || (!!hand && !hand.complete)
+                  }
+                  onChange={(e) => {
+                    setPlayers(Number(e.target.value) as 2 | 6);
+                    setFixedPosition(0);
+                    if (e.target.value === "6")
+                      setBotId("baseline-heuristic/1");
+                  }}
+                >
+                  <option value={6}>6 人桌</option>
+                  <option value={2}>单挑</option>
+                </select>
+              </label>
+              {!hand && (
                 <button
                   className={s.primary}
                   onClick={() => void run(create)}
                   disabled={busy}
                 >
-                  {hand ? "下一手" : "开始练习"}
+                  开始练习
                 </button>
-              </>
-            )}
+              )}
+            </>
           </div>
         )}
-      </div>
-      {!reviewMode && (
-        <div className={s.playbackControls}>
-          <label>
-            行动节奏{" "}
-            <select
-              aria-label="行动节奏"
-              value={playback.speed}
-              onChange={(e) =>
-                playback.setSpeed(
-                  e.target.value as "comfort" | "fast" | "instant",
-                )
-              }
-            >
-              <option value="comfort">舒适</option>
-              <option value="fast">快速</option>
-              <option value="instant">即时</option>
-            </select>
-          </label>
-          {playback.playing && (
-            <>
-              <span role="status">
-                {playback.thinking !== undefined
-                  ? `${(hand!.session?.positions ?? positions(hand!.players))[playback.thinking]} 正在行动…`
-                  : frameText(playback.frame)}
-              </span>
-              <button onClick={() => playback.cancel()}>跳过动作播放</button>
-            </>
-          )}
-        </div>
-      )}
-      {!reviewMode && (
-        <details className={s.sessionSettings}>
-          <summary>位置与对手</summary>
-          <fieldset disabled={busy || (!!hand && !hand.complete)}>
+        {!reviewMode && (
+          <div className={s.playbackControls}>
             <label>
-              位置安排
+              行动节奏{" "}
               <select
-                aria-label="位置安排"
-                value={positionMode}
+                aria-label="行动节奏"
+                value={playback.speed}
                 onChange={(e) =>
-                  setPositionMode(e.target.value as typeof positionMode)
+                  playback.setSpeed(
+                    e.target.value as "comfort" | "fast" | "instant",
+                  )
                 }
               >
-                <option value="rotate">按钮轮转</option>
-                <option value="fixed">指定位置</option>
-                <option value="random">随机位置</option>
+                <option value="comfort">舒适</option>
+                <option value="fast">快速</option>
+                <option value="instant">即时</option>
               </select>
             </label>
-            {positionMode === "fixed" && (
+            <div className={s.playbackStatus} hidden={!playback.playing}>
+              <button
+                aria-label="跳过动作播放"
+                onClick={() => playback.cancel()}
+              >
+                跳过播放
+              </button>
+            </div>
+          </div>
+        )}
+        {!reviewMode && (
+          <details
+            ref={settings}
+            className={s.sessionSettings}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.currentTarget.open = false;
+                e.currentTarget
+                  .querySelector("summary")
+                  ?.focus({ preventScroll: true });
+              }
+            }}
+          >
+            <summary>位置与对手</summary>
+            <fieldset
+              disabled={busy || playback.playing || (!!hand && !hand.complete)}
+            >
               <label>
-                Hero位置
+                位置安排
                 <select
-                  aria-label="Hero位置"
-                  value={fixedPosition}
-                  onChange={(e) => setFixedPosition(Number(e.target.value))}
+                  aria-label="位置安排"
+                  value={positionMode}
+                  onChange={(e) =>
+                    setPositionMode(e.target.value as typeof positionMode)
+                  }
                 >
-                  {positions(players).map((p, i) => (
-                    <option key={p} value={i}>
-                      {p}
-                    </option>
-                  ))}
+                  <option value="rotate">按钮轮转</option>
+                  <option value="fixed">指定位置</option>
+                  <option value="random">随机位置</option>
                 </select>
               </label>
-            )}
-            <label>
-              对手
-              <select
-                aria-label="对手"
-                value={botId}
-                onChange={(e) => setBotId(e.target.value)}
-              >
-                <option value="baseline-heuristic/1">基础对手</option>
-                {bots
-                  .filter(
-                    (b) =>
-                      b.id !== "baseline-heuristic/1" &&
-                      b.tableSizes.includes(players),
-                  )
-                  .map((b) => (
-                    <option key={b.id} value={b.id} disabled={!b.available}>
-                      {b.name} · {b.available ? "实验候选" : "未安装"}
-                    </option>
-                  ))}
-              </select>
-            </label>
-            <p>
-              {botId === "hu-v2.2.2-experimental"
-                ? "HU 2.2.2为固定本地候选，整体强度未证明。"
-                : "基础对手使用轻量启发式，未作GTO声明。"}{" "}
-              更改设置将在下一手建立新会话。
-            </p>
-          </fieldset>
-        </details>
-      )}
+              {positionMode === "fixed" && (
+                <label>
+                  Hero位置
+                  <select
+                    aria-label="Hero位置"
+                    value={fixedPosition}
+                    onChange={(e) => setFixedPosition(Number(e.target.value))}
+                  >
+                    {positions(players).map((p, i) => (
+                      <option key={p} value={i}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              <label>
+                对手
+                <select
+                  aria-label="对手"
+                  value={botId}
+                  onChange={(e) => setBotId(e.target.value)}
+                >
+                  <option value="baseline-heuristic/1">基础对手</option>
+                  {bots
+                    .filter(
+                      (b) =>
+                        b.id !== "baseline-heuristic/1" &&
+                        b.tableSizes.includes(players),
+                    )
+                    .map((b) => (
+                      <option key={b.id} value={b.id} disabled={!b.available}>
+                        {b.name} · {b.available ? "实验候选" : "未安装"}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <p>
+                {botId === "hu-v2.2.2-experimental"
+                  ? "HU 2.2.2为固定本地候选，整体强度未证明。"
+                  : "基础对手使用轻量启发式，未作GTO声明。"}{" "}
+                更改设置将在下一手建立新会话。
+              </p>
+            </fieldset>
+          </details>
+        )}
+      </div>
       {reviewMode && (
         <div className={s.reviewFilters}>
           <label>
@@ -372,35 +403,6 @@ export function PlayPage() {
           </label>
           <small>最近1000手中筛选，最多显示100手。</small>
         </div>
-      )}
-      {(!hand || hand.complete) && !playback.playing && (
-        <details className={s.backup}>
-          <summary>练习备份</summary>
-          <p>备份包含重放所需的完整发牌数据，不用于未见题。</p>
-          <button disabled={busy} onClick={() => void run(exportHands)}>
-            导出练习
-          </button>
-          <label>
-            导入练习备份
-            <input
-              type="file"
-              accept="application/json,.json"
-              disabled={busy}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                void run(async () => {
-                  if (file.size > 1000000) throw Error("备份超过1MB");
-                  await gameCall("game_import", {
-                    backup: JSON.parse(await file.text()),
-                  });
-                  await load();
-                });
-                e.target.value = "";
-              }}
-            />
-          </label>
-        </details>
       )}
       {error && (
         <div className={s.error} role="alert">
@@ -553,7 +555,7 @@ export function PlayPage() {
                     ) : (
                       <span className={s.cardBack}>▧ ▧</span>
                     )}
-                    {!view.active[i] && !view.complete && <small>已弃牌</small>}
+
                     {playback.frame?.actor === i &&
                       playback.frame.kind === "player-acted" &&
                       !!playback.frame.amount && (
@@ -565,30 +567,41 @@ export function PlayPage() {
                           ● ●
                         </i>
                       )}
-                    {playback.thinking === i ? (
-                      <strong className={s.actionCue}>正在行动…</strong>
-                    ) : (
-                      playback.frame?.actor === i && (
-                        <strong className={s.actionCue}>
-                          {frameText(playback.frame)}
-                        </strong>
-                      )
-                    )}
+                    <strong className={s.actionCue}>
+                      {playback.thinking === i
+                        ? "正在行动…"
+                        : playback.frame?.actor === i
+                          ? frameText(playback.frame)
+                          : !view.active[i] && !view.complete
+                            ? "已弃牌"
+                            : " "}
+                    </strong>
                   </div>
                 ))}
               </div>
             </div>
-            {!reviewMode && !hand!.complete && (
+            {!reviewMode && (!hand!.complete || playback.playing) && (
               <section className={s.actionArea} aria-label="行动区">
                 <div className={s.actionHeading}>
-                  <strong>
-                    {playback.playing ? "对手动作播放中" : "轮到你"}
+                  <strong
+                    role={busy && !playback.playing ? "status" : undefined}
+                    aria-live="polite"
+                  >
+                    {playback.playing
+                      ? "对手动作播放中"
+                      : busy
+                        ? "正在处理行动…"
+                        : "轮到你"}
                     {!playback.playing && callAction
                       ? ` · 待跟注 ${amount(callAction.amount!)}`
                       : ""}
                   </strong>
                   <button
-                    disabled={busy || hand!.marks.includes(hand!.events.length)}
+                    disabled={
+                      busy ||
+                      playback.playing ||
+                      hand!.marks.includes(hand!.events.length)
+                    }
                     onClick={() =>
                       void run(async () =>
                         setHand(
@@ -605,79 +618,98 @@ export function PlayPage() {
                       : "标记疑问"}
                   </button>
                 </div>
-                {!playback.playing && (
-                  <div className={s.actions}>
-                    {hand!.legal
-                      .filter((a) => a.kind !== "raise")
-                      .map((a) => (
-                        <button
-                          key={a.kind}
-                          disabled={busy}
-                          onClick={() => void run(() => act(a))}
-                        >
-                          {actionName(a.kind)}
-                          {a.kind === "call" ? ` ${amount(a.amount!)}` : ""}
-                        </button>
-                      ))}
-                    {raiseAction && (
-                      <>
-                        <label>
-                          下注/加注至 bb
-                          <input
-                            aria-label="下注/加注至 bb"
-                            type="number"
-                            step="0.01"
-                            min={raiseAction.min! / 100}
-                            max={raiseAction.max! / 100}
-                            value={raise}
-                            placeholder={String(raiseAction.min! / 100)}
-                            onChange={(e) => setRaise(e.target.value)}
-                          />
-                        </label>
-                        <button
-                          className={s.primary}
-                          disabled={busy}
-                          onClick={() => void run(() => act(raiseAction))}
-                        >
-                          下注/加注
-                        </button>
-                        <button
-                          disabled={busy}
-                          onClick={() => {
-                            setRaise(String(raiseAction.max! / 100));
-                          }}
-                        >
-                          填入全下额
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-                {busy && !playback.playing && (
-                  <span role="status">正在处理行动…</span>
-                )}
+                <div
+                  className={s.actions}
+                  inert={playback.playing}
+                  style={{
+                    visibility: playback.playing ? "hidden" : undefined,
+                  }}
+                >
+                  {hand!.legal
+                    .filter((a) => a.kind !== "raise")
+                    .map((a) => (
+                      <button
+                        key={a.kind}
+                        disabled={busy}
+                        onClick={() => void run(() => act(a))}
+                      >
+                        {actionName(a.kind)}
+                        {a.kind === "call" ? ` ${amount(a.amount!)}` : ""}
+                      </button>
+                    ))}
+                  {raiseAction && (
+                    <>
+                      <label>
+                        下注/加注至 bb
+                        <input
+                          aria-label="下注/加注至 bb"
+                          type="number"
+                          step="0.01"
+                          min={raiseAction.min! / 100}
+                          max={raiseAction.max! / 100}
+                          value={raise}
+                          placeholder={String(raiseAction.min! / 100)}
+                          onChange={(e) => setRaise(e.target.value)}
+                        />
+                      </label>
+                      <button
+                        className={s.primary}
+                        disabled={busy}
+                        onClick={() => void run(() => act(raiseAction))}
+                      >
+                        下注/加注
+                      </button>
+                      <button
+                        disabled={busy}
+                        onClick={() => {
+                          setRaise(String(raiseAction.max! / 100));
+                        }}
+                      >
+                        填入全下额
+                      </button>
+                    </>
+                  )}
+                </div>
               </section>
             )}
-            {view.complete &&
-              !snapshot &&
-              (!playback.playing || playback.frame?.kind === "hand-closed") && (
-                <div className={s.result}>
-                  <strong>
-                    本手结束 · Hero {hand!.payoffs[hand!.hero] >= 0 ? "+" : ""}
-                    {amount(hand!.payoffs[hand!.hero])}
-                  </strong>
-                  <span>已保存 {hand!.decisions.length} 次原始决策</span>
-                  {!reviewMode && (
+            {view.complete && !snapshot && !playback.playing && (
+              <div
+                className={`${s.result} ${s.settlement}`}
+                aria-label="本手结果"
+              >
+                <strong>
+                  本手结束 · Hero {hand!.payoffs[hand!.hero] >= 0 ? "+" : ""}
+                  {amount(hand!.payoffs[hand!.hero])}
+                </strong>
+                <span>已保存 {hand!.decisions.length} 次原始决策</span>
+                {!reviewMode && (
+                  <>
                     <button
-                      className={s.primary}
                       disabled={playback.playing || busy}
                       onClick={() => navigate(`/hands?hand=${hand!.id}`)}
                     >
                       复盘这手牌
                     </button>
-                  )}
-                </div>
-              )}
+                    <button
+                      className={s.primary}
+                      disabled={playback.playing || busy}
+                      onClick={() => void run(create)}
+                    >
+                      下一手
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+            {reviewMode && hand?.complete && (
+              <AutoReviewPanel
+                key={`${hand.id}:${location.search}`}
+                hand={hand}
+                decision={decision}
+                onSelect={(n) => void run(() => selectDecision(n))}
+                onOpen={navigate}
+              />
+            )}
             {!!view.botDecisions?.some((d) => d.fallback) && (
               <p role="status" className={s.opponent}>
                 本手有对手回退：
@@ -779,6 +811,35 @@ export function PlayPage() {
             )}
           </aside>
         </div>
+      )}
+      {(!hand || hand.complete) && !playback.playing && (
+        <details className={s.backup}>
+          <summary>练习备份</summary>
+          <p>备份包含重放所需的完整发牌数据，不用于未见题。</p>
+          <button disabled={busy} onClick={() => void run(exportHands)}>
+            导出练习
+          </button>
+          <label>
+            导入练习备份
+            <input
+              type="file"
+              accept="application/json,.json"
+              disabled={busy}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                void run(async () => {
+                  if (file.size > 1000000) throw Error("备份超过1MB");
+                  await gameCall("game_import", {
+                    backup: JSON.parse(await file.text()),
+                  });
+                  await load();
+                });
+                e.target.value = "";
+              }}
+            />
+          </label>
+        </details>
       )}
     </main>
   );

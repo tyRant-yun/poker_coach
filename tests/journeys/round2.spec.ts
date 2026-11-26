@@ -1,6 +1,9 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import type { HandSummary, HandView } from "../../src/modules/play/domain";
+import { Rules } from "../../runtime/game/rules";
+import { hash } from "../../runtime/store";
+import type { ReviewReport } from "../../src/modules/play/review";
 async function call<T>(
   request: APIRequestContext,
   tool: string,
@@ -40,6 +43,109 @@ async function finish(request: APIRequestContext) {
   }
 }
 test.beforeEach(async ({ request }) => finish(request));
+
+test("AR1: four streets → actual automatic EV → same-solution graphical research → reference retry", async ({
+  page,
+  request,
+}) => {
+  const list = await call<HandSummary[]>(request, "game_list"),
+    rules = new Rules();
+  const deck = [..."23456789TJQKA"].flatMap((r) =>
+    [..."cdhs"].map((s) => r + s),
+  );
+  const actions = [
+    { actor: 1, kind: "call" as const },
+    { actor: 0, kind: "check" as const },
+    ...[0, 1, 2].flatMap(() => [
+      { actor: 0, kind: "check" as const },
+      { actor: 1, kind: "check" as const },
+    ]),
+  ];
+  let state;
+  try {
+    state = await rules.replay({ players: 2, deck, actions });
+  } finally {
+    rules.close();
+  }
+  const handId = crypto.randomUUID(),
+    payload = {
+      version: "riverline-hands/1",
+      hands: [
+        {
+          id: handId,
+          number: (list[0]?.number ?? 0) + 1,
+          revision: 0,
+          players: 2,
+          hero: 0,
+          deck,
+          actions,
+          marks: [4],
+          state,
+          created: new Date().toISOString(),
+        },
+      ],
+      studies: [],
+    };
+  await call(request, "game_import", {
+    backup: { payload, checksum: hash(payload), privateReplayData: true },
+  });
+  await page.goto(`/hands?hand=${handId}`);
+  const panel = page.getByLabel("自动复盘报告", { exact: true });
+  await expect(panel).toContainText("真实局部分析 2 / 4", { timeout: 30000 });
+  const streets = panel.getByRole("navigation", { name: "复盘街道" });
+  await streets.getByRole("button", { name: /^翻前/ }).click();
+  await expect(panel).toContainText("该街尚未接入真实求解");
+  await streets.getByRole("button", { name: /^翻牌/ }).click();
+  await expect(page.getByLabel("当前牌桌")).toContainText("底池");
+  await streets.getByRole("button", { name: /^转牌/ }).click();
+  await expect(panel.getByLabel("真实行动EV比较")).toBeVisible();
+  await panel.getByText("自动范围与计算条件", { exact: true }).click();
+  await expect(panel.getByLabel("自动参考范围矩阵")).toBeVisible();
+  mkdirSync(".artifacts/auto-review/screenshots", { recursive: true });
+  await panel.screenshot({
+    path: ".artifacts/auto-review/screenshots/report-desktop.png",
+  });
+  const report = await call<ReviewReport>(request, "game_review_report", {
+    handId,
+  });
+  await panel
+    .getByRole("button", { name: "图形深入研究", exact: true })
+    .click();
+  await expect(page.getByLabel("真实结果矩阵", { exact: true })).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(page).toHaveURL(
+    new RegExp(report.nodes.find((n) => n.street === 2)!.caseId!),
+  );
+  await page.getByRole("link", { name: "返回原手牌", exact: true }).click();
+  await panel
+    .getByRole("navigation", { name: "复盘街道" })
+    .getByRole("button", { name: /^河牌/ })
+    .click();
+  await expect(panel.getByLabel("真实行动EV比较")).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await panel.screenshot({
+    path: ".artifacts/auto-review/screenshots/report-mobile.png",
+  });
+  await panel.getByText("自动范围与计算条件", { exact: true }).click();
+  await panel
+    .getByLabel("自动分析参考范围", { exact: true })
+    .selectOption("tight");
+  await panel.getByRole("button", { name: "重新分析", exact: true }).click();
+  await expect
+    .poll(
+      async () =>
+        (await call<ReviewReport>(request, "game_review_report", { handId }))
+          .profile,
+    )
+    .toBe("tight");
+  await expect(panel).toContainText("真实局部分析 2 / 4", { timeout: 30000 });
+});
 
 test("NJ03: reduced motion, hidden-page cancellation and leaving during playback preserve the saved hand", async ({
   page,
@@ -249,13 +355,12 @@ test("NJ09: genuine turn solve → conditional river choice → strategy branch 
     path: ".artifacts/round2/screenshots/turn-river.png",
     fullPage: true,
   });
-  const workspace = await call<any>(request, "real_workspace_get");
-  const spec = workspace.specs.find(
-    (s: any) => s.scope === "given-range-turn-subgame",
-  );
-  const solution = workspace.solutions.find(
-    (s: any) => s.spec.id === spec.ref.id,
-  );
+  const jobId = new URL(page.url()).searchParams.get("job");
+  expect(jobId).toBeTruthy();
+  const job = await call<any>(request, "real_analysis_get", { jobId });
+  const solution = await call<any>(request, "real_solution_load", {
+    solutionId: job.result.id,
+  });
   const root = await call<any>(request, "real_turn_solution_query", {
     solutionId: solution.ref.id,
   });
@@ -314,4 +419,92 @@ test("NJ09: genuine turn solve → conditional river choice → strategy branch 
   );
   await page.getByRole("link", { name: "返回原手牌", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/hands\\?hand=${source.handId}`));
+});
+
+test("Practice viewport: table and actions stay above the fold through Bot playback and next hand", async ({
+  page,
+  request,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 608 });
+  await page.goto("/play");
+  await page.getByLabel("行动节奏", { exact: true }).selectOption("instant");
+  await page.getByLabel("桌型", { exact: true }).selectOption("6");
+  await page.getByRole("button", { name: /^(开始练习|下一手)$/ }).click();
+  const table = page.getByLabel("当前牌桌", { exact: true });
+  const area = page.getByRole("region", { name: "行动区", exact: true });
+  await expect(area).toBeVisible();
+  for (const size of [
+    { width: 1440, height: 900 },
+    { width: 1024, height: 768 },
+    { width: 1280, height: 608 },
+  ]) {
+    await page.setViewportSize(size);
+    const box = await area.boundingBox();
+    expect(box!.y + box!.height).toBeLessThanOrEqual(size.height);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+  }
+  mkdirSync(".artifacts/practice-layout", { recursive: true });
+  await page.screenshot({ path: ".artifacts/practice-layout/desktop.png" });
+  const before = await table.boundingBox();
+  await page.getByLabel("行动节奏", { exact: true }).selectOption("fast");
+  // Sample every animation frame to catch transient collapse, not just final positions.
+  await page.evaluate(() => {
+    const samples: { y: number; top: number; height: number }[] = [];
+    (window as any).__layoutSamples = samples;
+    (window as any).__layoutSampling = true;
+    const sample = () => {
+      const box = document
+        .querySelector('[aria-label="当前牌桌"]')
+        ?.getBoundingClientRect();
+      if (box) samples.push({ y: scrollY, top: box.top, height: box.height });
+      if ((window as any).__layoutSampling) requestAnimationFrame(sample);
+    };
+    sample();
+  });
+  await page
+    .getByRole("button", { name: /^(过牌|跟注 [0-9])/ })
+    .first()
+    .click();
+  await expect(
+    page.getByRole("button", { name: "跳过动作播放", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "跳过动作播放", exact: true }),
+  ).toBeHidden({ timeout: 30000 });
+  const samples = await page.evaluate(() => {
+    (window as any).__layoutSampling = false;
+    return (window as any).__layoutSamples as {
+      y: number;
+      top: number;
+      height: number;
+    }[];
+  });
+  expect(samples.length).toBeGreaterThan(3);
+  expect(Math.max(...samples.map((s) => s.y))).toBe(0);
+  expect(
+    Math.max(...samples.map((s) => Math.abs(s.top - before!.y))),
+  ).toBeLessThanOrEqual(1);
+  expect(
+    Math.max(...samples.map((s) => Math.abs(s.height - before!.height))),
+  ).toBeLessThanOrEqual(1);
+  await page.getByLabel("行动节奏", { exact: true }).selectOption("instant");
+  await finish(request);
+  await page.reload();
+  const next = page.getByRole("button", { name: "下一手", exact: true });
+  await expect(next).toHaveCount(1);
+  const nextBox = await next.boundingBox(),
+    tableBox = await table.boundingBox();
+  expect(nextBox!.y).toBeGreaterThanOrEqual(tableBox!.y + tableBox!.height);
+  expect(nextBox!.y + nextBox!.height).toBeLessThanOrEqual(608);
+  await page.screenshot({ path: ".artifacts/practice-layout/finished.png" });
+  await next.click();
+  await expect(area).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({ path: ".artifacts/practice-layout/mobile.png" });
+  await finish(request);
 });
