@@ -1,5 +1,15 @@
 # Riverline Poker Coach
 
+本仓库是Riverline总产品。2026-11-27按用户要求整理为三个独立开发项目：
+
+| 项目 | 开发入口 | 职责 |
+| --- | --- | --- |
+| 总产品 | [poker_coach](https://github.com/tyRant-yun/poker_coach) | 练习、复盘、研究、规则与数据权威、教学/Agent |
+| Bot | [riverline-bot](https://github.com/tyRant-yun/riverline-bot) | 对手策略、运行时、离线评估、平台/产品适配 |
+| Solver | [riverline-solver](https://github.com/tyRant-yun/riverline-solver) | 真实引擎、计算协议、原生查询与独立数值验证 |
+
+产品使用 `components.lock.json` 固定的兼容快照，`npm run components:check` 校验63个文件；后续Bot/引擎源码在对应仓库开发，再按固定版本升级产品。原启动方式保留。Bot可从相邻克隆安装：`npm run bot:setup -- ../riverline-bot`。完整边界、验证及 `E:\poker agent` 的模块采用分析见[三仓库整理与旧项目分析](docs/riverline-repository-organization-2026-11-27.md)。旧公开 `riverline-poker-coach` 保留历史，尚未整仓合并，也未接入其真实LLM。
+
 2026-11-27 AF 工程交付：[实际成果与验收边界](docs/riverline-auto-feedback-delivery-2026-11-27.md)、[翻前数据获取与核验](docs/riverline-preflop-data-acquisition-2026-11-27.md)。结束报告前置、EV图/建议、原决策往返、策略候选接入、缓存及真实受限翻牌三街研究已实现；自动转牌加入后续河牌下注。取得CC BY短筹码数据并核验，但未取得匹配100BB的可靠全行动EV包，AF-M1/M2仍未通过，未接入全街自动评分或真实LLM。后端更新需重启 `npm start`。下方“均未实施”为本轮执行前历史检查点。
 
 2026-11-27 研究与设计：[自动反馈、Agent与数据来源研究](docs/riverline-auto-feedback-research-2026-11-27.md)、[AF下一阶段任务包](docs/riverline-auto-feedback-task-design-2026-11-27.md)。建议固定分析流程负责数值/图表，Agent按需解释；先可信翻前数据与条件范围，再推进有独立验证的HU四街分析。AF00–AF11尚未实施，未取得新策略库或接入LLM；[真实用户试用](docs/riverline-user-trial-2026-11-27.md)记录当前流程缺陷。

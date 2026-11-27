@@ -31,7 +31,8 @@
     "benchmark:solver:tree": "node scripts/solver-benchmark.mjs --tree",
     "benchmark:solver:turn": "node scripts/solver-turn-benchmark.mjs",
     "benchmark:solver:flop": "node scripts/solver-flop-benchmark.mjs",
-    "benchmark:review:cache": "node --import tsx scripts/af-review-benchmark.ts"
+    "benchmark:review:cache": "node --import tsx scripts/af-review-benchmark.ts",
+    "components:check": "node scripts/components-check.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",

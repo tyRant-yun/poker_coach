@@ -29,5 +29,9 @@ if (!existsSync(python))
 run(python, ["-m", "pip", "install", "-r", "engines/bot/requirements.txt"]);
 run(python, [
   "scripts/install-bot.py",
-  process.argv[2] ?? process.env.RIVERLINE_HU_SOURCE ?? "E:/hu bot",
+  process.argv[2] ??
+    process.env.RIVERLINE_HU_SOURCE ??
+    (existsSync("../riverline-bot/submission/hu_bot")
+      ? "../riverline-bot"
+      : "E:/hu bot"),
 ]);

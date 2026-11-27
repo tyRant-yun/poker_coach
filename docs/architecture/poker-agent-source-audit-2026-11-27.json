@@ -1,0 +1,150 @@
+{
+  "sourceCommit": "374b0e1f346cb746f252d44fa7b1ca57efe6390d",
+  "trackedPythonFilesParsed": 116,
+  "syntaxFailures": [],
+  "runtimeTestsRun": false,
+  "declaredPython": ">=3.13,<3.14",
+  "availablePython": "3.14.3",
+  "competitionImplemented": false,
+  "selectedModules": {
+    "coach/external.py": {
+      "sha256": "dbd7e28ee78e8a4b073bd35455fe488af952523142754901881feb25207ad804",
+      "classes": [
+        "ExternalModelTeacher"
+      ],
+      "imports": [
+        "__future__",
+        "poker_coach.analysis",
+        "poker_coach.coach.teacher",
+        "poker_coach.coach.tools",
+        "poker_coach.domain.models",
+        "poker_coach.rules",
+        "poker_coach.strategy.models",
+        "typing"
+      ]
+    },
+    "coach/posthand_gateway.py": {
+      "sha256": "fac86e72c490ca059706f79d4defc557695860938f98560169da18a57fea19bd",
+      "classes": [
+        "PosthandCoachEvidenceError",
+        "TrustedPosthandEvidenceResolver",
+        "CoachEvidenceCitationV1",
+        "CoachClaimV1",
+        "CoachMistakeTagV1",
+        "CoachPracticeSuggestionV1",
+        "CoachBriefV1",
+        "PosthandCoachGateway"
+      ],
+      "imports": [
+        "__future__",
+        "poker_coach.simulator.analysis_contracts",
+        "poker_coach.simulator.contracts",
+        "poker_coach.simulator.posthand_review_contracts",
+        "pydantic",
+        "typing"
+      ]
+    },
+    "ranges/update.py": {
+      "sha256": "ad09ca90274f2794b47c1e0cde7fccf7babdd9a092dd1bf03d9fc362aac8106b",
+      "classes": [],
+      "imports": [
+        "__future__",
+        "belief",
+        "decimal",
+        "poker_coach.analysis.range_analysis",
+        "poker_coach.domain.models",
+        "policy"
+      ]
+    },
+    "ranges/event_beliefs.py": {
+      "sha256": "88212444209bca11671ddbe121ab8a6872be5cc53a161940983a8fae68b376d6",
+      "classes": [
+        "_ImmutableDict",
+        "_ImmutableRangeBeliefCombo",
+        "_ImmutableRangeUpdateMetadata",
+        "_ImmutableRangeBeliefSnapshot",
+        "SeatBeliefUnavailableReason",
+        "SeatBeliefProvenanceV1",
+        "SeatBeliefResultV1",
+        "_ImmutableSeatBeliefProvenance",
+        "_ImmutableSeatBeliefResult",
+        "PublicEventBeliefConsumer"
+      ],
+      "imports": [
+        "__future__",
+        "belief",
+        "collections",
+        "decimal",
+        "enum",
+        "hashlib",
+        "likelihood",
+        "poker_coach.domain.models",
+        "poker_coach.simulator.contracts",
+        "policy",
+        "policy_artifact",
+        "pydantic",
+        "seat_priors",
+        "threading"
+      ]
+    },
+    "solver/posthand_worker.py": {
+      "sha256": "87fe2313d8162dbb29354d710fcc5192a891f2c3990e1ee703967ec7dfb8beb6",
+      "classes": [
+        "PosthandSolverWorkItem",
+        "SQLitePosthandSolverQueue",
+        "PosthandSolverWorker"
+      ],
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "pathlib",
+        "poker_coach.persistence.hand_event_store",
+        "poker_coach.persistence.review_projection_store",
+        "poker_coach.simulator.posthand_evidence"
+      ]
+    },
+    "simulator/phh.py": {
+      "sha256": "f7119fc44c12890c1df3f37993eeafe9b2f2d65607e708d1039f248544ca57fe",
+      "classes": [
+        "PhhCodecError",
+        "PhhImportResultV1",
+        "HandHistoryCodec"
+      ],
+      "imports": [
+        "__future__",
+        "collections.abc",
+        "contracts",
+        "datetime",
+        "poker_coach.domain.models",
+        "poker_coach.rules",
+        "pokerkit",
+        "pydantic",
+        "replay",
+        "typing",
+        "uuid"
+      ]
+    },
+    "simulator/bot_runtime.py": {
+      "sha256": "409815a174f7044cb39a825b3104edbc86ee950e46782a0ad0961abb7f2e9636",
+      "classes": [
+        "BotDecisionProvider",
+        "InvalidBotAction",
+        "FixedPolicyProvider",
+        "BotRuntime"
+      ],
+      "imports": [
+        "__future__",
+        "contracts",
+        "typing"
+      ]
+    },
+    "theory/policy_artifact_data.py": {
+      "sha256": "680fec28f11e50ac4c52d0311cb5e18ff69b69343935df4bb2768048788e59c6",
+      "classes": [],
+      "imports": [
+        "__future__",
+        "typing"
+      ]
+    }
+  }
+}

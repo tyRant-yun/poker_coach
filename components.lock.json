@@ -1,0 +1,334 @@
+{
+  "schema": "riverline-components/1",
+  "components": {
+    "bot": {
+      "repository": "https://github.com/tyRant-yun/riverline-bot",
+      "commit": "276cfe900bcccae53cf6783b6bfcd456a9517a4f",
+      "ownership": "canonical-source-with-pinned-product-snapshot",
+      "files": [
+        {
+          "sourcePath": "adapters/riverline/requirements.txt",
+          "productPath": "engines/bot/requirements.txt",
+          "sha256": "f92eac4b40d6eee19703c986399cd1c8a8fb4da7380a3eac4147eeb16fc8ab41"
+        },
+        {
+          "sourcePath": "adapters/riverline/source.json",
+          "productPath": "engines/bot/source.json",
+          "sha256": "81e868b78f49c74e8af58f5b1e8cc7911b9490e23a49a45c31cb6a73b69e6a26"
+        },
+        {
+          "sourcePath": "adapters/riverline/worker.py",
+          "productPath": "engines/bot/worker.py",
+          "sha256": "37db59a2c62ae038b5b78179285a3c8f3ee1764986f4480a18af5dc39a9f1cbe"
+        }
+      ]
+    },
+    "solver": {
+      "repository": "https://github.com/tyRant-yun/riverline-solver",
+      "commit": "6569a01cbe57cf109c4bd240a415fa31d5931a7b",
+      "ownership": "canonical-source-with-pinned-product-snapshot",
+      "files": [
+        {
+          "sourcePath": "benchmarks/solver/audit_preflop_candidate.py",
+          "productPath": "benchmarks/solver/audit_preflop_candidate.py",
+          "sha256": "55b5b0ed753c1d16d6759f7f38c2eeb809c2d2210e27fe2c367a715834a4772e"
+        },
+        {
+          "sourcePath": "benchmarks/solver/flop-cases.json",
+          "productPath": "benchmarks/solver/flop-cases.json",
+          "sha256": "5a46ff7e0dd1cf6bccb4421c60ea58928b3fc734e9f09bea598562bea443ceba"
+        },
+        {
+          "sourcePath": "benchmarks/solver/m1-capacity-definition.json",
+          "productPath": "benchmarks/solver/m1-capacity-definition.json",
+          "sha256": "98bc21d8e5a75ef31bd41d5c6dabe0e1ba9625813d456683cb5cf0f3eaf0162a"
+        },
+        {
+          "sourcePath": "benchmarks/solver/m1-turn-cases.json",
+          "productPath": "benchmarks/solver/m1-turn-cases.json",
+          "sha256": "2676c6e281022f8438afc436e8a3bd107d9f90d858cb1ba2f4a2f59afd8ef599"
+        },
+        {
+          "sourcePath": "benchmarks/solver/requirements.txt",
+          "productPath": "benchmarks/solver/requirements.txt",
+          "sha256": "2222d852163e53db8c6b9ef0e6e220d965360ce649fd6cb9ffcb007801cc4d3d"
+        },
+        {
+          "sourcePath": "benchmarks/solver/river-cases.json",
+          "productPath": "benchmarks/solver/river-cases.json",
+          "sha256": "a3f36f688c4618a4deda2d3c3bfeae559402920f44b3323ca1abd1e851e9dd48"
+        },
+        {
+          "sourcePath": "benchmarks/solver/river-tree-cases.json",
+          "productPath": "benchmarks/solver/river-tree-cases.json",
+          "sha256": "6f2587af9412c204174c38ca5cf8f7ac2265cb274aac9696ec35859e38d2e331"
+        },
+        {
+          "sourcePath": "benchmarks/solver/run-m1-capacity.ps1",
+          "productPath": "benchmarks/solver/run-m1-capacity.ps1",
+          "sha256": "e510e6ad8b9237f62d194f5c0ff2fcc7b933c48325e82ac36a0d24539d65e697"
+        },
+        {
+          "sourcePath": "benchmarks/solver/run-river.ps1",
+          "productPath": "benchmarks/solver/run-river.ps1",
+          "sha256": "7dbaa77029a53f0886179b4711cfb03cd74efc3f6d8f9139c862254aeeee3a6d"
+        },
+        {
+          "sourcePath": "benchmarks/solver/test_oracle.py",
+          "productPath": "benchmarks/solver/test_oracle.py",
+          "sha256": "afdf4e1b1068ece128e9c65e193417da56ec047d04eeba3697460c72a33d10d8"
+        },
+        {
+          "sourcePath": "benchmarks/solver/test_tree_oracle.py",
+          "productPath": "benchmarks/solver/test_tree_oracle.py",
+          "sha256": "5ae05ba992891720c95213e806f180151f865c2c4b74c168f8a3c135cfed6865"
+        },
+        {
+          "sourcePath": "benchmarks/solver/test_turn_oracle.py",
+          "productPath": "benchmarks/solver/test_turn_oracle.py",
+          "sha256": "890aee0e3f759cdc242078ac77d9c1b5a8cf587bc8b7d3b3c321e8f47490bb6a"
+        },
+        {
+          "sourcePath": "benchmarks/solver/turn-cases.json",
+          "productPath": "benchmarks/solver/turn-cases.json",
+          "sha256": "bc2af631bdc36c2c95988d6949a51eef10c8cf4dff486710b4f7f9900d11db00"
+        },
+        {
+          "sourcePath": "benchmarks/solver/verify_flop.py",
+          "productPath": "benchmarks/solver/verify_flop.py",
+          "sha256": "6e7172e646bacca6ada2cede6ec22a073c8bb8a69eee35a003d82028730f12cc"
+        },
+        {
+          "sourcePath": "benchmarks/solver/verify_m1_capacity.py",
+          "productPath": "benchmarks/solver/verify_m1_capacity.py",
+          "sha256": "a97c9361fdbad1ef65584c060f51da21e035a9bd3d4e039279d3d65b18fe2761"
+        },
+        {
+          "sourcePath": "benchmarks/solver/verify_river.py",
+          "productPath": "benchmarks/solver/verify_river.py",
+          "sha256": "33e9292bf5c20ff5551d0ab3c536cffd4d832206b2004412f06b668c910186e9"
+        },
+        {
+          "sourcePath": "benchmarks/solver/verify_river_tree.py",
+          "productPath": "benchmarks/solver/verify_river_tree.py",
+          "sha256": "b95ff8a595765404514a806f67757284fdece8156e835b7b3528b92c59ab0803"
+        },
+        {
+          "sourcePath": "benchmarks/solver/verify_turn.py",
+          "productPath": "benchmarks/solver/verify_turn.py",
+          "sha256": "5678c9b47ed7666fe02df13fa47ae3b5031f4844ce5b79ad9adec9305a7df119"
+        },
+        {
+          "sourcePath": "contracts/solver/command.schema.json",
+          "productPath": "contracts/solver/command.schema.json",
+          "sha256": "4bd3faa067b839c71f6d4e05d1d40c08fc46a655b8269220fa78d977dc36f249"
+        },
+        {
+          "sourcePath": "contracts/solver/engine.ts",
+          "productPath": "contracts/solver/engine.ts",
+          "sha256": "c50dbee5d0f73704fb14782f4c94b19d1d485f401ca852fac85adff99130a837"
+        },
+        {
+          "sourcePath": "contracts/solver/event.schema.json",
+          "productPath": "contracts/solver/event.schema.json",
+          "sha256": "b1f885401125b03cbec33f82ab4956d1af8990e49c4535b00aeb0747a6d5f33b"
+        },
+        {
+          "sourcePath": "contracts/solver/examples/solve.json",
+          "productPath": "contracts/solver/examples/solve.json",
+          "sha256": "fb27af1f88c3243595043d5e98d8e85e69e1b0a23301cf675284713c3791569c"
+        },
+        {
+          "sourcePath": "contracts/solver/flop.schema.json",
+          "productPath": "contracts/solver/flop.schema.json",
+          "sha256": "5838b9b2cd504f2312a3139635aa23db92e7e297513ad47edcf6c70261ef98ff"
+        },
+        {
+          "sourcePath": "contracts/solver/native-page.schema.json",
+          "productPath": "contracts/solver/native-page.schema.json",
+          "sha256": "08a26339c2ec81ccd4c19f2639c63645574d7ad6a5f802ff55389d65b68ff18b"
+        },
+        {
+          "sourcePath": "contracts/solver/native-query.schema.json",
+          "productPath": "contracts/solver/native-query.schema.json",
+          "sha256": "7dd70ffce5171bb4bcf01c4aebb960ffa1f75f1476d752b1e872f40f715e4e7c"
+        },
+        {
+          "sourcePath": "contracts/solver/river-tree.schema.json",
+          "productPath": "contracts/solver/river-tree.schema.json",
+          "sha256": "707c2cdc3345c5c54fa5f62402b6dffcbd2bb85e481fa8c0fce099b9740aeba4"
+        },
+        {
+          "sourcePath": "contracts/solver/river-tree.ts",
+          "productPath": "contracts/solver/river-tree.ts",
+          "sha256": "acac4b186563eb1e58c7cfcffd168cd7633646a2b6781092042955e2fbf3fb28"
+        },
+        {
+          "sourcePath": "contracts/solver/river.schema.json",
+          "productPath": "contracts/solver/river.schema.json",
+          "sha256": "90f448289084d061575f3cea64e395445dd0658e19d15ba2692af88dcf0fe253"
+        },
+        {
+          "sourcePath": "contracts/solver/turn-node.schema.json",
+          "productPath": "contracts/solver/turn-node.schema.json",
+          "sha256": "dead6f5cf37cf960ce9056d758710617ec5e661f245c2999e0c372f6a3a19257"
+        },
+        {
+          "sourcePath": "contracts/solver/turn-page-query.schema.json",
+          "productPath": "contracts/solver/turn-page-query.schema.json",
+          "sha256": "cb0edf4b75273e7b35fec41285d5d35e0a2786342aef9bd6016581c8e60580e5"
+        },
+        {
+          "sourcePath": "contracts/solver/turn-page.schema.json",
+          "productPath": "contracts/solver/turn-page.schema.json",
+          "sha256": "4285f3ace0d651e7cebdeadb76ae8b55acdf1cfa7951129dc5bacbae4c31b053"
+        },
+        {
+          "sourcePath": "contracts/solver/turn-path.schema.json",
+          "productPath": "contracts/solver/turn-path.schema.json",
+          "sha256": "f281fe65004a6974ffd0b457583a5d1ad963ad87c404338c5129b77b1c150bd3"
+        },
+        {
+          "sourcePath": "contracts/solver/turn.schema.json",
+          "productPath": "contracts/solver/turn.schema.json",
+          "sha256": "99e53872259eac3071b7dc0782c919061ad9bfc03fa1444d8777878833235458"
+        },
+        {
+          "sourcePath": "contracts/solver/turn.ts",
+          "productPath": "contracts/solver/turn.ts",
+          "sha256": "ec5dcb60120f9ea6d055c15404b242a1452fc5e9fef6dd945ab8002280b87d4e"
+        },
+        {
+          "sourcePath": "engines/postflop/Cargo.lock",
+          "productPath": "engines/postflop/Cargo.lock",
+          "sha256": "03a223d822f39affd18c1278cbc954ce34f94c2bdac2922a821fec052173070e"
+        },
+        {
+          "sourcePath": "engines/postflop/Cargo.toml",
+          "productPath": "engines/postflop/Cargo.toml",
+          "sha256": "2cfee40ac6bc003ae419695f9c2f1e60507d03b1db86f4bcacd9eabe5d9fef5b"
+        },
+        {
+          "sourcePath": "engines/postflop/THIRD_PARTY.md",
+          "productPath": "engines/postflop/THIRD_PARTY.md",
+          "sha256": "c89a8841bd87a55f17c034ac021479422b5cffc7a66d9bfb0740ba2847bf61bd"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/Cargo.toml",
+          "productPath": "engines/postflop/crates/riverline-solver/Cargo.toml",
+          "sha256": "62cc2ff6d63d8fdec10373d7350bdd4a560f0364dba081227cd44c9d357d67a4"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/src/explicit.rs",
+          "productPath": "engines/postflop/crates/riverline-solver/src/explicit.rs",
+          "sha256": "2030615cf7f0518d74d69178418882b3de623f30e6b08a2bc5cdf224db67f90c"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/src/flop.rs",
+          "productPath": "engines/postflop/crates/riverline-solver/src/flop.rs",
+          "sha256": "3a30fa83f140b309284f3bb9e1e094369e1ae4dd2d0a0a40f584a56ba40623e8"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/src/lib.rs",
+          "productPath": "engines/postflop/crates/riverline-solver/src/lib.rs",
+          "sha256": "74e268fe8d7e846fd8e6b6ee2b2da2bdd18c79d9979e7f404e34da6b29753596"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/src/main.rs",
+          "productPath": "engines/postflop/crates/riverline-solver/src/main.rs",
+          "sha256": "6c334b0b12eb33862bd7cfc5f9081c29a49271c440118c8a055cc3dc3fd82d56"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/src/native_reader.rs",
+          "productPath": "engines/postflop/crates/riverline-solver/src/native_reader.rs",
+          "sha256": "24f3cfc813fefd510db4188a80d935d5b14857c5858f81b44014e227b23a27f9"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/src/turn.rs",
+          "productPath": "engines/postflop/crates/riverline-solver/src/turn.rs",
+          "sha256": "de3d23f4486c22ea4b67788ba23c2952b54c34d37d82a7bd204ce4955ba3be08"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/src/turn_page.rs",
+          "productPath": "engines/postflop/crates/riverline-solver/src/turn_page.rs",
+          "sha256": "541b660710605770cb2bfaa554be1d82ae0ca43f29a8865370778eafcc3eff64"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/src/turn_reader.rs",
+          "productPath": "engines/postflop/crates/riverline-solver/src/turn_reader.rs",
+          "sha256": "043916aa6ec8337af89c6f29c87d0cd3765c8c752cc3d02d3ef4c09b1737daa2"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/src/worker.rs",
+          "productPath": "engines/postflop/crates/riverline-solver/src/worker.rs",
+          "sha256": "cc40c9bddfd653775b685f15a5752e99bebf3577256bc17cdfdb6ea48fd1f889"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/tests/explicit.rs",
+          "productPath": "engines/postflop/crates/riverline-solver/tests/explicit.rs",
+          "sha256": "2370dce0147790cb3fd37d8a83ce5f6ff8f6b1a93365226557f69e2cc442c2c8"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/tests/flop.rs",
+          "productPath": "engines/postflop/crates/riverline-solver/tests/flop.rs",
+          "sha256": "1193f2199c4dd15a53224ce1e37b869c5e367cc771e8d66a79307bb17aa8e8c7"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/tests/river.rs",
+          "productPath": "engines/postflop/crates/riverline-solver/tests/river.rs",
+          "sha256": "9f3067af71a32c559e0ca8a9680bd978c2129ad52d17623a6781008f6f71c980"
+        },
+        {
+          "sourcePath": "engines/postflop/crates/riverline-solver/tests/turn.rs",
+          "productPath": "engines/postflop/crates/riverline-solver/tests/turn.rs",
+          "sha256": "4b1e40f32ad9b371dcd4f35a78e6ccb46361535f92f9ea32fcfa439e2723c487"
+        },
+        {
+          "sourcePath": "engines/postflop/licenses/postflop-solver-AGPL-3.0.txt",
+          "productPath": "engines/postflop/licenses/postflop-solver-AGPL-3.0.txt",
+          "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0"
+        },
+        {
+          "sourcePath": "engines/postflop/rust-toolchain.toml",
+          "productPath": "engines/postflop/rust-toolchain.toml",
+          "sha256": "b323b19900e4b811af0a8facce5ec11249ed135ae5a46ff5c0be90067521e11f"
+        },
+        {
+          "sourcePath": "scripts/solver-benchmark.mjs",
+          "productPath": "scripts/solver-benchmark.mjs",
+          "sha256": "37d994ccd9cdd26497a39b7dd56035be3e70ed64ccb6a36e30f2843f3b904225"
+        },
+        {
+          "sourcePath": "scripts/solver-flop-benchmark.mjs",
+          "productPath": "scripts/solver-flop-benchmark.mjs",
+          "sha256": "86c18b0e7ae0eae9145ac51c4181d88f283b25fbc35de03caa5efca59399bd3c"
+        },
+        {
+          "sourcePath": "scripts/solver-flop-capacity.ps1",
+          "productPath": "scripts/solver-flop-capacity.ps1",
+          "sha256": "67dd92a8ab06ddb25a849798f5f4f0004f725cbcff6c9e259faec192ba3cfc4c"
+        },
+        {
+          "sourcePath": "scripts/solver-m1-capacity.mjs",
+          "productPath": "scripts/solver-m1-capacity.mjs",
+          "sha256": "40335e2433938dd12bddaf05bac6fd72e7df54e76b34770fd145281f8f8f135e"
+        },
+        {
+          "sourcePath": "scripts/solver-m1-reader.mjs",
+          "productPath": "scripts/solver-m1-reader.mjs",
+          "sha256": "e35a2fba8f8c0b96dcb4a538fa279f1a12309105698419dca0d38e7e202e16b6"
+        },
+        {
+          "sourcePath": "scripts/solver-tool.mjs",
+          "productPath": "scripts/solver-tool.mjs",
+          "sha256": "140992a885a0dfcc5863149827b7bf5af1e7aff2e50db8724aaa429d78981de3"
+        },
+        {
+          "sourcePath": "scripts/solver-turn-benchmark.mjs",
+          "productPath": "scripts/solver-turn-benchmark.mjs",
+          "sha256": "a41d26be52a9ba3ea40be3758e0c58761dd87157141a78f7c2be0ca8a12000bc"
+        }
+      ]
+    }
+  }
+}

@@ -5,6 +5,8 @@
 这是本地、独立的产品 Demo 仓库。用 stub/mock 展示完整的理想产品过程；用户已于 2026-11-12 明确要求“执行第一轮开发”，D01–D08 已实现并验证。以用户本次指令为最高项目范围依据。
 
 ## 当前开发门
+
+三仓库整理（2026-11-27）：用户明确要求整理GitHub为总产品/Bot/Solver并分析 `E:\poker agent`，授权本轮必要的私有仓库创建、源码推送与产品入口整理，覆盖下方历史“不推送/不迁移”的本轮限制；不授权参赛上传、部署、改写旧历史或后续任意推送。总产品为本仓库，Bot新开发仓库 `E:\riverline-bot` / `tyRant-yun/riverline-bot`，Solver为 `E:\riverline-solver` / `tyRant-yun/riverline-solver`。固定组件快照由 `components.lock.json` 和 `npm run components:check` 约束，锁定文件后续在源仓开发并按版本集成，不双处随意编辑。来源/状态/验证见 `docs/riverline-repository-organization-2026-11-27.md`。`E:\hu bot` 冻结来源与旧公开 `riverline-poker-coach` 本轮只读保留；Agent教学属于产品，竞赛执行属于Bot，不直接合并旧Python/Next整套产品。仍不安排代理。
 AF本轮工程交付（2026-11-27）：用户“按任务包推进至本轮验收”及“尝试获取可靠数据”授权已执行。报告首屏/图表/规则建议/精确决定返回、策略候选不可变导入与四个同权威工具、HU翻前条件范围数学、真实受限翻牌三街（16组合/方）作业分页恢复、自动转牌后续河牌下注及同解缓存已实现；数据获取记录 `docs/riverline-preflop-data-acquisition-2026-11-27.md`，实际工程/验证/限制 `docs/riverline-auto-feedback-delivery-2026-11-27.md`。本轮105状态、20规则/报告/策略、17 TS/CLI Solver、14 Rust、6真实MCP（86工具）、最终61浏览器整版通过，新增4翻牌及原6转牌/10河牌独立数值门通过。已取得并核验CC BY 1–20BB HU推弃数据，但不能用于100BB练习；100BB全行动EV合格包仍缺，AF-M1/M2及贯穿四街自动评分/标准真解练习/定向迁移/真实Agent未验收。当前自动转牌河牌仍是未按历史更新的有限假设；不能删范围凑16组合或使用短筹码数据冒充评分。独立策略库尚未纳入整手/研究备份，默认约396MB旧journal未迁移。冻结来源不改，不安排代理、不推送部署，后端需重启旧 `npm start`。下方AR1是历史范围，自动转牌一律checkdown已由本轮新报告更新，旧v1报告不改义。
 
 
