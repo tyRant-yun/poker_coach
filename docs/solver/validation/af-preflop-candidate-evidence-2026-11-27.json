@@ -1,0 +1,292 @@
+{
+  "source": "https://georgelipoker.com/data",
+  "credit": "George Li, georgelipoker.com",
+  "license": "CC BY 4.0",
+  "rawFiles": [
+    {
+      "name": "push-fold-heads-up.json",
+      "sha256": "abdcbc31e4c201ad5210cc94152aee11fe6d7af30e7d05fda2040ec979cf8f1b",
+      "bytes": 255930
+    },
+    {
+      "name": "preflop-equity.json",
+      "sha256": "997e6d278315f71073d8516c1cc4d942df1a3b4ab1f7a8154f2cdeda02640ef4",
+      "bytes": 764495
+    }
+  ],
+  "checks": "independent physical-card compatibility + rounded matrix action EV + BR gap",
+  "maxActionEvDifferenceBb": 4.999999999921734e-06,
+  "maxRecomputedNashConvBb": 2.0218140183565365e-08,
+  "status": "limited-model-consistency-passed",
+  "eligibleForCurrent100BbPractice": false,
+  "limits": [
+    "HU shove/fold only, 1-20BB, no ante",
+    "Equity source exactness not independently certified",
+    "Not a 100BB raise/limp/call strategy, not installed as practice scoring reference"
+  ],
+  "independentEquitySpotChecks": [
+    {
+      "hero": "aa",
+      "villain": "kk",
+      "samples": 10000,
+      "sourceEquity": 0.819465,
+      "independentSampleEquity": 0.8157,
+      "absoluteDifference": 0.0037650000000000183,
+      "threshold": 0.025
+    },
+    {
+      "hero": "aks",
+      "villain": "qq",
+      "samples": 10000,
+      "sourceEquity": 0.460485,
+      "independentSampleEquity": 0.46205,
+      "absoluteDifference": 0.0015650000000000386,
+      "threshold": 0.025
+    },
+    {
+      "hero": "76s",
+      "villain": "ako",
+      "samples": 10000,
+      "sourceEquity": 0.41570500000000005,
+      "independentSampleEquity": 0.4164,
+      "absoluteDifference": 0.0006949999999999457,
+      "threshold": 0.025
+    }
+  ],
+  "results": [
+    {
+      "stackBb": 1,
+      "recomputedNashConvBb": 0.0,
+      "actionEvMaxDifferenceBb": 4.9959183674452845e-06,
+      "sbValueBb": -6.728829732988162e-18
+    },
+    {
+      "stackBb": 1.5,
+      "recomputedNashConvBb": 0.0,
+      "actionEvMaxDifferenceBb": 4.995857497885892e-06,
+      "sbValueBb": 0.0003159400129282467
+    },
+    {
+      "stackBb": 2,
+      "recomputedNashConvBb": 0.0,
+      "actionEvMaxDifferenceBb": 4.971428571448611e-06,
+      "sbValueBb": 0.009549463157570716
+    },
+    {
+      "stackBb": 2.5,
+      "recomputedNashConvBb": 0.0,
+      "actionEvMaxDifferenceBb": 4.984833164911606e-06,
+      "sbValueBb": 0.029484835534213702
+    },
+    {
+      "stackBb": 3,
+      "recomputedNashConvBb": 1.7973811088091466e-09,
+      "actionEvMaxDifferenceBb": 4.999814608719344e-06,
+      "sbValueBb": 0.051591541450219616
+    },
+    {
+      "stackBb": 3.5,
+      "recomputedNashConvBb": 6.57168713355838e-10,
+      "actionEvMaxDifferenceBb": 4.987726362037925e-06,
+      "sbValueBb": 0.06329947035279276
+    },
+    {
+      "stackBb": 4,
+      "recomputedNashConvBb": 0.0,
+      "actionEvMaxDifferenceBb": 4.956521739263309e-06,
+      "sbValueBb": 0.06603116658355652
+    },
+    {
+      "stackBb": 4.5,
+      "recomputedNashConvBb": 3.916200307655641e-10,
+      "actionEvMaxDifferenceBb": 4.9857265718156185e-06,
+      "sbValueBb": 0.06272726058138557
+    },
+    {
+      "stackBb": 5,
+      "recomputedNashConvBb": 8.598799523755923e-09,
+      "actionEvMaxDifferenceBb": 4.997903222558886e-06,
+      "sbValueBb": 0.05620067754252711
+    },
+    {
+      "stackBb": 5.5,
+      "recomputedNashConvBb": 5.797429122009301e-09,
+      "actionEvMaxDifferenceBb": 4.982022449084855e-06,
+      "sbValueBb": 0.04776026122872734
+    },
+    {
+      "stackBb": 6,
+      "recomputedNashConvBb": 5.956007027895907e-10,
+      "actionEvMaxDifferenceBb": 4.985809392676899e-06,
+      "sbValueBb": 0.03815902102329804
+    },
+    {
+      "stackBb": 6.5,
+      "recomputedNashConvBb": 0.0,
+      "actionEvMaxDifferenceBb": 4.976218786367781e-06,
+      "sbValueBb": 0.027770713700864987
+    },
+    {
+      "stackBb": 7,
+      "recomputedNashConvBb": 5.243830454133008e-09,
+      "actionEvMaxDifferenceBb": 4.992090223643331e-06,
+      "sbValueBb": 0.016862988827549993
+    },
+    {
+      "stackBb": 7.5,
+      "recomputedNashConvBb": 0.0,
+      "actionEvMaxDifferenceBb": 4.999999999810711e-06,
+      "sbValueBb": 0.00623051306676516
+    },
+    {
+      "stackBb": 8,
+      "recomputedNashConvBb": 3.76553329153323e-09,
+      "actionEvMaxDifferenceBb": 4.980542794297271e-06,
+      "sbValueBb": -0.00413739278478031
+    },
+    {
+      "stackBb": 8.5,
+      "recomputedNashConvBb": 2.5500230868079003e-09,
+      "actionEvMaxDifferenceBb": 4.9908008162846684e-06,
+      "sbValueBb": -0.014589201457750308
+    },
+    {
+      "stackBb": 9,
+      "recomputedNashConvBb": 0.0,
+      "actionEvMaxDifferenceBb": 4.993481095283414e-06,
+      "sbValueBb": -0.025226753396743327
+    },
+    {
+      "stackBb": 9.5,
+      "recomputedNashConvBb": 1.8168005664455007e-09,
+      "actionEvMaxDifferenceBb": 4.998069795980609e-06,
+      "sbValueBb": -0.03516079386499582
+    },
+    {
+      "stackBb": 10,
+      "recomputedNashConvBb": 1.519303105870105e-09,
+      "actionEvMaxDifferenceBb": 4.986030840037348e-06,
+      "sbValueBb": -0.045370759199894126
+    },
+    {
+      "stackBb": 10.5,
+      "recomputedNashConvBb": 0.0,
+      "actionEvMaxDifferenceBb": 4.992764110367531e-06,
+      "sbValueBb": -0.05536229169821774
+    },
+    {
+      "stackBb": 11,
+      "recomputedNashConvBb": 8.172906085831326e-09,
+      "actionEvMaxDifferenceBb": 4.9905256183091495e-06,
+      "sbValueBb": -0.06466079962598163
+    },
+    {
+      "stackBb": 11.5,
+      "recomputedNashConvBb": 5.292295379223635e-10,
+      "actionEvMaxDifferenceBb": 4.986803052720035e-06,
+      "sbValueBb": -0.0736425445950782
+    },
+    {
+      "stackBb": 12,
+      "recomputedNashConvBb": 0.0,
+      "actionEvMaxDifferenceBb": 4.984802432161928e-06,
+      "sbValueBb": -0.08252883528796133
+    },
+    {
+      "stackBb": 12.5,
+      "recomputedNashConvBb": 6.786591558501568e-09,
+      "actionEvMaxDifferenceBb": 4.99281632659887e-06,
+      "sbValueBb": -0.09074565062835142
+    },
+    {
+      "stackBb": 13,
+      "recomputedNashConvBb": 2.0218140183565365e-08,
+      "actionEvMaxDifferenceBb": 4.998631836783396e-06,
+      "sbValueBb": -0.09902146719048968
+    },
+    {
+      "stackBb": 13.5,
+      "recomputedNashConvBb": 2.397174254160025e-09,
+      "actionEvMaxDifferenceBb": 4.997775534087978e-06,
+      "sbValueBb": -0.10667367601295431
+    },
+    {
+      "stackBb": 14,
+      "recomputedNashConvBb": 8.315478807102857e-09,
+      "actionEvMaxDifferenceBb": 4.991090500450213e-06,
+      "sbValueBb": -0.11382109999562756
+    },
+    {
+      "stackBb": 14.5,
+      "recomputedNashConvBb": 0.0,
+      "actionEvMaxDifferenceBb": 4.999999999921734e-06,
+      "sbValueBb": -0.1208314212823591
+    },
+    {
+      "stackBb": 15,
+      "recomputedNashConvBb": 5.104060085572154e-09,
+      "actionEvMaxDifferenceBb": 4.992950108473337e-06,
+      "sbValueBb": -0.12722693253173023
+    },
+    {
+      "stackBb": 15.5,
+      "recomputedNashConvBb": 3.867633208222482e-09,
+      "actionEvMaxDifferenceBb": 4.985626148368283e-06,
+      "sbValueBb": -0.13327407417857193
+    },
+    {
+      "stackBb": 16,
+      "recomputedNashConvBb": 1.753470372551131e-08,
+      "actionEvMaxDifferenceBb": 4.976775591469806e-06,
+      "sbValueBb": -0.13932400868381695
+    },
+    {
+      "stackBb": 16.5,
+      "recomputedNashConvBb": 4.3258546499715526e-09,
+      "actionEvMaxDifferenceBb": 4.990028163120996e-06,
+      "sbValueBb": -0.14518917522794508
+    },
+    {
+      "stackBb": 17,
+      "recomputedNashConvBb": 1.1101582786278902e-08,
+      "actionEvMaxDifferenceBb": 4.998569795855445e-06,
+      "sbValueBb": -0.15080688729991426
+    },
+    {
+      "stackBb": 17.5,
+      "recomputedNashConvBb": 5.155175916441765e-09,
+      "actionEvMaxDifferenceBb": 4.986447735388921e-06,
+      "sbValueBb": -0.15653055824939932
+    },
+    {
+      "stackBb": 18,
+      "recomputedNashConvBb": 5.001335915386327e-10,
+      "actionEvMaxDifferenceBb": 4.993253877649817e-06,
+      "sbValueBb": -0.16216193374994217
+    },
+    {
+      "stackBb": 18.5,
+      "recomputedNashConvBb": 1.5017763412077227e-08,
+      "actionEvMaxDifferenceBb": 4.991241468133012e-06,
+      "sbValueBb": -0.16756392034125808
+    },
+    {
+      "stackBb": 19,
+      "recomputedNashConvBb": 0.0,
+      "actionEvMaxDifferenceBb": 4.990019959905112e-06,
+      "sbValueBb": -0.17290956163388443
+    },
+    {
+      "stackBb": 19.5,
+      "recomputedNashConvBb": 5.329406840034835e-09,
+      "actionEvMaxDifferenceBb": 4.99275739773708e-06,
+      "sbValueBb": -0.1780610095997155
+    },
+    {
+      "stackBb": 20,
+      "recomputedNashConvBb": 1.6011327608780528e-09,
+      "actionEvMaxDifferenceBb": 4.997188082778159e-06,
+      "sbValueBb": -0.18318951923659454
+    }
+  ]
+}

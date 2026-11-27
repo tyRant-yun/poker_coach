@@ -16,7 +16,7 @@ import { hash } from "../store.ts";
 import { takeNativeQuerySlot } from "./query-budget.ts";
 import type { NativeContext } from "./native-access.ts";
 
-export type TurnContext = NativeContext & { board: string[] };
+export type TurnContext = NativeContext & { board: string[]; version?: 4 | 5 };
 const binary = fileURLToPath(
   new URL(
     `../../engines/postflop/target/release/riverline-solver${process.platform === "win32" ? ".exe" : ""}`,

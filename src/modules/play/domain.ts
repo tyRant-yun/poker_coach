@@ -1,11 +1,31 @@
 import { z } from "zod";
 import { baseInput } from "../analysis/domain";
 import { botIdSchema } from "./seating";
+import {
+  comboSchema,
+  strategyActionSchema,
+  strategyPackSchema,
+} from "./strategy";
 import type { SeatContext } from "./seating";
 
 const identity = { handId: z.string().min(1) };
 const write = baseInput.required({ requestId: true, expectedRevision: true });
 export const gameSchemas = {
+  game_strategy_list: baseInput.strict(),
+  game_strategy_import: write.extend({ pack: strategyPackSchema }).strict(),
+  game_strategy_accept: write
+    .extend({
+      hash: z.string().regex(/^[a-f0-9]{64}$/),
+      evidence: z.string().min(20).max(4000),
+    })
+    .strict(),
+  game_strategy_query: baseInput
+    .extend({
+      hash: z.string().regex(/^[a-f0-9]{64}$/),
+      path: z.array(strategyActionSchema).max(30),
+      combo: comboSchema,
+    })
+    .strict(),
   game_list: baseInput
     .extend({
       position: z.string().optional(),
@@ -76,6 +96,13 @@ export const gameSchemas = {
 };
 export type GameTool = keyof typeof gameSchemas;
 export const gameTools: Record<GameTool, string> = {
+  game_strategy_list:
+    "列出固定策略包来源、范围及待核验/人工接纳状态；不输出整树",
+  game_strategy_import: "校验并导入固定策略包为待核验候选，不自动作为正确答案",
+  game_strategy_accept:
+    "依据实际核验说明接纳策略包；结构校验不证明来源数值正确",
+  game_strategy_query:
+    "按固定策略包哈希、精确路径和组合读取策略/行动EV及原口径",
   game_review_report:
     "手后读取自动参考报告，包含四街事实、真实局部行动EV及未覆盖原因",
   game_review_retry: "按选定自动参考范围重新生成报告，不宣称推断真实对手范围",

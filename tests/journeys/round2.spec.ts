@@ -94,7 +94,7 @@ test("AR1: four streets → actual automatic EV → same-solution graphical rese
   await expect(panel).toContainText("真实局部分析 2 / 4", { timeout: 30000 });
   const streets = panel.getByRole("navigation", { name: "复盘街道" });
   await streets.getByRole("button", { name: /^翻前/ }).click();
-  await expect(panel).toContainText("该街尚未接入真实求解");
+  await expect(panel).toContainText("暂无精确匹配且已核验接纳的翻前");
   await streets.getByRole("button", { name: /^翻牌/ }).click();
   await expect(page.getByLabel("当前牌桌")).toContainText("底池");
   await streets.getByRole("button", { name: /^转牌/ }).click();
@@ -294,6 +294,7 @@ test("NJ04/05/06: graphical board/ranges → one operation → actual solver →
       ),
     ).toBe(true);
   }
+  await page.getByRole("button", { name: "展开研究输入", exact: true }).click();
   await page.getByRole("button", { name: /^公共牌 第1张/ }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.screenshot({
@@ -372,6 +373,7 @@ test("NJ09: genuine turn solve → conditional river choice → strategy branch 
   await expect(
     page.getByRole("heading", { name: "转牌研究", exact: true }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "展开研究输入", exact: true }).click();
   await page.getByLabel("研究起点", { exact: true }).selectOption("river");
   await expect(page.getByRole("button", { name: /^公共牌 第/ })).toHaveCount(5);
   await expect(
@@ -492,9 +494,9 @@ test("Practice viewport: table and actions stay above the fold through Bot playb
   await page.reload();
   const next = page.getByRole("button", { name: "下一手", exact: true });
   await expect(next).toHaveCount(1);
-  const nextBox = await next.boundingBox(),
-    tableBox = await table.boundingBox();
-  expect(nextBox!.y).toBeGreaterThanOrEqual(tableBox!.y + tableBox!.height);
+  await expect(table).toBeHidden();
+  await expect(page.getByLabel("自动复盘报告", { exact: true })).toBeVisible();
+  const nextBox = await next.boundingBox();
   expect(nextBox!.y + nextBox!.height).toBeLessThanOrEqual(608);
   await page.screenshot({ path: ".artifacts/practice-layout/finished.png" });
   await next.click();

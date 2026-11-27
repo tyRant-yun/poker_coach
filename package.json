@@ -29,7 +29,9 @@
     "solver:contract": "node --import tsx scripts/solver-contract.ts",
     "benchmark:solver:small": "node scripts/solver-benchmark.mjs",
     "benchmark:solver:tree": "node scripts/solver-benchmark.mjs --tree",
-    "benchmark:solver:turn": "node scripts/solver-turn-benchmark.mjs"
+    "benchmark:solver:turn": "node scripts/solver-turn-benchmark.mjs",
+    "benchmark:solver:flop": "node scripts/solver-flop-benchmark.mjs",
+    "benchmark:review:cache": "node --import tsx scripts/af-review-benchmark.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",

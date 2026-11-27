@@ -1,6 +1,7 @@
 import { handClasses } from "../study/domain";
 import type { HandView, GameAction } from "./domain";
 import type { CaseTree } from "../analysis/real-domain";
+import type { EvaluationCoverage } from "./feedback";
 
 export type RangeProfile = "tight" | "standard" | "wide";
 export type ReviewInput = {
@@ -11,6 +12,9 @@ export type ReviewInput = {
   chosen: GameAction;
 };
 export type ReviewNode = {
+  coverage?: EvaluationCoverage;
+  reference?: { id: string; hash: string; name: string };
+  referenceStrategy?: { action: string; frequency: number }[];
   sequence: number;
   street: number;
   chosen: GameAction;
@@ -46,7 +50,7 @@ export type ReviewNode = {
   turnPath?: { kind: "action"; index: number }[];
 };
 export type ReviewReport = {
-  version: "auto-review/1";
+  version: "auto-review/1" | "auto-review/2";
   handId: string;
   handHash: string;
   profile: RangeProfile;
@@ -170,7 +174,10 @@ export function autoConfiguration(input: ReviewInput, profile: RangeProfile) {
     if (wagers.length)
       bets[wagers[0].actor === oop ? 0 : 1] = wagers[0].amount!;
     else if (candidate) bets[hero] = candidate;
-    // Checkdown rivers keep the automatic tree small and make the limitation explicit.
+    const riverBet = Math.min(
+      Math.round(root.pot / 2),
+      Math.max(0, stack - Math.max(...bets)),
+    );
     return {
       hero,
       ranges,
@@ -185,7 +192,7 @@ export function autoConfiguration(input: ReviewInput, profile: RangeProfile) {
         turn: {
           kind: "hu-turn/4" as const,
           turnBets: bets,
-          riverBets: [0, 0] as [number, number],
+          riverBets: [riverBet, riverBet] as [number, number],
         },
       },
     };

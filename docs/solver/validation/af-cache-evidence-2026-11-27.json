@@ -1,0 +1,221 @@
+{
+  "scope": "30 warm-cache backend reports of the same public four-street checkdown; only bounded turn/river reference, not 100BB preflop or full-range flop scoring; not browser TTI",
+  "sampleCount": 30,
+  "p95ReportReadyMs": 282.6265999999996,
+  "p50ReportReadyMs": 247.17369999999983,
+  "nativeJobsBefore": 2,
+  "nativeJobsAfter": 2,
+  "journalGrowthBytes": 0,
+  "samples": [
+    {
+      "hand": 2,
+      "reportReadyMs": 243.42909999999983,
+      "cacheReadMs": 0.17190000000027794,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 3,
+      "reportReadyMs": 244.41539999999986,
+      "cacheReadMs": 0.1665000000002692,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 4,
+      "reportReadyMs": 261.9580000000001,
+      "cacheReadMs": 0.1693000000000211,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 5,
+      "reportReadyMs": 246.97159999999985,
+      "cacheReadMs": 0.18940000000020518,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 6,
+      "reportReadyMs": 285.2298999999998,
+      "cacheReadMs": 0.2656000000001768,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 7,
+      "reportReadyMs": 221.4340000000002,
+      "cacheReadMs": 0.16509999999971114,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 8,
+      "reportReadyMs": 247.17369999999983,
+      "cacheReadMs": 0.19470000000001164,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 9,
+      "reportReadyMs": 263.05759999999964,
+      "cacheReadMs": 0.32349999999996726,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 10,
+      "reportReadyMs": 257.49620000000004,
+      "cacheReadMs": 0.24719999999979336,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 11,
+      "reportReadyMs": 231.01900000000023,
+      "cacheReadMs": 0.24859999999989668,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 12,
+      "reportReadyMs": 249.71300000000065,
+      "cacheReadMs": 0.22509999999965657,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 13,
+      "reportReadyMs": 253.08370000000014,
+      "cacheReadMs": 0.1742999999996755,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 14,
+      "reportReadyMs": 266.2667999999994,
+      "cacheReadMs": 1.5138000000006286,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 15,
+      "reportReadyMs": 223.94980000000032,
+      "cacheReadMs": 0.7195000000001528,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 16,
+      "reportReadyMs": 246.2447999999995,
+      "cacheReadMs": 0.26569999999992433,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 17,
+      "reportReadyMs": 209.5028999999995,
+      "cacheReadMs": 0.15169999999943684,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 18,
+      "reportReadyMs": 281.65500000000065,
+      "cacheReadMs": 1.1891999999998006,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 19,
+      "reportReadyMs": 242.8672000000006,
+      "cacheReadMs": 0.5424000000002707,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 20,
+      "reportReadyMs": 252.22470000000067,
+      "cacheReadMs": 0.5421000000005733,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 21,
+      "reportReadyMs": 231.65409999999974,
+      "cacheReadMs": 0.3813000000000102,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 22,
+      "reportReadyMs": 225.04309999999987,
+      "cacheReadMs": 0.21600000000034925,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 23,
+      "reportReadyMs": 249.16679999999997,
+      "cacheReadMs": 1.1049000000002707,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 24,
+      "reportReadyMs": 213.19949999999972,
+      "cacheReadMs": 0.16219999999975698,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 25,
+      "reportReadyMs": 258.4269000000004,
+      "cacheReadMs": 0.1669000000001688,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 26,
+      "reportReadyMs": 255.77769999999964,
+      "cacheReadMs": 0.16740000000027067,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 27,
+      "reportReadyMs": 240.78319999999985,
+      "cacheReadMs": 0.17600000000129512,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 28,
+      "reportReadyMs": 256.90320000000065,
+      "cacheReadMs": 0.18779999999969732,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 29,
+      "reportReadyMs": 249.22080000000096,
+      "cacheReadMs": 0.2026000000005297,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 30,
+      "reportReadyMs": 282.6265999999996,
+      "cacheReadMs": 0.4873999999999796,
+      "evaluated": 2,
+      "total": 4
+    },
+    {
+      "hand": 31,
+      "reportReadyMs": 219.1947,
+      "cacheReadMs": 0.5117000000009284,
+      "evaluated": 2,
+      "total": 4
+    }
+  ]
+}

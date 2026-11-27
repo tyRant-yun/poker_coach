@@ -1,0 +1,64 @@
+{
+  "date": "2026-11-27",
+  "cpu": "Intel(R) Core(TM) i7-14700HX",
+  "physicalMemoryBytes": 16873545728,
+  "threads": 1,
+  "compression": false,
+  "maxSeconds": 30,
+  "bothFlop": true,
+  "note": "Deterministic evenly-spread capacity ranges, not GTO data. Full 1176 board-legal combinations preserved. 256MiB application allocation gate; 2GiB process emergency stop; parent timeout is declared seconds +10.",
+  "runs": [
+    {
+      "caseId": "flop-16-flop-bet",
+      "operation": "preflight-flop",
+      "combosPerPlayer": 16,
+      "wallMs": 21.1063,
+      "observedPeakWorkingSetBytes": null,
+      "exitCode": 0,
+      "killed": false,
+      "error": "",
+      "inputSha256": "5e1c0fd73a7391f6cb09b9509e0a38278b071124a558fda16c078090df69b08f",
+      "estimatedBytes": 4073120
+    },
+    {
+      "caseId": "flop-16-flop-bet",
+      "operation": "measure-flop",
+      "combosPerPlayer": 16,
+      "wallMs": 105.0872,
+      "observedPeakWorkingSetBytes": 8806400,
+      "exitCode": 0,
+      "killed": false,
+      "error": "",
+      "inputSha256": "5e1c0fd73a7391f6cb09b9509e0a38278b071124a558fda16c078090df69b08f",
+      "iterations": 40,
+      "elapsedMs": 90,
+      "stopReason": "quality-target"
+    },
+    {
+      "caseId": "flop-16-three-street",
+      "operation": "preflight-flop",
+      "combosPerPlayer": 16,
+      "wallMs": 68.2358,
+      "observedPeakWorkingSetBytes": 17264640,
+      "exitCode": 0,
+      "killed": false,
+      "error": "",
+      "inputSha256": "5714d7ee06293a6f77c4e6e33e30de31ce5c052529359f71da326b79451ee9b5",
+      "estimatedBytes": 35872160
+    },
+    {
+      "caseId": "flop-16-three-street",
+      "operation": "measure-flop",
+      "combosPerPlayer": 16,
+      "wallMs": 7110.5088,
+      "observedPeakWorkingSetBytes": 40189952,
+      "exitCode": 0,
+      "killed": false,
+      "error": "",
+      "inputSha256": "5714d7ee06293a6f77c4e6e33e30de31ce5c052529359f71da326b79451ee9b5",
+      "iterations": 130,
+      "elapsedMs": 7093,
+      "stopReason": "quality-target"
+    }
+  ]
+}

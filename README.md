@@ -1,5 +1,9 @@
 # Riverline Poker Coach
 
+2026-11-27 AF 工程交付：[实际成果与验收边界](docs/riverline-auto-feedback-delivery-2026-11-27.md)、[翻前数据获取与核验](docs/riverline-preflop-data-acquisition-2026-11-27.md)。结束报告前置、EV图/建议、原决策往返、策略候选接入、缓存及真实受限翻牌三街研究已实现；自动转牌加入后续河牌下注。取得CC BY短筹码数据并核验，但未取得匹配100BB的可靠全行动EV包，AF-M1/M2仍未通过，未接入全街自动评分或真实LLM。后端更新需重启 `npm start`。下方“均未实施”为本轮执行前历史检查点。
+
+2026-11-27 研究与设计：[自动反馈、Agent与数据来源研究](docs/riverline-auto-feedback-research-2026-11-27.md)、[AF下一阶段任务包](docs/riverline-auto-feedback-task-design-2026-11-27.md)。建议固定分析流程负责数值/图表，Agent按需解释；先可信翻前数据与条件范围，再推进有独立验证的HU四街分析。AF00–AF11尚未实施，未取得新策略库或接入LLM；[真实用户试用](docs/riverline-user-trial-2026-11-27.md)记录当前流程缺陷。
+
 2026-11-26 AR1 实施：[手后自动复盘交付](docs/riverline-auto-review-delivery-2026-11-26.md)、[任务包](docs/riverline-auto-review-task-design-2026-11-26.md)。整手结束后台生成报告，四街原决定导航、价格/赔率、合格两人转牌/河牌真实行动EV、参考范围矩阵与同解图形研究已接入；58条浏览器整版通过。自动范围是有限参考假设，未推断真实对手范围；翻前/翻牌/多人仍无均衡评价。后端已更新，运行中的旧服务需重启 `npm start` 后刷新。下方历史记录按其日期解释。
 
 2026-11-26 M1 实施：固定 Hero 与位置会话、可选真实 HU 候选、128×128 真实转牌分页/图表、同解浏览恢复已接入。能力、自动验收、性能证据与限制见 [M1 交付](docs/riverline-m1-delivery-2026-11-26.md)。HU 强度未证明，六人仍为基础启发式；未完成翻牌/多人均衡或默认大 journal 迁移。以下“仅规划”保留历史检查点。

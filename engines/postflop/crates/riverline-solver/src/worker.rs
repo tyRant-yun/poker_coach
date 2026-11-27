@@ -145,7 +145,26 @@ pub fn serve_model(directory: &Path, model: u8) -> Result<(), String> {
             seq += 1;
         }
     };
-    let result = if model >= 3 {
+    let result = if model == 5 {
+        let input: riverline_solver::flop::FlopInput =
+            serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+        if input.schema_version != 5
+            || input
+                .ranges
+                .iter()
+                .any(|r| r.values().filter(|&&w| w > 0.0).count() > 16)
+            || input.limits.max_memory_bytes > 256 * 1024 * 1024
+            || input.limits.max_seconds > 120
+        {
+            return Err("unsupported-input: flop/5 product limit".into());
+        }
+        riverline_solver::flop::run_flop_controlled(
+            input,
+            || cancelled.load(Ordering::SeqCst),
+            progress,
+        )
+        .and_then(|(g, r)| Ok((g, serde_json::to_value(r).map_err(|e| e.to_string())?)))
+    } else if model >= 3 {
         let input: riverline_solver::turn::TurnInput =
             serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
         if input.schema_version != model as u32

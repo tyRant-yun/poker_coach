@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, HashSet};
 use std::time::Instant;
 
 pub mod explicit;
+pub mod flop;
 pub mod native_reader;
 pub mod turn;
 pub mod turn_page;
@@ -138,7 +139,7 @@ pub(crate) fn build_with_tree(
         .map(|s| card_from_str(s))
         .collect::<Result<_, _>>()?;
     let unique: HashSet<u8> = board.iter().copied().collect();
-    if unique.len() != board.len() || !(4..=5).contains(&board.len()) {
+    if unique.len() != board.len() || !(3..=5).contains(&board.len()) {
         return Err("unsupported-input: duplicate board card".into());
     }
     let mut ranges = [Range::new(), Range::new()];
@@ -168,7 +169,7 @@ pub(crate) fn build_with_tree(
     let cards = CardConfig {
         range: ranges,
         flop: [board[0], board[1], board[2]],
-        turn: board[3],
+        turn: board.get(3).copied().unwrap_or(NOT_DEALT),
         river: board.get(4).copied().unwrap_or(NOT_DEALT),
     };
     PostFlopGame::with_config(cards, tree)

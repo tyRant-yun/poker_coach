@@ -59,7 +59,7 @@ const configuration = {
   name: z.string().min(1).max(200),
   board: z
     .array(z.string().regex(/^[2-9TJQKA][cdhs]$/))
-    .min(4)
+    .min(3)
     .max(5),
   pot: z
     .number()
@@ -185,7 +185,7 @@ export const realTools: Record<RealTool, string> = {
   real_solution_load: "读取固定真实解的版本、来源、质量和制品索引",
   real_solution_query: "按需读取真实节点、组合策略、指标和条件范围分布",
   real_turn_solution_query:
-    "按版本化动作/发牌路径读取真实转牌节点、组合与机会概率，保留固定来源",
+    "按版本化动作/发牌路径读取真实翻牌/转牌节点、组合与机会概率，保留固定来源",
   real_range_aggregate: "按兼容组合分布汇总真实范围与策略，明确分母",
   real_range_derive: "沿真实固定策略创建有来源的派生范围，不覆盖原解",
 };
@@ -220,9 +220,15 @@ export type RealSpec = {
   targetNashConvPotFraction: number;
   engineCommit: string;
   algorithm: string;
-  scope: "given-range-river-subgame" | "given-range-turn-subgame";
+  scope:
+    | "given-range-river-subgame"
+    | "given-range-turn-subgame"
+    | "given-range-flop-subgame";
   operation: "solve-equilibrium";
-  valueModel: "exact-river-terminal" | "exact-turn-river-runouts";
+  valueModel:
+    | "exact-river-terminal"
+    | "exact-turn-river-runouts"
+    | "exact-flop-turn-river-runouts";
   constraints: { kind: "none" };
   tableFormat: "HU";
   backgroundPlayers: 2;
@@ -268,7 +274,11 @@ export type RealSolution = {
   native: Ref;
   summary: Ref;
   nodes: { path: number[]; artifact: Ref }[];
-  queryModel?: "native-paged/2" | "native-turn/3" | "native-turn-paged/4";
+  queryModel?:
+    | "native-paged/2"
+    | "native-turn/3"
+    | "native-turn-paged/4"
+    | "native-flop-paged/5";
   handCounts: [number, number];
   metricDefinition: {
     unit: "bb";

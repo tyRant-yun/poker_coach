@@ -52,7 +52,9 @@ async function playHand(page: Page) {
       .first();
     await expect(action).toBeEnabled();
     await action.click();
-    await expect(page.getByRole("status")).toHaveCount(0);
+    await expect(
+      page.getByLabel("行动区", { exact: true }).getByRole("status"),
+    ).toHaveCount(0);
   }
   throw Error("hand did not finish");
 }
@@ -107,6 +109,9 @@ test("full hand → historical decision → saved question → actual river tree
     .first()
     .click();
   await page.getByRole("button", { name: "研究此决策", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "河牌研究", exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByText("原决策与研究笔记", { exact: true }),
   ).toBeVisible();
@@ -174,7 +179,7 @@ test("full hand → historical decision → saved question → actual river tree
     page.getByRole("heading", { name: "手牌复盘", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText("本手结束", { exact: false }).first(),
+    page.getByLabel("报告覆盖与本手结果", { exact: true }),
   ).toBeVisible();
 });
 

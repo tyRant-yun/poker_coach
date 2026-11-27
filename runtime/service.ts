@@ -8,6 +8,7 @@ import { validateBackupState } from "./validation.ts";
 import { RealAnalysisService } from "./analysis/real-service.ts";
 import { GameService } from "./game/service.ts";
 import { AutoReviewService } from "./game/auto-review.ts";
+import { StrategyService } from "./analysis/strategy-service.ts";
 import { gameSchemas } from "../src/modules/play/domain.ts";
 import { gameTools, type GameTool } from "../src/modules/play/domain.ts";
 import { validateRealArtifacts } from "./analysis/native-projection.ts";
@@ -611,9 +612,16 @@ export class AnalysisService {
   }
   private game?: GameService;
   private autoReview?: AutoReviewService;
+  private strategies?: StrategyService;
   private ensureGame() {
     this.game ??= new GameService(this.store);
-    this.autoReview ??= new AutoReviewService(this.store, this.game, this.real);
+    this.strategies ??= new StrategyService(this.store.directory);
+    this.autoReview ??= new AutoReviewService(
+      this.store,
+      this.game,
+      this.real,
+      this.strategies,
+    );
   }
   private handRestricted() {
     if (!this.game && existsSync(join(this.store.directory, "hands.sqlite")))
@@ -642,6 +650,71 @@ export class AnalysisService {
   async executeAsync(name: string, raw: unknown): Promise<Reply> {
     if (Object.hasOwn(gameTools, name)) {
       this.ensureGame();
+      if (name.startsWith("game_strategy_")) {
+        try {
+          const input = gameSchemas[name as GameTool].parse(raw) as Record<
+            string,
+            unknown
+          >;
+          if (this.game!.restricted() || this.state.independent)
+            throw Error(
+              "INFORMATION_RESTRICTED: 完成当前作答后查看或变更策略数据",
+            );
+          if (input.workspaceId !== this.state.workspaceId)
+            throw Error("工作区不匹配");
+          if (
+            ["game_strategy_import", "game_strategy_accept"].includes(name) &&
+            input.expectedRevision !== this.state.revision
+          )
+            throw Error("REVISION_CONFLICT: 工作区已变化");
+          const data =
+            name === "game_strategy_list"
+              ? this.strategies!.list()
+              : name === "game_strategy_import"
+                ? this.strategies!.import(input.pack)
+                : name === "game_strategy_accept"
+                  ? this.strategies!.accept(
+                      input.hash as string,
+                      input.evidence as string,
+                    )
+                  : this.strategies!.query(
+                      input.hash as string,
+                      input.path as import("../src/modules/play/strategy.ts").StrategyPack["nodes"][number]["path"],
+                      input.combo as string,
+                    );
+          if (
+            name === "game_strategy_query" &&
+            (data as { availability?: string }).availability === "available"
+          ) {
+            const key = `strategy:${input.hash}`;
+            if (!this.state.exposures.includes(key)) {
+              const next = structuredClone(this.state);
+              this.exposed(next, [key]);
+              this.store.commit(next);
+            }
+          }
+          return {
+            ok: true,
+            contractVersion,
+            workspaceId: this.state.workspaceId,
+            revision: this.state.revision,
+            artifactRefs: [],
+            data,
+          };
+        } catch (e) {
+          const message = (e as Error).message;
+          return {
+            ok: false,
+            code: message.includes("INFORMATION_RESTRICTED")
+              ? "INFORMATION_RESTRICTED"
+              : message.includes("REVISION_CONFLICT")
+                ? "REVISION_CONFLICT"
+                : "VALIDATION_ERROR",
+            message,
+            retryable: false,
+          };
+        }
+      }
       if (
         [
           "game_review_report",
@@ -2609,6 +2682,7 @@ export class AnalysisService {
   }
   close() {
     this.autoReview?.close();
+    this.strategies?.close();
     this.game?.close();
     this.stopped = true;
     this.real.close();

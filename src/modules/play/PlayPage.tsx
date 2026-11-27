@@ -23,6 +23,8 @@ export function PlayPage() {
     navigate = useNavigate(),
     reviewMode = location.pathname === "/hands";
   const [hands, setHands] = useState<HandSummary[]>([]),
+    [showCompletedTable, setShowCompletedTable] = useState(false),
+    [reviewLoading, setReviewLoading] = useState(false),
     [hand, setHand] = useState<HandView>(),
     [snapshot, setSnapshot] = useState<HandView>(),
     [decision, setDecision] = useState<number>(),
@@ -47,7 +49,10 @@ export function PlayPage() {
     [markedOnly, setMarkedOnly] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
-  const selected = new URLSearchParams(location.search).get("hand");
+  const params = new URLSearchParams(location.search),
+    selected = params.get("hand"),
+    requestedDecision = params.get("decision");
+  const selectionTicket = useRef(0);
   const playback = usePlayback(setError);
   const mounted = useRef(true),
     route = useRef(location.pathname + location.search),
@@ -87,7 +92,9 @@ export function PlayPage() {
   }
   useEffect(() => {
     playback.cancel(false);
+    ++selectionTicket.current;
     let alive = true;
+    setReviewLoading(reviewMode);
     setSnapshot(undefined);
     setDecision(undefined);
     setHand((current) => (current?.id === selected ? current : undefined));
@@ -105,16 +112,46 @@ export function PlayPage() {
             setPositionMode(h.session?.mode ?? "rotate");
             setFixedPosition(h.session?.fixedPosition ?? 0);
             setBotId(h.session?.botId ?? "baseline-heuristic/1");
+            if (reviewMode && h.complete) {
+              const explicit =
+                requestedDecision !== null
+                  ? Number(requestedDecision)
+                  : undefined;
+              const first =
+                h.decisions.find((d) => d.sequence === explicit) ??
+                h.decisions.find((d) => d.marked) ??
+                h.decisions[0];
+              if (first) {
+                const before = await gameCall<HandView>("game_review", {
+                  handId: h.id,
+                  decision: first.sequence,
+                });
+                if (alive) {
+                  setDecision(first.sequence);
+                  setSnapshot(before);
+                }
+              }
+            }
           }
         }
       })
       .catch((e) => {
         if (alive) setError(String(e.message));
+      })
+      .finally(() => {
+        if (alive) setReviewLoading(false);
       });
     return () => {
       alive = false;
     };
-  }, [selected, reviewMode, filterPosition, filterStreet, markedOnly]);
+  }, [
+    selected,
+    requestedDecision,
+    reviewMode,
+    filterPosition,
+    filterStreet,
+    markedOnly,
+  ]);
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true);
@@ -128,6 +165,7 @@ export function PlayPage() {
     }
   };
   const create = async () => {
+    setShowCompletedTable(false);
     if (settings.current) settings.current.open = false;
     const origin = route.current;
     const next =
@@ -178,12 +216,17 @@ export function PlayPage() {
     setHands(await gameCall<HandSummary[]>("game_list", listInput()));
   };
   const selectDecision = async (sequence: number) => {
+    const ticket = ++selectionTicket.current,
+      handId = hand!.id;
     const view = await gameCall<HandView>("game_review", {
       handId: hand!.id,
       decision: sequence,
     });
-    setSnapshot(view);
-    setDecision(sequence);
+    if (mounted.current && ticket === selectionTicket.current) {
+      setSnapshot(view);
+      setDecision(sequence);
+      navigate(`/hands?hand=${handId}&decision=${sequence}`, { replace: true });
+    }
   };
   const study = async () => {
     const report = await gameCall<import("./review").ReviewReport>(
@@ -207,6 +250,7 @@ export function PlayPage() {
     navigate(`/solver/real?source=${encodeURIComponent(source.id)}`);
   };
   const view = snapshot ?? playback.frame?.view ?? hand,
+    feedbackMode = !reviewMode && !!hand?.complete && !playback.playing,
     raiseAction = hand?.legal.find((a) => a.kind === "raise"),
     callAction = hand?.legal.find((a) => a.kind === "call");
   return (
@@ -445,6 +489,44 @@ export function PlayPage() {
             </aside>
           )}
           <section className={s.main}>
+            {feedbackMode && (
+              <div className={s.result} aria-label="本手结果">
+                <strong>
+                  本手结束 · Hero {hand!.payoffs[hand!.hero] >= 0 ? "+" : ""}
+                  {amount(hand!.payoffs[hand!.hero])}
+                </strong>
+                <button onClick={() => navigate(`/hands?hand=${hand!.id}`)}>
+                  复盘这手牌
+                </button>
+                <button
+                  className={s.primary}
+                  disabled={busy}
+                  onClick={() => void run(create)}
+                >
+                  下一手
+                </button>
+                <button
+                  aria-expanded={showCompletedTable}
+                  onClick={() => setShowCompletedTable(!showCompletedTable)}
+                >
+                  {showCompletedTable ? "收起牌桌" : "查看本手牌桌"}
+                </button>
+              </div>
+            )}
+            {(reviewMode || feedbackMode) && hand?.complete && (
+              <AutoReviewPanel
+                key={hand.id}
+                hand={hand}
+                decision={decision}
+                selectionBusy={busy || reviewLoading}
+                onSelect={(n) => void run(() => selectDecision(n))}
+                onOpen={navigate}
+                preview={feedbackMode}
+              />
+            )}
+            {reviewMode && hand?.complete && (
+              <h2 className={s.replayHeading}>行动前牌桌回放</h2>
+            )}
             <div className={s.context}>
               <span>
                 第 {view.number} 手 · {streetNames[view.street]}
@@ -489,6 +571,7 @@ export function PlayPage() {
             )}
             <div
               className={s.table}
+              hidden={feedbackMode && !showCompletedTable}
               aria-label="当前牌桌"
               data-players={view.players}
             >
@@ -672,44 +755,38 @@ export function PlayPage() {
                 </div>
               </section>
             )}
-            {view.complete && !snapshot && !playback.playing && (
-              <div
-                className={`${s.result} ${s.settlement}`}
-                aria-label="本手结果"
-              >
-                <strong>
-                  本手结束 · Hero {hand!.payoffs[hand!.hero] >= 0 ? "+" : ""}
-                  {amount(hand!.payoffs[hand!.hero])}
-                </strong>
-                <span>已保存 {hand!.decisions.length} 次原始决策</span>
-                {!reviewMode && (
-                  <>
-                    <button
-                      disabled={playback.playing || busy}
-                      onClick={() => navigate(`/hands?hand=${hand!.id}`)}
-                    >
-                      复盘这手牌
-                    </button>
-                    <button
-                      className={s.primary}
-                      disabled={playback.playing || busy}
-                      onClick={() => void run(create)}
-                    >
-                      下一手
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-            {reviewMode && hand?.complete && (
-              <AutoReviewPanel
-                key={`${hand.id}:${location.search}`}
-                hand={hand}
-                decision={decision}
-                onSelect={(n) => void run(() => selectDecision(n))}
-                onOpen={navigate}
-              />
-            )}
+            {view.complete &&
+              !snapshot &&
+              !playback.playing &&
+              !feedbackMode && (
+                <div
+                  className={`${s.result} ${s.settlement}`}
+                  aria-label="本手结果"
+                >
+                  <strong>
+                    本手结束 · Hero {hand!.payoffs[hand!.hero] >= 0 ? "+" : ""}
+                    {amount(hand!.payoffs[hand!.hero])}
+                  </strong>
+                  <span>已保存 {hand!.decisions.length} 次原始决策</span>
+                  {!reviewMode && (
+                    <>
+                      <button
+                        disabled={playback.playing || busy}
+                        onClick={() => navigate(`/hands?hand=${hand!.id}`)}
+                      >
+                        复盘这手牌
+                      </button>
+                      <button
+                        className={s.primary}
+                        disabled={playback.playing || busy}
+                        onClick={() => void run(create)}
+                      >
+                        下一手
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             {!!view.botDecisions?.some((d) => d.fallback) && (
               <p role="status" className={s.opponent}>
                 本手有对手回退：
@@ -756,6 +833,7 @@ export function PlayPage() {
                     <button
                       key={d.sequence}
                       aria-pressed={decision === d.sequence}
+                      disabled={busy || reviewLoading}
                       onClick={() => void run(() => selectDecision(d.sequence))}
                     >
                       {streetNames[d.street]} · {actionName(d.kind)}
@@ -768,7 +846,7 @@ export function PlayPage() {
                   <button
                     className={s.primary}
                     onClick={() => void run(study)}
-                    disabled={busy}
+                    disabled={busy || reviewLoading}
                   >
                     研究此决策
                   </button>

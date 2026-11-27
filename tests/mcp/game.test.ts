@@ -1,3 +1,4 @@
+import { strategyFixture } from "../helpers/strategy-fixture.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -18,7 +19,7 @@ import type { ReviewReport } from "../../src/modules/play/review.ts";
 import { setTimeout as wait } from "node:timers/promises";
 
 test(
-  "whole-hand MCP: all 19 tools, shared HTTP state, automatic review, reference guards and replay backup",
+  "whole-hand MCP: all game and strategy tools, shared HTTP state, automatic review, reference guards and replay backup",
   { timeout: 30000 },
   async () => {
     const directory = mkdtempSync(join(tmpdir(), "hands-mcp-")),
@@ -69,6 +70,21 @@ test(
         assert(list.tools.some((t) => t.name === name));
       assert.deepEqual(await call("game_list"), []);
       assert.equal((await call<unknown[]>("game_bot_list")).length, 2);
+      assert.deepEqual(await call("game_strategy_list"), []);
+      const imported = await call<{ hash: string }>("game_strategy_import", {
+        pack: strategyFixture(),
+      });
+      const lookup = await call<{ availability: string }>(
+        "game_strategy_query",
+        { hash: imported.hash, path: [], combo: "AhAs" },
+      );
+      assert.equal(lookup.availability, "available");
+      const rejected = await raw("game_strategy_accept", {
+        hash: imported.hash,
+        evidence: "合成协议样本不可作为真实策略数据；验收此拒绝路径。",
+      });
+      assert.equal(rejected.ok, false);
+
       let h = await call<HandView>("game_create", { players: 2 });
       const session = (await (
         await fetch(`${address}/api/analysis/session`)

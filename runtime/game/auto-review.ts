@@ -5,6 +5,7 @@ import { setTimeout as wait } from "node:timers/promises";
 import { DiskStore, hash } from "../store.ts";
 import type { GameService } from "./service.ts";
 import type { RealAnalysisService } from "../analysis/real-service.ts";
+import type { StrategyService } from "../analysis/strategy-service.ts";
 import type {
   RealJob,
   RealCase,
@@ -44,10 +45,11 @@ export class AutoReviewService {
     private store: DiskStore,
     private game: GameService,
     private real: RealAnalysisService,
+    private strategies?: StrategyService,
   ) {
     this.db = new DatabaseSync(join(store.directory, "hands.sqlite"));
     this.db.exec(
-      "CREATE TABLE IF NOT EXISTS auto_reports(handId TEXT PRIMARY KEY, document TEXT NOT NULL); CREATE TABLE IF NOT EXISTS auto_receipts(id TEXT PRIMARY KEY, hash TEXT NOT NULL, document TEXT NOT NULL)",
+      "CREATE TABLE IF NOT EXISTS auto_reports(handId TEXT PRIMARY KEY, document TEXT NOT NULL); CREATE TABLE IF NOT EXISTS auto_receipts(id TEXT PRIMARY KEY, hash TEXT NOT NULL, document TEXT NOT NULL); CREATE TABLE IF NOT EXISTS auto_solve_cache(key TEXT PRIMARY KEY, document TEXT NOT NULL)",
     );
     for (const row of this.db
       .prepare("SELECT document FROM auto_reports")
@@ -91,7 +93,7 @@ export class AutoReviewService {
       .get() as { n: number };
     if (pending.n >= 4) throw Error("自动报告队列已满，请先等待或取消其他报告");
     const report: ReviewReport = {
-      version: "auto-review/1",
+      version: "auto-review/2",
       handId,
       handHash: "",
       profile,
@@ -263,7 +265,12 @@ export class AutoReviewService {
           solution: this.store.state.real!.solutions[node.solutionId].ref,
           path: node.path ?? [],
           turnPath: node.turnPath ?? [],
-          labels: [],
+          labels: chosen.prefix.map((a) =>
+            a.kind === "raise"
+              ? `下注/加注至 ${a.amount! / 100} bb`
+              : ({ check: "过牌", call: "跟注", fold: "弃牌" }[a.kind] ??
+                a.kind),
+          ),
           player: node.player,
           hand: "",
           hero: chosen.snapshot.heroCards.join(""),
@@ -285,13 +292,33 @@ export class AutoReviewService {
       .run(key, fingerprint, JSON.stringify(result));
     return result;
   }
-  private async analyze(
-    input: ReviewInput,
-    node: ReviewNode,
-    report: ReviewReport,
+  private async obtainSolution(
+    config: ReturnType<typeof autoConfiguration>,
     token: string,
   ) {
-    const config = autoConfiguration(input, report.profile);
+    const { name: _name, ...inputs } = config.config;
+    const key = hash({
+      adapter: "auto-review/2",
+      inputs,
+      maxIterations: 5000,
+      maxSeconds: 8,
+    });
+    const cached = this.db
+      .prepare("SELECT document FROM auto_solve_cache WHERE key=?")
+      .get(key) as { document: string } | undefined;
+    if (cached) {
+      const ref = JSON.parse(cached.document) as {
+        caseId: string;
+        solutionId: string;
+        solutionHash: string;
+      };
+      const solution = this.store.state.real?.solutions[ref.solutionId];
+      if (
+        solution?.ref.contentHash === ref.solutionHash &&
+        this.store.state.real?.cases[ref.caseId]
+      )
+        return { caseId: ref.caseId, solution };
+    }
     while (
       !this.cancelled(token) &&
       (this.real.busy() ||
@@ -301,18 +328,11 @@ export class AutoReviewService {
     )
       await wait(100);
     if (this.cancelled(token)) return;
-    const start = performance.now();
-    const c = await this.invoke<RealCase>("real_case_create", config.config);
+    const c = await this.invoke<RealCase>("real_case_create", {
+      ...config.config,
+      name: "自动复盘 · 固定局部参考",
+    });
     if (this.cancelled(token)) return;
-    node.caseId = c.ref.id;
-    node.player = config.hero;
-    node.rangeClasses = config.ranges.map((r) => [
-      ...new Set(Object.keys(r).map((c) => handByCombo[c])),
-    ]) as [string[], string[]];
-    node.rangeCounts = config.ranges.map((r) => Object.keys(r).length) as [
-      number,
-      number,
-    ];
     const spec = await this.invoke<RealSpec>("real_spec_create", {
       caseId: c.ref.id,
       maxIterations: 5000,
@@ -327,11 +347,7 @@ export class AutoReviewService {
         await this.invoke("real_analysis_cancel", { jobId: job.ref.id });
       return;
     }
-    node.jobId = job.ref.id;
     this.active!.jobId = job.ref.id;
-    node.status = "running";
-    node.reason = "正在计算自动参考范围下的局部策略";
-    this.save(report);
     let current = job;
     while (
       !this.cancelled(token) &&
@@ -344,11 +360,50 @@ export class AutoReviewService {
         jobId: job.ref.id,
       });
     }
+    this.active!.jobId = undefined;
     if (this.cancelled(token)) return;
     if (!current.result) throw Error(current.error ?? `作业${current.status}`);
     const solution = this.store.state.real!.solutions[
       current.result.id
     ] as RealSolution;
+    if (solution.quality === "target-met")
+      this.db
+        .prepare(
+          "INSERT INTO auto_solve_cache VALUES(?,?) ON CONFLICT(key) DO UPDATE SET document=excluded.document",
+        )
+        .run(
+          key,
+          JSON.stringify({
+            caseId: c.ref.id,
+            solutionId: solution.ref.id,
+            solutionHash: solution.ref.contentHash,
+          }),
+        );
+    return { caseId: c.ref.id, solution };
+  }
+  private async analyze(
+    input: ReviewInput,
+    node: ReviewNode,
+    report: ReviewReport,
+    token: string,
+  ) {
+    const config = autoConfiguration(input, report.profile);
+    const start = performance.now();
+    node.status = "running";
+    node.reason = "查询固定参考缓存或等待后台求解";
+    this.save(report);
+    const result = await this.obtainSolution(config, token);
+    if (!result || this.cancelled(token)) return;
+    const { solution, caseId } = result;
+    node.caseId = caseId;
+    node.player = config.hero;
+    node.rangeClasses = config.ranges.map((r) => [
+      ...new Set(Object.keys(r).map((c) => handByCombo[c])),
+    ]) as [string[], string[]];
+    node.rangeCounts = config.ranges.map((r) => Object.keys(r).length) as [
+      number,
+      number,
+    ];
     node.solutionId = solution.ref.id;
     node.quality = solution.quality;
     const isTurn = input.root.board.length === 4,
@@ -392,6 +447,25 @@ export class AutoReviewService {
     if (chosenIndex < 0)
       throw Error("原始下注尺寸未精确进入行动树，不做近似评价");
     node.chosenIndex = chosenIndex;
+    const missingActions = input.snapshot.legal
+      .filter((a) =>
+        a.kind === "raise"
+          ? a.min !== a.max ||
+            actionIndex(q.node.actions, {
+              ...input.chosen,
+              kind: "raise",
+              amount: a.min,
+            }) < 0
+          : !q.node.actions.some((s) => s.toLowerCase() === a.kind),
+      )
+      .map((a) => (a.kind === "raise" ? "其他合法下注/加注尺寸" : a.kind));
+    node.coverage = {
+      source: "assumed-range",
+      actions: "partial",
+      continuation: "bounded-tree",
+      missingActions,
+      evidence: [solution.ref.contentHash],
+    };
     node.equity = row.equity ?? undefined;
     node.nodeEvBb = row.evBb ?? undefined;
     if (solution.quality === "target-met")
@@ -403,7 +477,7 @@ export class AutoReviewService {
     node.elapsedMs = performance.now() - start;
     node.reason =
       (isTurn
-        ? "转牌单尺寸、无再加注，后续河牌过牌摊牌。"
+        ? "转牌单尺寸、无再加注，后续河牌包含双方单尺寸下注（已全下路径除外）。"
         : "河牌有限行动树。") +
       (input.root.players === 6
         ? " 六人剩两人的局部参考，忽略弃牌相关性。"
@@ -430,6 +504,20 @@ export class AutoReviewService {
       if (this.cancelled(token)) return;
       report.handHash = hash(inputs);
       report.nodes = inputs.map(nodeFacts);
+      for (const node of report.nodes.filter((n) => n.street === 0)) {
+        try {
+          const evaluation = this.strategies?.evaluate(
+            inputs.find((i) => i.sequence === node.sequence)!,
+          );
+          if (evaluation) Object.assign(node, evaluation);
+          else
+            node.reason =
+              "暂无精确匹配且已核验接纳的翻前策略/行动EV来源；保留事实，不填零损失。";
+        } catch (e) {
+          node.reason = (e as Error).message;
+          node.status = "unsupported";
+        }
+      }
       const candidates = report.nodes
         .filter((n) => n.street >= 2)
         .sort(

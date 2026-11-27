@@ -85,6 +85,8 @@ const initial = {
   stack: "10",
   betPercent: "100",
   model: "simple",
+  flopOop: "1",
+  flopIp: "1",
   turnOop: "5",
   turnIp: "5",
   riverOop: "5",
@@ -258,8 +260,12 @@ async function readRange(reference: Ref) {
 
 export function RealAnalysisPage() {
   const [pendingBoard, setPendingBoard] = useState<string[]>(),
+    [browseStatus, setBrowseStatus] = useState(""),
+    [queryLoading, setQueryLoading] = useState(false),
     [pathLabels, setPathLabels] = useState<string[]>([]),
-    [inputsCollapsed, setInputsCollapsed] = useState(false);
+    [inputsCollapsed, setInputsCollapsed] = useState(
+      !!new URLSearchParams(location.search).get("case"),
+    );
   const openTicket = useRef(0),
     heroChosen = useRef(false),
     lastSaved = useRef("");
@@ -346,7 +352,15 @@ export function RealAnalysisPage() {
         pot: String(c.pot / 100),
         stack: String(c.stack / 100),
         betPercent: c.betPercent,
-        model: c.turn ? "turn" : c.tree ? "explicit" : "simple",
+        model: c.turn
+          ? c.turn.kind === "hu-flop/5"
+            ? "flop"
+            : "turn"
+          : c.tree
+            ? "explicit"
+            : "simple",
+        flopOop: String((c.turn?.flopBets?.[0] ?? 100) / 100),
+        flopIp: String((c.turn?.flopBets?.[1] ?? 100) / 100),
         turnOop: String((c.turn?.turnBets[0] ?? 500) / 100),
         turnIp: String((c.turn?.turnBets[1] ?? 500) / 100),
         riverOop: String((c.turn?.riverBets[0] ?? 500) / 100),
@@ -570,10 +584,13 @@ export function RealAnalysisPage() {
       pot,
       stack,
       betPercent: draft.betPercent,
-      ...(draft.model === "turn"
+      ...(["turn", "flop"].includes(draft.model)
         ? {
             turn: {
-              kind: "hu-turn/4",
+              kind: draft.model === "flop" ? "hu-flop/5" : "hu-turn/4",
+              ...(draft.model === "flop"
+                ? { flopBets: [centibb(draft.flopOop), centibb(draft.flopIp)] }
+                : {}),
               turnBets: [centibb(draft.turnOop), centibb(draft.turnIp)],
               riverBets: [centibb(draft.riverOop), centibb(draft.riverIp)],
             },
@@ -696,9 +713,12 @@ export function RealAnalysisPage() {
     setQuery(undefined);
     setAggregate(undefined);
     setMatrixRows([]);
+    setHeroRow(undefined);
+    setQueryLoading(true);
     const turn =
         solution.queryModel === "native-turn/3" ||
-        solution.queryModel === "native-turn-paged/4",
+        solution.queryModel === "native-turn-paged/4" ||
+        solution.queryModel === "native-flop-paged/5",
       tool = turn ? "real_turn_solution_query" : "real_solution_query",
       nodePath = turn ? turnPath : path;
     const read = async () => {
@@ -745,6 +765,7 @@ export function RealAnalysisPage() {
       .then(({ q, m, a }) => {
         if (active && !restricted.current) {
           setQuery(q);
+          setQueryLoading(false);
           setAggregate(a);
           setMatrixRows(m.items);
           if (!heroChosen.current) {
@@ -759,6 +780,7 @@ export function RealAnalysisPage() {
       })
       .catch((e) => {
         if (active) {
+          setQueryLoading(false);
           setMessage(
             String(e).includes("RESOURCE_LIMIT")
               ? "查询暂时繁忙，已保留当前路径，可重新读取。"
@@ -797,7 +819,8 @@ export function RealAnalysisPage() {
       return;
     const turn =
       solution.queryModel === "native-turn/3" ||
-      solution.queryModel === "native-turn-paged/4";
+      solution.queryModel === "native-turn-paged/4" ||
+      solution.queryModel === "native-flop-paged/5";
     if (
       JSON.stringify(query.node.path) !== JSON.stringify(turn ? turnPath : path)
     )
@@ -815,15 +838,25 @@ export function RealAnalysisPage() {
       offset,
     };
     const key = JSON.stringify(view);
-    if (key === lastSaved.current) return;
+    if (key === lastSaved.current) {
+      setBrowseStatus("研究位置已保存");
+      return;
+    }
+    setBrowseStatus("正在保存研究位置…");
     let active = true;
     const timer = setTimeout(() => {
       void invoke("real_browse_save", { view })
         .then(() => {
-          if (active) lastSaved.current = key;
+          if (active) {
+            lastSaved.current = key;
+            setBrowseStatus("研究位置已保存");
+          }
         })
         .catch((e) => {
-          if (active) setMessage(`浏览位置尚未保存：${String(e)}`);
+          if (active) {
+            setBrowseStatus("研究位置尚未保存");
+            setMessage(`浏览位置尚未保存：${String(e)}`);
+          }
         });
     }, 350);
     return () => {
@@ -852,7 +885,8 @@ export function RealAnalysisPage() {
     }
     const currentPath =
       solution.queryModel === "native-turn/3" ||
-      solution.queryModel === "native-turn-paged/4"
+      solution.queryModel === "native-turn-paged/4" ||
+      solution.queryModel === "native-flop-paged/5"
         ? turnPath
         : path;
     if (
@@ -865,14 +899,16 @@ export function RealAnalysisPage() {
     setHeroRow(undefined);
     void invoke<Query>(
       solution.queryModel === "native-turn/3" ||
-        solution.queryModel === "native-turn-paged/4"
+        solution.queryModel === "native-turn-paged/4" ||
+        solution.queryModel === "native-flop-paged/5"
         ? "real_turn_solution_query"
         : "real_solution_query",
       {
         solutionId: solution.ref.id,
         path:
           solution.queryModel === "native-turn/3" ||
-          solution.queryModel === "native-turn-paged/4"
+          solution.queryModel === "native-turn-paged/4" ||
+          solution.queryModel === "native-flop-paged/5"
             ? turnPath
             : path,
         inRangeOnly: false,
@@ -992,22 +1028,39 @@ export function RealAnalysisPage() {
       <ProductNav />
       <header className={s.header}>
         <div>
-          <h1>{draft.model === "turn" ? "转牌研究" : "河牌研究"}</h1>
+          <h1>
+            {practiceSource && !practiceSource.eligible
+              ? `${["翻前", "翻牌", "转牌", "河牌"][practiceSource.snapshot.street]}决策研究`
+              : draft.model === "flop"
+                ? "翻牌研究"
+                : draft.model === "turn"
+                  ? "转牌研究"
+                  : "河牌研究"}
+          </h1>
           <p>
-            两人 · 给定范围 ·{" "}
-            {draft.model === "turn" ? "转牌到河牌" : "自定义行动树"}
+            {practiceSource && !practiceSource.eligible
+              ? "保留原问题与行动前事实 · 当前尚无合格求解模型"
+              : `两人 · 给定范围 · ${draft.model === "flop" ? "翻牌到河牌 · 有限行动树" : draft.model === "turn" ? "转牌到河牌" : "自定义行动树"}`}
           </p>
         </div>
         <nav>
           {practiceSource && (
-            <a href={`/hands?hand=${practiceSource.handId}`}>返回原手牌</a>
+            <a
+              href={`/hands?hand=${practiceSource.handId}&decision=${practiceSource.sequence}`}
+            >
+              返回原手牌
+            </a>
           )}
           <button onClick={() => void run(backup)} disabled={busy}>
             导出研究
           </button>
         </nav>
       </header>
-      <section className={s.examples} aria-label="研究案例">
+      <section
+        className={s.examples}
+        aria-label="研究案例"
+        hidden={!!practiceSource}
+      >
         <strong>研究案例</strong>
         {researchExamples.map((example, i) => (
           <button
@@ -1095,6 +1148,12 @@ export function RealAnalysisPage() {
           {message}
         </div>
       )}
+      {queryLoading && <p aria-live="polite">正在读取所选节点…</p>}
+      {solution && (
+        <small aria-label="研究位置保存状态" aria-live="polite">
+          {browseStatus}
+        </small>
+      )}
       <button
         aria-expanded={!inputsCollapsed}
         onClick={() => setInputsCollapsed(!inputsCollapsed)}
@@ -1153,13 +1212,19 @@ export function RealAnalysisPage() {
               研究起点
               <select
                 aria-label="研究起点"
-                value={draft.model === "turn" ? "turn" : "river"}
+                value={
+                  ["turn", "flop"].includes(draft.model) ? draft.model : "river"
+                }
                 onChange={(e) => {
-                  if (e.target.value === "turn") {
-                    update("model", "turn");
+                  if (["turn", "flop"].includes(e.target.value)) {
+                    update("model", e.target.value);
                     update(
                       "board",
-                      draft.board.trim().split(/\s+/).slice(0, 4).join(" "),
+                      draft.board
+                        .trim()
+                        .split(/\s+/)
+                        .slice(0, e.target.value === "flop" ? 3 : 4)
+                        .join(" "),
                     );
                   } else update("model", "explicit");
                   setPendingBoard(undefined);
@@ -1167,6 +1232,7 @@ export function RealAnalysisPage() {
               >
                 <option value="river">河牌</option>
                 <option value="turn">转牌 → 河牌</option>
+                <option value="flop">翻牌 → 转牌 → 河牌</option>
               </select>
             </label>
             {draft.model === "turn" && (
@@ -1175,10 +1241,17 @@ export function RealAnalysisPage() {
                 个组合；每街一个固定下注尺寸，无再加注。切换到转牌会移除原河牌，后续按合法河牌枚举。
               </p>
             )}
+            {draft.model === "flop" && (
+              <p className={s.muted}>
+                每方最多16个组合；三街每方各一个固定下注尺寸，无再加注。全部合法转牌/河牌由真实引擎枚举；范围是给定研究假设，未覆盖通用翻前策略。
+              </p>
+            )}
             <CardSlots
               label="公共牌"
               cards={draft.board.trim().split(/\s+/).filter(Boolean)}
-              count={draft.model === "turn" ? 4 : 5}
+              count={
+                draft.model === "flop" ? 3 : draft.model === "turn" ? 4 : 5
+              }
               onChange={changeBoard}
             />
             {pendingBoard && (
@@ -1242,15 +1315,23 @@ export function RealAnalysisPage() {
                 />
               </label>
             </div>
-            {draft.model === "turn" ? (
+            {["turn", "flop"].includes(draft.model) ? (
               <details open>
-                <summary>转牌与河牌下注</summary>
+                <summary>
+                  {draft.model === "flop" ? "三街下注" : "转牌与河牌下注"}
+                </summary>
                 <p className={s.muted}>
                   尺寸以 bb 计，0
                   表示只过牌。河牌尺寸适用于每条路径，必须不超过跟注转牌后的剩余筹码。
                 </p>
                 {(
                   [
+                    ...(draft.model === "flop"
+                      ? ([
+                          ["flopOop", "翻牌 OOP 下注 bb"],
+                          ["flopIp", "翻牌 IP 下注 bb"],
+                        ] as const)
+                      : []),
                     ["turnOop", "转牌 OOP 下注 bb"],
                     ["turnIp", "转牌 IP 下注 bb"],
                     ["riverOop", "河牌 OOP 下注 bb"],
@@ -1322,7 +1403,13 @@ export function RealAnalysisPage() {
               }
               return (
                 <RangeInput
-                  maxCombos={draft.model === "turn" ? 128 : 200}
+                  maxCombos={
+                    draft.model === "flop"
+                      ? 16
+                      : draft.model === "turn"
+                        ? 128
+                        : 200
+                  }
                   key={key}
                   label={key.toUpperCase()}
                   weights={weights}
@@ -1598,14 +1685,21 @@ export function RealAnalysisPage() {
                           ? "终局 · 已全下，后续河牌已枚举计入价值"
                           : "终局"
                         : query.node.kind === "chance"
-                          ? "选择河牌"
+                          ? "选择下一张公共牌"
                           : query.node.actor === 0
                             ? "OOP 行动"
                             : "IP 行动"}{" "}
                       · 底池 {query.node.potBb.toFixed(2)} bb
                     </p>
                     {query.node.kind === "chance" && (
-                      <section aria-label="合法河牌" className={s.chance}>
+                      <section
+                        aria-label={
+                          query.node.board.length === 3
+                            ? "合法转牌"
+                            : "合法河牌"
+                        }
+                        className={s.chance}
+                      >
                         <p className={s.muted}>
                           概率按双方兼容私牌和当前路径计算。— 表示路径不可达，0%
                           表示该发牌在当前范围中不可能。
@@ -1614,7 +1708,7 @@ export function RealAnalysisPage() {
                           {query.node.chanceCards?.map((c) => (
                             <button
                               key={c.card}
-                              aria-label={`河牌 ${c.card}`}
+                              aria-label={`${query.node.board.length === 3 ? "转牌" : "河牌"} ${c.card}`}
                               disabled={
                                 c.probability === null || c.probability === 0
                               }
@@ -1626,7 +1720,7 @@ export function RealAnalysisPage() {
                                 ]);
                                 setPathLabels([
                                   ...pathLabels,
-                                  `河牌 ${c.card}`,
+                                  `${query.node.board.length === 3 ? "转牌" : "河牌"} ${c.card}`,
                                 ]);
                                 setOffset(0);
                               }}
@@ -1650,7 +1744,8 @@ export function RealAnalysisPage() {
                             setQuery(undefined);
                             if (
                               solution.queryModel === "native-turn/3" ||
-                              solution.queryModel === "native-turn-paged/4"
+                              solution.queryModel === "native-turn-paged/4" ||
+                              solution.queryModel === "native-flop-paged/5"
                             )
                               setTurnPath([
                                 ...turnPath,
@@ -1693,7 +1788,7 @@ export function RealAnalysisPage() {
                     values={aggregate.frequencies}
                     emptyMessage={
                       query?.node.kind === "chance"
-                        ? "选择河牌后继续研究行动。"
+                        ? "选择下一张公共牌后继续研究行动。"
                         : query?.node.terminal
                           ? "已到终局，无后续行动。"
                           : aggregate.denominator === 0
@@ -1702,35 +1797,6 @@ export function RealAnalysisPage() {
                     }
                   />
                 )}
-                <ResultMatrix
-                  rows={matrixRows}
-                  classes={aggregate?.classes ?? []}
-                  actions={query?.node.actions ?? []}
-                  metric={matrixMetric}
-                  selected={hand}
-                  onSelect={(value) => {
-                    setHand(value);
-                    setOffset(0);
-                  }}
-                />
-                <CardSlots
-                  label="Hero观察组合"
-                  cards={hero.match(/.{2}/g) ?? []}
-                  count={2}
-                  dead={query?.node.board ?? []}
-                  onChange={(cards) => setHero(cards.join(""))}
-                />
-                <details>
-                  <summary>Hero牌码输入</summary>
-                  <label>
-                    Hero 具体组合
-                    <input
-                      aria-label="Hero 具体组合"
-                      value={hero}
-                      onChange={(e) => setHero(e.target.value)}
-                    />
-                  </label>
-                </details>
                 {heroRow?.allocation && (
                   <HeroEvChart
                     row={heroRow}
@@ -1761,6 +1827,35 @@ export function RealAnalysisPage() {
                     )}
                   </div>
                 )}
+                <ResultMatrix
+                  rows={matrixRows}
+                  classes={aggregate?.classes ?? []}
+                  actions={query?.node.actions ?? []}
+                  metric={matrixMetric}
+                  selected={hand}
+                  onSelect={(value) => {
+                    setHand(value);
+                    setOffset(0);
+                  }}
+                />
+                <CardSlots
+                  label="Hero观察组合"
+                  cards={hero.match(/.{2}/g) ?? []}
+                  count={2}
+                  dead={query?.node.board ?? []}
+                  onChange={(cards) => setHero(cards.join(""))}
+                />
+                <details>
+                  <summary>Hero牌码输入</summary>
+                  <label>
+                    Hero 具体组合
+                    <input
+                      aria-label="Hero 具体组合"
+                      value={hero}
+                      onChange={(e) => setHero(e.target.value)}
+                    />
+                  </label>
+                </details>
                 <p className={s.muted}>
                   EV 以当前引擎节点为原点，历史投入视为沉没；终局 EV
                   包含未跟注返还，无抽水。组合比例在兼容私牌与当前路径上条件化，不是从根到达概率。

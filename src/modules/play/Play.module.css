@@ -132,6 +132,10 @@
 .main {
   min-width: 0;
 }
+.replayHeading {
+  margin: 22px 0 12px;
+  font-size: 18px;
+}
 .playbackControls {
   display: flex;
   align-items: center;

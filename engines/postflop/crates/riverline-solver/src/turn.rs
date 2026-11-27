@@ -184,7 +184,9 @@ pub fn query_turn(game: &mut PostFlopGame, path: &[Step]) -> Result<TurnNode, St
             if game.possible_cards() & (1u64 << id) != 0 {
                 chance_cards.push(ChanceCard {
                     card: card_to_string(id)?,
-                    probability: (mass > 0.0).then(|| cards[id as usize] / (44.0 * mass)),
+                    probability: (mass > 0.0).then(|| {
+                        cards[id as usize] / ((48 - game.current_board().len()) as f64 * mass)
+                    }),
                 });
             }
         }

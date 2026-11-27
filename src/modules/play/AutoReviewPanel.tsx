@@ -6,6 +6,8 @@ import { profileNames, rangeNotice, referenceRanges } from "./review";
 import type { ReviewReport, RangeProfile } from "./review";
 import s from "./AutoReviewPanel.module.css";
 import { handClasses } from "../study/domain";
+import { decisionAdvice, reportSummary } from "./feedback";
+import { StrategyLibrary } from "./StrategyLibrary";
 
 const actionName = (name: string) =>
   name === "raise"
@@ -27,11 +29,15 @@ export function AutoReviewPanel({
   decision,
   onSelect,
   onOpen,
+  preview = false,
+  selectionBusy = false,
 }: {
   hand: HandView;
   decision?: number;
   onSelect: (n: number) => void;
   onOpen: (url: string) => void;
+  preview?: boolean;
+  selectionBusy?: boolean;
 }) {
   const [report, setReport] = useState<ReviewReport>(),
     [error, setError] = useState(""),
@@ -39,6 +45,16 @@ export function AutoReviewPanel({
     [profile, setProfile] = useState<RangeProfile>("standard"),
     [busy, setBusy] = useState(false),
     [rangePlayer, setRangePlayer] = useState<0 | 1>(0);
+  const [generation, setGeneration] = useState(0);
+  const previewPriority = preview
+    ? [...(report?.nodes ?? [])].sort(
+        (a, b) =>
+          Number(b.gapBb !== undefined) - Number(a.gapBb !== undefined) ||
+          Number(b.marked) - Number(a.marked) ||
+          (b.gapBb ?? 0) - (a.gapBb ?? 0),
+      )[0]?.sequence
+    : undefined;
+  const activeDecision = decision ?? previewPriority;
   useEffect(() => {
     let alive = true,
       timer: ReturnType<typeof setTimeout>;
@@ -64,11 +80,11 @@ export function AutoReviewPanel({
       alive = false;
       clearTimeout(timer);
     };
-  }, [hand.id]);
+  }, [hand.id, generation]);
   useEffect(() => {
-    const n = hand.decisions.find((n) => n.sequence === decision);
+    const n = hand.decisions.find((n) => n.sequence === activeDecision);
     if (n) setStreet(n.street);
-  }, [decision, hand]);
+  }, [activeDecision, hand]);
   async function mutate(tool: "game_review_retry" | "game_review_cancel") {
     setBusy(true);
     setError("");
@@ -79,8 +95,7 @@ export function AutoReviewPanel({
       });
       setReport(r);
       if (tool === "game_review_retry") {
-        // A bounded poll generation is tied to the existing hand through a page reload.
-        onOpen(`/hands?hand=${hand.id}&report=${Date.now()}`);
+        setGeneration((n) => n + 1);
       }
     } catch (e) {
       setError((e as Error).message);
@@ -89,10 +104,12 @@ export function AutoReviewPanel({
     }
   }
   const nodes = report?.nodes.filter((n) => n.street === street) ?? [],
-    node = report?.nodes.find((n) => n.sequence === decision),
+    node = report?.nodes.find((n) => n.sequence === activeDecision),
     completed =
       report?.nodes.filter((n) => n.status === "completed").length ?? 0;
   const busyReport = report && ["queued", "running"].includes(report.status);
+  const summary = report?.nodes.length ? reportSummary(report) : undefined;
+  const advice = node ? decisionAdvice(node) : undefined;
   return (
     <section className={s.panel} aria-label="自动复盘报告">
       <div className={s.heading}>
@@ -119,6 +136,88 @@ export function AutoReviewPanel({
           </button>
         )}
       </div>
+      <div className={s.summary} aria-label="报告覆盖与本手结果">
+        <span>
+          本手结算
+          <strong>
+            {hand.payoffs[hand.hero] >= 0 ? "+" : ""}
+            {(hand.payoffs[hand.hero] / 100).toFixed(2)} bb
+          </strong>
+        </span>
+        <span>
+          有参考 EV 差
+          <strong>
+            {summary?.evaluated ?? 0} / {hand.decisions.length} 个决定
+          </strong>
+        </span>
+        <span>
+          待分析<strong>{summary?.pending ?? "准备中"}</strong>
+        </span>
+        <span>
+          未评价<strong>{summary?.unknown ?? "准备中"}</strong>
+        </span>
+      </div>
+      <p className={s.boundary}>
+        EV差基于每个决定的参考模型；未知不记为零，各节点差值不累加为整手损失。
+      </p>
+      {report && (
+        <div className={s.timeline} aria-label="四街决定EV差时间线">
+          {report.nodes.map((n) => (
+            <button
+              key={n.sequence}
+              aria-pressed={activeDecision === n.sequence}
+              disabled={selectionBusy}
+              onClick={() => onSelect(n.sequence)}
+            >
+              <small>
+                {streetNames[n.street]} · {n.sequence + 1}
+                {n.marked ? " · 疑问" : ""}
+              </small>
+              {n.gapBb === undefined ? (
+                <span>
+                  {["queued", "running"].includes(n.status)
+                    ? "待分析"
+                    : "未评价"}
+                </span>
+              ) : (
+                <>
+                  <svg
+                    viewBox="0 0 100 18"
+                    role="img"
+                    aria-label={`参考EV差 ${n.gapBb.toFixed(3)} bb`}
+                  >
+                    <rect
+                      x="0"
+                      y="5"
+                      width="100"
+                      height="8"
+                      rx="4"
+                      fill="#e9eef1"
+                    />
+                    <rect
+                      x="0"
+                      y="5"
+                      width={Math.min(
+                        100,
+                        (n.gapBb /
+                          Math.max(
+                            ...report.nodes.map((x) => x.gapBb ?? 0),
+                            0.01,
+                          )) *
+                          100,
+                      )}
+                      height="8"
+                      rx="4"
+                      fill="#b66b44"
+                    />
+                  </svg>
+                  <strong>{n.gapBb.toFixed(3)} bb</strong>
+                </>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
       {busyReport && (
         <p role="status">
           {report.status === "queued"
@@ -138,6 +237,7 @@ export function AutoReviewPanel({
           <button
             key={i}
             aria-pressed={street === i}
+            disabled={selectionBusy}
             onClick={() => {
               setStreet(i);
               const n = hand.decisions.find((n) => n.street === i);
@@ -157,7 +257,8 @@ export function AutoReviewPanel({
           .map((n) => (
             <button
               key={n.sequence}
-              aria-pressed={decision === n.sequence}
+              aria-pressed={activeDecision === n.sequence}
+              disabled={selectionBusy}
               onClick={() => onSelect(n.sequence)}
             >
               决策 {n.sequence + 1} · {actionName(n.kind)}
@@ -213,8 +314,51 @@ export function AutoReviewPanel({
             </small>
           )}
           <p>{node.reason}</p>
+          {node.referenceStrategy && (
+            <div aria-label="来源策略频率（无EV评价）">
+              {node.referenceStrategy.map((a) => (
+                <p key={a.action}>
+                  {actionName(a.action)} · {(a.frequency * 100).toFixed(1)}%
+                </p>
+              ))}
+              <small>来源未包含行动EV，这些频率不用于计算损失或判错。</small>
+            </div>
+          )}
+          {node.actions && (
+            <div className={s.scope} aria-label="评价适用范围">
+              <strong>
+                {node.reference
+                  ? `来源：${node.reference.name}`
+                  : "范围来源：有限牌类假设，未按历史更新"}
+              </strong>
+              <span>
+                行动覆盖：
+                {node.coverage?.actions === "complete"
+                  ? "参考树内完整"
+                  : "有限候选，未覆盖全部合法尺度"}
+              </span>
+              {node.coverage?.missingActions.length ? (
+                <span>
+                  缺失：
+                  {node.coverage.missingActions.map(actionName).join("、")}
+                </span>
+              ) : null}
+              <span>
+                后续：
+                {node.coverage?.continuation === "checkdown"
+                  ? "河牌过牌摊牌"
+                  : "按所示参考树延续"}
+              </span>
+            </div>
+          )}
           {node.actions && (
             <div className={s.chart} aria-label="真实行动EV比较">
+              <div className={s.action}>
+                <span>候选行动</span>
+                <span>相对零点</span>
+                <span>行动EV</span>
+                <span>频率</span>
+              </div>
               {node.actions.map((a, i) => {
                 const max = Math.max(
                   ...node.actions!.map((a) => Math.abs(a.evBb)),
@@ -228,7 +372,10 @@ export function AutoReviewPanel({
                     </span>
                     <div className={s.track}>
                       <i
-                        style={{ width: `${(Math.abs(a.evBb) / max) * 100}%` }}
+                        style={{
+                          width: `${(Math.abs(a.evBb) / max) * 50}%`,
+                          marginLeft: `${a.evBb < 0 ? 50 - (Math.abs(a.evBb) / max) * 50 : 50}%`,
+                        }}
                         data-negative={a.evBb < 0}
                       />
                     </div>
@@ -238,7 +385,8 @@ export function AutoReviewPanel({
                 );
               })}
               <small>
-                每行：行动 EV · 同解参考频率；条长为 EV 绝对值，负值另行标记。
+                每行：行动 EV ·
+                同解参考频率；条形中央为零点，左侧负值、右侧正值。
               </small>
             </div>
           )}
@@ -250,18 +398,26 @@ export function AutoReviewPanel({
                 : `该假设下可优先比较「${actionName(node.actions!.reduce((a, b) => (a.evBb > b.evBb ? a : b)).action)}」，再检查范围变化是否影响结论。`}
             </p>
           )}
+          {advice && (
+            <div className={s.advice} aria-label="本决定建议">
+              <strong>{advice.title}</strong>
+              <p>{advice.detail}</p>
+            </div>
+          )}
           {node.actions && (
             <small>
-              {node.quality === "target-met"
-                ? "求解达到规格质量目标。"
-                : "求解尚未达到规格质量目标。"}
+              {node.quality === "source-declared"
+                ? "外部来源质量按原声明与人工核验记录显示。"
+                : node.quality === "target-met"
+                  ? "求解达到规格质量目标。"
+                  : "求解尚未达到规格质量目标。"}
               采用参考策略延续的节点行动价值，不是你实际后续操作的整手收益；局部
               EV 差不累加为整手总损失。
             </small>
           )}
           {node.solutionId && (
             <button
-              disabled={busy}
+              disabled={busy || selectionBusy}
               onClick={() => {
                 setBusy(true);
                 void gameCall<{ sourceId: string; caseId: string }>(
@@ -343,12 +499,13 @@ export function AutoReviewPanel({
           </>
         )}
         <p>
-          转牌：每方单尺寸，无再加注；河牌后续过牌摊牌。河牌：有限尺寸与精确原行动路径。翻前/翻牌/多人尚无均衡评价。
+          新转牌报告包含后续河牌单尺寸下注，无再加注；旧报告按原说明解读。河牌保留有限尺寸与精确原行动路径。翻前需匹配已接纳数据；自动翻牌与多人评价仍待可靠来源/模型覆盖。
         </p>
         <p>
           完整练习备份保留原手；自动报告可在导入后重建，真实案例与原生解随研究备份另存。
         </p>
       </details>
+      <StrategyLibrary />
     </section>
   );
 }

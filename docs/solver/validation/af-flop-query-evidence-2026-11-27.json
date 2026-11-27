@@ -1,0 +1,226 @@
+{
+  "sample": "F04 fixed one-combo-per-side three-street model; API call durations, not general full-range UI latency",
+  "measurements": [
+    {
+      "tool": "real_case_create",
+      "elapsedMs": 20.290900000000022
+    },
+    {
+      "tool": "real_spec_create",
+      "elapsedMs": 12.584499999999991
+    },
+    {
+      "tool": "real_preflight",
+      "elapsedMs": 24.554900000000032
+    },
+    {
+      "tool": "real_analysis_start",
+      "elapsedMs": 42.88249999999999
+    },
+    {
+      "tool": "real_analysis_get",
+      "elapsedMs": 0.7455999999999676
+    },
+    {
+      "tool": "real_analysis_get",
+      "elapsedMs": 0.5054000000000087
+    },
+    {
+      "tool": "real_analysis_get",
+      "elapsedMs": 0.4395000000000664
+    },
+    {
+      "tool": "real_analysis_get",
+      "elapsedMs": 0.55600000000004
+    },
+    {
+      "tool": "real_analysis_get",
+      "elapsedMs": 0.37030000000004293
+    },
+    {
+      "tool": "real_analysis_get",
+      "elapsedMs": 0.5226999999999862
+    },
+    {
+      "tool": "real_analysis_get",
+      "elapsedMs": 0.4925999999999249
+    },
+    {
+      "tool": "real_analysis_get",
+      "elapsedMs": 0.47850000000005366
+    },
+    {
+      "tool": "real_analysis_get",
+      "elapsedMs": 0.3487999999999829
+    },
+    {
+      "tool": "real_analysis_get",
+      "elapsedMs": 0.42859999999996035
+    },
+    {
+      "tool": "real_analysis_get",
+      "elapsedMs": 0.23099999999999454
+    },
+    {
+      "tool": "real_solution_load",
+      "elapsedMs": 10.606300000000147
+    },
+    {
+      "tool": "real_turn_solution_query",
+      "elapsedMs": 65.83349999999996,
+      "path": []
+    },
+    {
+      "tool": "real_turn_solution_query",
+      "elapsedMs": 5.391100000000051,
+      "path": [
+        {
+          "kind": "action",
+          "index": 1
+        },
+        {
+          "kind": "action",
+          "index": 1
+        }
+      ]
+    },
+    {
+      "tool": "real_turn_solution_query",
+      "elapsedMs": 67.27829999999994,
+      "path": [
+        {
+          "kind": "action",
+          "index": 1
+        },
+        {
+          "kind": "action",
+          "index": 1
+        }
+      ]
+    },
+    {
+      "tool": "real_turn_solution_query",
+      "elapsedMs": 70.62120000000004,
+      "path": [
+        {
+          "kind": "action",
+          "index": 1
+        },
+        {
+          "kind": "action",
+          "index": 1
+        }
+      ]
+    },
+    {
+      "tool": "real_turn_solution_query",
+      "elapsedMs": 72.37760000000003,
+      "path": [
+        {
+          "kind": "action",
+          "index": 1
+        },
+        {
+          "kind": "action",
+          "index": 1
+        }
+      ]
+    },
+    {
+      "tool": "real_turn_solution_query",
+      "elapsedMs": 5.731300000000147,
+      "path": [
+        {
+          "kind": "action",
+          "index": 1
+        },
+        {
+          "kind": "action",
+          "index": 1
+        }
+      ]
+    },
+    {
+      "tool": "real_turn_solution_query",
+      "elapsedMs": 70.70979999999986,
+      "path": [
+        {
+          "kind": "action",
+          "index": 1
+        },
+        {
+          "kind": "action",
+          "index": 1
+        },
+        {
+          "kind": "deal",
+          "card": "3s"
+        }
+      ]
+    },
+    {
+      "tool": "real_turn_solution_query",
+      "elapsedMs": 75.04469999999992,
+      "path": [
+        {
+          "kind": "action",
+          "index": 1
+        },
+        {
+          "kind": "action",
+          "index": 1
+        },
+        {
+          "kind": "deal",
+          "card": "3s"
+        },
+        {
+          "kind": "action",
+          "index": 0
+        },
+        {
+          "kind": "action",
+          "index": 0
+        },
+        {
+          "kind": "deal",
+          "card": "4s"
+        }
+      ]
+    },
+    {
+      "tool": "real_browse_save",
+      "elapsedMs": 9.46810000000005
+    },
+    {
+      "tool": "workspace_export",
+      "elapsedMs": 375.9459999999999
+    },
+    {
+      "tool": "workspace_import",
+      "elapsedMs": 189.99620000000004
+    },
+    {
+      "tool": "real_browse_get",
+      "elapsedMs": 0.6095000000000255
+    },
+    {
+      "tool": "real_turn_solution_query",
+      "elapsedMs": 59.68359999999984,
+      "path": [
+        {
+          "kind": "action",
+          "index": 1
+        },
+        {
+          "kind": "action",
+          "index": 1
+        },
+        {
+          "kind": "deal",
+          "card": "3s"
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 # R1 独立河牌基准
 
+2026-11-27 AF：新增 `npm run benchmark:solver:flop`，4个固定翻牌问题，独立7张牌枚举、LP/BR及固定私牌三街反向递推。`scripts/solver-flop-capacity.ps1` 默认逐组测16/64/128与全合法组合的不同深度，独立保留超预算失败；全组合简化树不等于全范围三街通过。公开短筹码数据核验可运行 `.artifacts/solver/oracle-venv/Scripts/python.exe benchmarks/solver/audit_preflop_candidate.py .artifacts/af/data`（先将两个保留原字节的文件复制至该隔离目录），不将输出写回原始数据目录。实际证据与边界见[AF本轮交付](../../docs/riverline-auto-feedback-delivery-2026-11-27.md)和[数据获取报告](../../docs/riverline-preflop-data-acquisition-2026-11-27.md)。
+
 2026-11-26：`npm run benchmark:solver:turn`增加6个冻结转牌问题与4项oracle自测；独立序列式LP/BR不让转牌信息集获知未来河牌，逐节点核验权益、EV、行动价值与条件机会概率。Windows沿用资源runner采样进程峰值工作集。完整输出只保留`.artifacts/solver/turn-n06`，小型[数值/资源摘要](../../docs/solver/validation/round2-turn-evidence-2026-11-26.json)随源码保存。产品已开放有限转牌及一般河牌，实际边界见[第二轮交付](../../docs/riverline-round2-delivery-2026-11-26.md)；下文2026-11-18“尚未开放UI/MCP”为历史检查点。oracle虚拟环境仍按下文固定requirements安装，Linux运行路径适配未做部署验收。
 
 2026-11-18 扩展：[一般河牌树独立验证与原生查询](../../docs/solver/validation/r2-river-tree-2026-11-18.md)。`npm run benchmark:solver:tree` 运行新增六个固定问题和五项 oracle 自测；`npm run benchmark:solver:small` 保持下文原四个受限问题及两项自测。两套门槛与输入独立保存，一般树尚未开放给 UI/MCP。

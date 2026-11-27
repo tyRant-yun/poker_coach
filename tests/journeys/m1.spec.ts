@@ -58,6 +58,11 @@ test("M1 seats/Bot: fixed BB, actual HU candidate and stable Hero at desktop/mob
   const list = await call(request, "game_list"),
     h = await call(request, "game_get", { handId: list[0].id });
   expect(h.session.botId).toBe("hu-v2.2.2-experimental");
+  // The real opponent can fold before Hero acts; finished hands open in report view.
+  if (h.complete)
+    await page
+      .getByRole("button", { name: "查看本手牌桌", exact: true })
+      .click();
   expect(
     h.botDecisions.some((d: any) => d.executed === "hu-v2.2.2-experimental"),
   ).toBe(true);
@@ -160,7 +165,9 @@ test("M1 research: 128 combinations, fixed river/player/metric/Hero survives ref
   await expect(
     page.getByRole("button", { name: "EV", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "收起研究输入", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "展开研究输入", exact: true }),
+  ).toBeVisible();
   await page.screenshot({
     path: ".artifacts/m1/screenshots/research-desktop.png",
     fullPage: true,

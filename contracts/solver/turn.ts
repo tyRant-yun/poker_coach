@@ -21,7 +21,13 @@ export const turnPathSchema = z
 export type TurnPath = z.infer<typeof turnPathSchema>;
 export const turnProfileSchema = z
   .object({
-    kind: z.enum(["hu-turn/3", "hu-turn/4"]),
+    kind: z.enum(["hu-turn/3", "hu-turn/4", "hu-flop/5"]),
+    flopBets: z
+      .tuple([
+        z.number().int().nonnegative().max(1000000),
+        z.number().int().nonnegative().max(1000000),
+      ])
+      .optional(),
     turnBets: z.tuple([
       z.number().int().nonnegative().max(1000000),
       z.number().int().nonnegative().max(1000000),
@@ -50,6 +56,17 @@ export const turnInputSchema = riverInputSchema
   })
   .strict();
 export type TurnInput = z.infer<typeof turnInputSchema>;
+export const flopInputSchema = turnInputSchema
+  .extend({
+    schemaVersion: z.literal(5),
+    board: riverInputSchema.shape.board.element.array().length(3),
+    flopBets: z.tuple([
+      z.number().int().nonnegative().max(1000000),
+      z.number().int().nonnegative().max(1000000),
+    ]),
+  })
+  .strict();
+export type FlopInput = z.infer<typeof flopInputSchema>;
 export const turnNodeSchema = z
   .object({
     path: turnPathSchema,
@@ -60,7 +77,7 @@ export const turnNodeSchema = z
     kind: z.enum(["decision", "chance", "terminal"]),
     board: z
       .array(z.string().regex(/^[2-9TJQKA][cdhs]$/))
-      .min(4)
+      .min(3)
       .max(5),
     terminal: z.boolean(),
     player: z.union([z.literal(0), z.literal(1)]).nullable(),
@@ -102,7 +119,7 @@ export const turnNodeSchema = z
 export type TurnNode = z.infer<typeof turnNodeSchema>;
 export const turnPageQuerySchema = z
   .object({
-    schemaVersion: z.literal(4),
+    schemaVersion: z.union([z.literal(4), z.literal(5)]),
     nativeSha256: z.string().regex(/^[a-f0-9]{64}$/),
     inputSha256: z.string().regex(/^[a-f0-9]{64}$/),
     path: turnPathSchema,
@@ -113,7 +130,7 @@ export const turnPageQuerySchema = z
   .strict();
 export const turnPageSchema = z
   .object({
-    schemaVersion: z.literal(4),
+    schemaVersion: z.union([z.literal(4), z.literal(5)]),
     path: turnPathSchema,
     player: z.union([z.literal(0), z.literal(1)]),
     counts: z.tuple([

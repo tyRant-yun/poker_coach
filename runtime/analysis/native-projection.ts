@@ -44,12 +44,21 @@ export function validateRealArtifacts(
       hash(input.board) !== hash(c.board) ||
       input.pot !== c.pot ||
       input.stack !== c.stack ||
-      (input.schemaVersion === 3 || input.schemaVersion === 4
+      (input.schemaVersion === 3 ||
+      input.schemaVersion === 4 ||
+      input.schemaVersion === 5
         ? !c.turn ||
-          (input.schemaVersion === 4) !== (c.turn.kind === "hu-turn/4") ||
+          input.schemaVersion !==
+            (c.turn.kind === "hu-flop/5"
+              ? 5
+              : c.turn.kind === "hu-turn/4"
+                ? 4
+                : 3) ||
           !!c.tree ||
           hash(input.turnBets) !== hash(c.turn.turnBets) ||
-          hash(input.riverBets) !== hash(c.turn.riverBets)
+          hash(input.riverBets) !== hash(c.turn.riverBets) ||
+          (input.schemaVersion === 5 &&
+            hash(input.flopBets) !== hash(c.turn.flopBets))
         : input.schemaVersion === 2
           ? !!c.turn || !c.tree || hash(input.treeLines) !== hash(c.tree.lines)
           : input.schemaVersion !== 1 ||
@@ -59,8 +68,12 @@ export function validateRealArtifacts(
       input.locks.length ||
       spec.treeHash !== caseTreeHash(c) ||
       spec.scope !==
-        (input.schemaVersion === 3 || input.schemaVersion === 4
-          ? "given-range-turn-subgame"
+        (input.schemaVersion === 3 ||
+        input.schemaVersion === 4 ||
+        input.schemaVersion === 5
+          ? input.schemaVersion === 5
+            ? "given-range-flop-subgame"
+            : "given-range-turn-subgame"
           : "given-range-river-subgame") ||
       input.limits.targetExploitability !==
         (c.pot * spec.targetNashConvPotFraction) / 2
@@ -118,24 +131,31 @@ export function validateRealArtifacts(
       )
         throw Error("ARTIFACT_INCOMPLETE: private-card mapping differs");
     }
-    if (input.schemaVersion === 3 || input.schemaVersion === 4) {
+    if (
+      input.schemaVersion === 3 ||
+      input.schemaVersion === 4 ||
+      input.schemaVersion === 5
+    ) {
       if (hash(summary.input) !== hash(input))
         throw Error("ARTIFACT_INCOMPLETE: turn summary input differs");
       if (
         solution.queryModel !==
-          (input.schemaVersion === 4
-            ? "native-turn-paged/4"
-            : "native-turn/3") ||
+          (input.schemaVersion === 5
+            ? "native-flop-paged/5"
+            : input.schemaVersion === 4
+              ? "native-turn-paged/4"
+              : "native-turn/3") ||
         solution.nodes.length !== 0
       )
         throw Error("ARTIFACT_INCOMPLETE: unexpected turn projection");
-      (input.schemaVersion === 4 ? verifyTurnPageRoot : verifyTurnRoot)({
+      (input.schemaVersion >= 4 ? verifyTurnPageRoot : verifyTurnRoot)({
         bytes: native,
         nativeHash: hash(native),
         inputHash: spec.inputHash,
         counts: solution.handCounts,
         cards: summary.privateCards,
         board: input.board,
+        ...(input.schemaVersion === 5 ? { version: 5 as const } : {}),
       });
       continue;
     }

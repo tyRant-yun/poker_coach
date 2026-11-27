@@ -25,10 +25,13 @@ const binary = fileURLToPath(
 );
 export type PageSelection = { player: 0 | 1; indices: number[] };
 function stage(c: TurnContext, path: TurnPath, selection: PageSelection) {
-  if (hash(c.bytes) !== c.nativeHash || c.counts.some((n) => n > 128))
+  if (
+    hash(c.bytes) !== c.nativeHash ||
+    c.counts.some((n) => n > (c.version === 5 ? 16 : 128))
+  )
     throw Error("ARTIFACT_INCOMPLETE: turn/4 identity/capacity differs");
   const request = turnPageQuerySchema.parse({
-    schemaVersion: 4,
+    schemaVersion: c.version ?? 4,
     nativeSha256: c.nativeHash,
     inputSha256: c.inputHash,
     path,
@@ -57,6 +60,7 @@ function validate(
     actor = n.player === s.player,
     mass = page.aggregate.denominator;
   if (
+    page.schemaVersion !== (c.version ?? 4) ||
     hash(page.path) !== hash(path) ||
     page.player !== s.player ||
     hash(page.counts) !== hash(c.counts) ||
@@ -70,7 +74,7 @@ function validate(
     (n.kind !== "decision" && (n.player !== null || a !== 0)) ||
     (n.kind === "decision" && (n.player === null || !a)) ||
     (n.kind === "chance"
-      ? n.board.length !== 4 || !n.chanceCards.length
+      ? ![3, 4].includes(n.board.length) || !n.chanceCards.length
       : n.chanceCards.length !== 0) ||
     page.rows.some(
       (r) =>

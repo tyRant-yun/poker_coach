@@ -18,6 +18,55 @@ fn read_bounded(path: &str, limit: usize) -> Result<Vec<u8>, String> {
 
 fn execute() -> Result<(), String> {
     let args: Vec<String> = env::args().collect();
+    if args.len() == 3 && args[1] == "worker-flop-page" {
+        return worker::serve_model(std::path::Path::new(&args[2]), 5);
+    }
+    if args.len() == 3 && args[1] == "preflight-flop-page" {
+        let input: riverline_solver::flop::FlopInput =
+            serde_json::from_slice(&read_bounded(&args[2], 65536)?).map_err(|e| e.to_string())?;
+        if input
+            .ranges
+            .iter()
+            .any(|r| r.values().filter(|&&w| w > 0.0).count() > 16)
+        {
+            return Err("unsupported-input: flop/5 at most 16 combos per side".into());
+        }
+        let game = riverline_solver::flop::build_flop(&input)?;
+        let memory = game.memory_usage().0;
+        if memory > input.limits.max_memory_bytes {
+            return Err("budget-exceeded: memory".into());
+        }
+        println!("{{\"ok\":true,\"estimatedBytes\":{memory}}}");
+        return Ok(());
+    }
+    if args.len() == 4 && ["measure-flop", "preflight-flop"].contains(&args[1].as_str()) {
+        use riverline_solver::flop::*;
+        use riverline_solver::turn::{query_turn, Step};
+        let bytes = read_bounded(&args[2], 1024 * 1024)?;
+        let input: FlopInput = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+        if args[1] == "preflight-flop" {
+            let game = build_flop(&input)?;
+            let estimated = game.memory_usage().0;
+            fs::write(&args[3], format!("{{\"estimatedBytes\":{estimated}}}"))
+                .map_err(|e| e.to_string())?;
+            return Ok(());
+        }
+        let (mut game, report) = run_flop(input)?;
+        let root = query_turn(&mut game, &[])?;
+        let mut selected = vec![root];
+        if game.available_actions().len() > 1 {
+            selected.push(query_turn(&mut game, &[Step::Action { index: 1 }])?);
+        }
+        let mut value = serde_json::to_value(report).map_err(|e| e.to_string())?;
+        value["input"] = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+        value["sampleNodes"] = serde_json::to_value(selected).map_err(|e| e.to_string())?;
+        fs::write(
+            &args[3],
+            serde_json::to_vec(&value).map_err(|e| e.to_string())?,
+        )
+        .map_err(|e| e.to_string())?;
+        return Ok(());
+    }
     if args.len() == 5 && args[1] == "query-turn-page" {
         let request: riverline_solver::turn_page::PageQuery =
             serde_json::from_slice(&read_bounded(&args[3], 16384)?).map_err(|e| e.to_string())?;

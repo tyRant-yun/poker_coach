@@ -1,0 +1,55 @@
+{
+  "oracle": "independent-7card-enumeration+LP+BR+fixed-pair-backward-induction/1",
+  "thresholds": {
+    "rootValueBb": 0.001,
+    "actionEvBb": 0.001,
+    "equity": 2e-06,
+    "nashConvBb": 0.001
+  },
+  "results": [
+    {
+      "caseId": "F01-checkdown",
+      "equityMaxError": 2.6330401969865136e-08,
+      "valueMaxErrorBb": 4.726628222151419e-08,
+      "iterations": 0,
+      "elapsedMs": 2,
+      "memoryBytes": 747072,
+      "stopReason": "quality-target"
+    },
+    {
+      "caseId": "F02-flop-bet",
+      "lpValueBb": 1.5090685241829926,
+      "actualValueBb": 1.5090685082681152,
+      "nashConvBb": 4.486550358162589e-05,
+      "actionEvMaxErrorBb": 1.3625593497934574e-07,
+      "equityMaxError": 1.5700572508769994e-08,
+      "iterations": 630,
+      "elapsedMs": 249,
+      "memoryBytes": 1304744,
+      "stopReason": "quality-target"
+    },
+    {
+      "caseId": "F03-allin",
+      "lpValueBb": 3.804924242424243,
+      "actualValueBb": 3.804924242424243,
+      "nashConvBb": 0.0,
+      "actionEvMaxErrorBb": 1.980106674182025e-07,
+      "equityMaxError": 3.5344881355037217e-08,
+      "iterations": 20,
+      "elapsedMs": 11,
+      "memoryBytes": 900984,
+      "stopReason": "quality-target"
+    },
+    {
+      "caseId": "F04-three-street",
+      "independentBackwardInductionBb": 1.0767676767676768,
+      "actualValueBb": 1.0767676544189453,
+      "valueErrorBb": 2.2348731532062516e-08,
+      "oracleStates": 24124,
+      "iterations": 20,
+      "elapsedMs": 621,
+      "memoryBytes": 13905512,
+      "stopReason": "quality-target"
+    }
+  ]
+}

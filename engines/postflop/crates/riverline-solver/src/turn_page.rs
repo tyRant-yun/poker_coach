@@ -53,7 +53,11 @@ pub fn read_page(path: &Path, request: &PageQuery) -> Result<serde_json::Value, 
         path: request.path.clone(),
         max_memory_bytes: request.max_memory_bytes,
     };
-    let mut game = load_turn(path, &r, 4, 128)?;
+    let version = request.schema_version;
+    if ![4, 5].contains(&version) {
+        return Err("unsupported-input: page version".into());
+    }
+    let mut game = load_turn(path, &r, version, if version == 5 { 16 } else { 128 })?;
     let node = query_turn(&mut game, &request.path)?;
     let p = request.player;
     let count = node.private_cards[p].len();
@@ -110,7 +114,7 @@ pub fn read_page(path: &Path, request: &PageQuery) -> Result<serde_json::Value, 
         })
         .collect();
     Ok(
-        serde_json::json!({"schemaVersion":4,"path":node.path,"player":p,"counts":[node.private_cards[0].len(),node.private_cards[1].len()],
+        serde_json::json!({"schemaVersion":version,"path":node.path,"player":p,"counts":[node.private_cards[0].len(),node.private_cards[1].len()],
         "node":{"kind":node.kind,"board":node.board,"terminal":node.terminal,"player":node.player,"actions":node.actions,"chanceCards":node.chance_cards,"invested":node.invested},
         "rows":rows,"aggregate":{"denominator":mass,"frequencies":frequencies,"classes":classes}}),
     )

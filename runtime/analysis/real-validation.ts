@@ -24,7 +24,8 @@ export function validateRealState(s: RuntimeState) {
     const solution = fixed(s.real.solutions, view.solution),
       turn =
         solution.queryModel === "native-turn/3" ||
-        solution.queryModel === "native-turn-paged/4";
+        solution.queryModel === "native-turn-paged/4" ||
+        solution.queryModel === "native-flop-paged/5";
     if (
       id !== solution.ref.id ||
       (turn ? view.path.length !== 0 : view.turnPath.length !== 0)
@@ -44,7 +45,9 @@ export function validateRealState(s: RuntimeState) {
   for (const c of Object.values(s.real.cases)) {
     z.object({
       name: z.string(),
-      board: z.array(z.string()).length(c.turn ? 4 : 5),
+      board: z
+        .array(z.string())
+        .length(c.turn ? (c.turn.kind === "hu-flop/5" ? 3 : 4) : 5),
       pot: z.number().int().positive(),
       stack: z.number().int().positive(),
       betPercent: z.string(),
@@ -85,7 +88,8 @@ export function validateRealState(s: RuntimeState) {
       solution.dataKind !== "engine-computed" ||
       (solution.queryModel === "native-paged/2" ||
       solution.queryModel === "native-turn/3" ||
-      solution.queryModel === "native-turn-paged/4"
+      solution.queryModel === "native-turn-paged/4" ||
+      solution.queryModel === "native-flop-paged/5"
         ? solution.nodes.length !== 0
         : solution.queryModel !== undefined || solution.nodes.length !== 6) ||
       solution.engineCommit !== "9d1509fe5077d019825f833eed04b16d342dfda1"

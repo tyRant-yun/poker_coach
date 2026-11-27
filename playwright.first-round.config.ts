@@ -10,6 +10,7 @@ export default defineConfig({
           "round2.spec.ts",
           "whole-hand.spec.ts",
           "m1.spec.ts",
+          "af.spec.ts",
         ],
   workers: 1,
   fullyParallel: false,
@@ -24,6 +25,7 @@ export default defineConfig({
               /whole-hand\.spec\.ts$/,
               /round2\.spec\.ts$/,
               /m1\.spec\.ts$/,
+              /af\.spec\.ts$/,
             ],
           },
           {
@@ -33,7 +35,7 @@ export default defineConfig({
           },
           {
             name: "whole-hand",
-            testMatch: /(?:whole-hand|round2|m1)\.spec\.ts$/,
+            testMatch: /(?:whole-hand|round2|m1|af)\.spec\.ts$/,
             dependencies: ["analysis"],
           },
         ]

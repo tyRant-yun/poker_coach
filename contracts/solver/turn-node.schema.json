@@ -78,7 +78,7 @@
       ]
     },
     "board": {
-      "minItems": 4,
+      "minItems": 3,
       "maxItems": 5,
       "type": "array",
       "items": {

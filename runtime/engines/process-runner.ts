@@ -1,7 +1,10 @@
 import { explicitRiverSchema } from "../../contracts/solver/river-tree.ts";
 import type { ExplicitRiverInput } from "../../contracts/solver/river-tree.ts";
-import { turnInputSchema } from "../../contracts/solver/turn.ts";
-import type { TurnInput } from "../../contracts/solver/turn.ts";
+import {
+  turnInputSchema,
+  flopInputSchema,
+} from "../../contracts/solver/turn.ts";
+import type { TurnInput, FlopInput } from "../../contracts/solver/turn.ts";
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync, readFileSync, lstatSync } from "node:fs";
@@ -42,7 +45,7 @@ export type EngineRunResult = {
 
 /** No workspace state here: caller owns job transitions and atomic artifact publication. */
 export function startEngine(
-  input: RiverInput | ExplicitRiverInput | TurnInput,
+  input: RiverInput | ExplicitRiverInput | TurnInput | FlopInput,
   options: {
     directory: string;
     jobId?: string;
@@ -55,11 +58,13 @@ export function startEngine(
   interrupt: () => void;
 } {
   const parsed =
-    input.schemaVersion === 3 || input.schemaVersion === 4
-      ? turnInputSchema.parse(input)
-      : input.schemaVersion === 2
-        ? explicitRiverSchema.parse(input)
-        : riverInputSchema.parse(input);
+    input.schemaVersion === 5
+      ? flopInputSchema.parse(input)
+      : input.schemaVersion === 3 || input.schemaVersion === 4
+        ? turnInputSchema.parse(input)
+        : input.schemaVersion === 2
+          ? explicitRiverSchema.parse(input)
+          : riverInputSchema.parse(input);
   const directory = resolve(options.directory);
   // Exclusive fresh directory prevents retry artifacts and symlink substitutions being reused.
   mkdirSync(directory, { recursive: false });
@@ -81,13 +86,15 @@ export function startEngine(
   const child = spawn(
     binary,
     [
-      parsed.schemaVersion === 4
-        ? "worker-turn-page"
-        : parsed.schemaVersion === 3
-          ? "worker-turn"
-          : parsed.schemaVersion === 2
-            ? "worker-tree"
-            : "worker",
+      parsed.schemaVersion === 5
+        ? "worker-flop-page"
+        : parsed.schemaVersion === 4
+          ? "worker-turn-page"
+          : parsed.schemaVersion === 3
+            ? "worker-turn"
+            : parsed.schemaVersion === 2
+              ? "worker-tree"
+              : "worker",
       directory,
     ],
     {

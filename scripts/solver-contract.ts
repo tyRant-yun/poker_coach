@@ -2,6 +2,7 @@ import { writeFileSync } from "node:fs";
 import { z } from "zod";
 import {
   turnInputSchema,
+  flopInputSchema,
   turnNodeSchema,
   turnPathSchema,
   turnPageSchema,
@@ -30,6 +31,7 @@ for (const [name, schema] of Object.entries({
   "native-query": nativeQuerySchema,
   "native-page": nativePageSchema,
   turn: turnInputSchema,
+  flop: flopInputSchema,
   "turn-node": turnNodeSchema,
   "turn-path": turnPathSchema,
   "turn-page": turnPageSchema,

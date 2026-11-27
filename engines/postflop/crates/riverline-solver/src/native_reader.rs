@@ -2,7 +2,7 @@
 use crate::*;
 use sha2::{Digest, Sha256};
 use std::fs::{self, File};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::Path;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -86,8 +86,9 @@ pub fn read_page(path: &Path, request: &NativeQuery) -> Result<NodePage, String>
         return Err("artifact-error: native checksum mismatch".into());
     }
     file.seek(SeekFrom::Start(0)).map_err(|e| e.to_string())?;
+    let mut reader = BufReader::with_capacity(65536, file);
     let (mut game, memo): (PostFlopGame, String) =
-        load_data_from_std_read(&mut file, Some(request.max_memory_bytes))?;
+        load_data_from_std_read(&mut reader, Some(request.max_memory_bytes))?;
     let expected_memo = request
         .input_sha256
         .as_ref()

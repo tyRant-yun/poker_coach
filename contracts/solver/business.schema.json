@@ -275,7 +275,7 @@
           "maxLength": 200
         },
         "board": {
-          "minItems": 4,
+          "minItems": 3,
           "maxItems": 5,
           "type": "array",
           "items": {
@@ -374,8 +374,27 @@
               "type": "string",
               "enum": [
                 "hu-turn/3",
-                "hu-turn/4"
+                "hu-turn/4",
+                "hu-flop/5"
               ]
+            },
+            "flopBets": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000000
+                },
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000000
+                }
+              ],
+              "items": false,
+              "minItems": 2,
+              "maxItems": 2
             },
             "turnBets": {
               "type": "array",
@@ -494,7 +513,7 @@
           "maxLength": 200
         },
         "board": {
-          "minItems": 4,
+          "minItems": 3,
           "maxItems": 5,
           "type": "array",
           "items": {
@@ -602,8 +621,27 @@
                   "type": "string",
                   "enum": [
                     "hu-turn/3",
-                    "hu-turn/4"
+                    "hu-turn/4",
+                    "hu-flop/5"
                   ]
+                },
+                "flopBets": {
+                  "type": "array",
+                  "prefixItems": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1000000
+                    },
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1000000
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
                 },
                 "turnBets": {
                   "type": "array",

@@ -1,9 +1,62 @@
 .panel {
-  margin-top: 18px;
+  margin: 0 0 20px;
   padding: 18px;
   background: #fff;
   border: 1px solid #cbd3dd;
   border-radius: 12px;
+}
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.summary > span {
+  display: grid;
+  color: #526478;
+  font-size: 12px;
+}
+.summary strong {
+  color: #172638;
+  font-size: 16px;
+}
+.boundary {
+  color: #526478;
+  font-size: 12px;
+}
+.timeline {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.timeline button {
+  display: grid;
+  flex: 1 0 105px;
+  text-align: left;
+  gap: 5px;
+}
+.timeline svg {
+  width: 100%;
+  max-width: 120px;
+  height: 18px;
+}
+.scope {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  background: #faf4e9;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.advice {
+  border-left: 3px solid #24977b;
+  padding: 8px 12px;
+  margin: 12px 0;
+}
+.advice p {
+  margin: 4px 0;
+  font-size: 13px;
 }
 .panel h2 {
   font-size: 20px;
@@ -68,10 +121,19 @@
   color: #17604e;
 }
 .track {
+  position: relative;
   height: 10px;
   background: #edf1f4;
   border-radius: 4px;
   overflow: hidden;
+}
+.track::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid #6e7c89;
 }
 .track i {
   display: block;
@@ -119,6 +181,9 @@
   color: #15513f;
 }
 @media (max-width: 760px) {
+  .summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .panel {
     padding: 12px;
   }

@@ -206,6 +206,29 @@ test(
             ),
           );
       }
+      const jobsBefore = Object.keys(service.state.real!.jobs).length;
+      let cachedReport = await call<ReviewReport>("game_review_retry", {
+        handId,
+        profile: "standard",
+      });
+      for (
+        let i = 0;
+        i < 100 && ["queued", "running"].includes(cachedReport.status);
+        i++
+      ) {
+        await wait(50);
+        cachedReport = await call("game_review_report", { handId });
+      }
+      assert.equal(cachedReport.status, "completed");
+      assert.equal(
+        Object.keys(service.state.real!.jobs).length,
+        jobsBefore,
+        "same immutable model reuses completed native solution",
+      );
+      assert.deepEqual(
+        cachedReport.nodes.map((n) => n.solutionId),
+        report.nodes.map((n) => n.solutionId),
+      );
       const opened = await call<{ sourceId: string; caseId: string }>(
         "game_review_open",
         { handId, decision: report.nodes[3].sequence },
