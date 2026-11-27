@@ -1,0 +1,569 @@
+{
+  "schema": "riverline-document-archive/1",
+  "date": "2026-11-27",
+  "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+  "policy": "Archive historical state; rewrite navigation only; preserve original Git history and immutable numeric evidence.",
+  "records": [
+    {
+      "oldPath": "README.md",
+      "archivePath": "docs/archive/2026-11-27/entrypoints/README.before-consolidation.md",
+      "originalGitSha256": "903ac6409d862e72c827362b5e3ab387860e6f06fcfef4d8e9ba2345daabdc0b",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "376e61f8559fc9bab63af333549fdfa3bfeb5389be14dc5d0ed3275e507aa7e3"
+    },
+    {
+      "oldPath": "AGENTS.md",
+      "archivePath": "docs/archive/2026-11-27/entrypoints/AGENTS.before-consolidation.md",
+      "originalGitSha256": "ed4862d1179b38b25f8b501258aa90391493c7109328f03f94ffa0fea4ebc53e",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "70aaabe2fc6bf56b577e1fa71857ced387768e46127a8dedb824ad4f3cb2e6ab"
+    },
+    {
+      "oldPath": "docs/development-plan.md",
+      "archivePath": "docs/archive/2026-11-27/entrypoints/development-plan.before-consolidation.md",
+      "originalGitSha256": "3612e3edfa590c40866d3fdcddc7b8ae35a4e16fae47b1cc8ead090f6604e660",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "47ef4a7c7059ec505d4ffc51afe4d77bbb861280a5c3039421ec3e017b262b88"
+    },
+    {
+      "oldPath": "docs/git-workflow.md",
+      "archivePath": "docs/archive/2026-11-27/entrypoints/git-workflow.before-consolidation.md",
+      "originalGitSha256": "837c14acf5ae23b01b0d7c2b488dbc57e24ce2d01a2901b89c6a56f7fa493afe",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "a7113b3920e6a2623654240f3945ce7e0d8782440ccd150d861917aaaec757dc"
+    },
+    {
+      "oldPath": "contracts/solver/README.md",
+      "archivePath": "docs/archive/2026-11-27/entrypoints/solver-contracts.before-consolidation.md",
+      "originalGitSha256": "c71b5501ff3ee8dee5cc85501e44f147a2f5b1a0280c6edc55576fad32fe12bd",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "dba13f588beeba1a2289f6d8423c3e739bea2aab06ed1d657ae1e903e6b6b304"
+    },
+    {
+      "oldPath": "benchmarks/solver/README.md",
+      "archivePath": "docs/archive/2026-11-27/entrypoints/solver-benchmarks.before-consolidation.md",
+      "originalGitSha256": "af79b388f36bb823ff16a7147684ba6ac88828f9f488df8d5b371b118fb73f3b",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "583cc66b830c770fa0df7841a78bc5efc940110a0af4ceec4e62a570d7635803"
+    },
+    {
+      "oldPath": "docs/d01-delivery.md",
+      "archivePath": "docs/archive/2026-11-27/d01-delivery.md",
+      "originalGitSha256": "38b93f0ba800765fb92283f11eeb846248413d474d6abe8597e3c763e11aa1ad",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "4a496a8f7bbbff2b4a4b081d481af75fabdd2b032d35123f2dc96c84d62eec8e"
+    },
+    {
+      "oldPath": "docs/d02-delivery.md",
+      "archivePath": "docs/archive/2026-11-27/d02-delivery.md",
+      "originalGitSha256": "3b23fd40e9e40661ddbfb460b6393dd0b14948884a0cf42c441354167cd53225",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "5d4bebdc9b2c7645ad6b5e47e1e42a07b385c80fc9340ca65d09dcf468b03edd"
+    },
+    {
+      "oldPath": "docs/decisions.md",
+      "archivePath": "docs/archive/2026-11-27/decisions.md",
+      "originalGitSha256": "d489df88d5e1ae1dda4de954cca19e50e7642a53ecc7ba8337d73aad860eab6f",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "8e7e0b10faaca8e82ad722e58275d45b770d62865876b9f5c70cc4da2b3ec894"
+    },
+    {
+      "oldPath": "docs/demo-architecture.md",
+      "archivePath": "docs/archive/2026-11-27/demo-architecture.md",
+      "originalGitSha256": "dd837a8adade219ee2d312c9004b4e5f191c47b3ef7354156853f19f6894c6e3",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "6dec86b680736b56c68004d6c5394aaa9a60a42656baee512f1ef3f6b80c67b5"
+    },
+    {
+      "oldPath": "docs/demo-learner-experience-review.md",
+      "archivePath": "docs/archive/2026-11-27/demo-learner-experience-review.md",
+      "originalGitSha256": "a39d71b033a86191c6306a0ac401c167420b384bf5f7bbfafa89b0e6193d3cf9",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "1e6524a5b7dbedb15ce939c94f9ea59f86ca7601006fca232c9600911a029b81"
+    },
+    {
+      "oldPath": "docs/demo-review.md",
+      "archivePath": "docs/archive/2026-11-27/demo-review.md",
+      "originalGitSha256": "2949cedc62e453521fc40dba08efc91a7bc7075a4466d0130422d53b63e1112f",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "325593130079fc90ac219ebe397bacdaaf43310b1c59e004e0bb265a7bcecc53"
+    },
+    {
+      "oldPath": "docs/demo-v1-delivery.md",
+      "archivePath": "docs/archive/2026-11-27/demo-v1-delivery.md",
+      "originalGitSha256": "a4ed360521b6719ee1d199c288b028b012c947ab0c169174097ce048b491c00b",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "5c1279a5e8e14c3b99fae227f5ed28f6a404cf686b924491bd94a67421f13487"
+    },
+    {
+      "oldPath": "docs/demo-v1-task-design.md",
+      "archivePath": "docs/archive/2026-11-27/demo-v1-task-design.md",
+      "originalGitSha256": "79950d3621bf07e029ac5811b0f4df99daed818e3576b5120decacb2e000238d",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "7d598521f0af9c31120984b3921fa67e1608ec7cd4e41917909a42b48c39736b"
+    },
+    {
+      "oldPath": "docs/hero-feedback-delivery.md",
+      "archivePath": "docs/archive/2026-11-27/hero-feedback-delivery.md",
+      "originalGitSha256": "cbc9a568fd69721c128182ab9b19e76efacd597a23432dc0ef258adacb61f8e0",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "53f96fbbdd58a46b2506e05b0d0259a81b5cee02ba40e28e1ab05b802a2ed4be"
+    },
+    {
+      "oldPath": "docs/mock-contracts.md",
+      "archivePath": "docs/archive/2026-11-27/mock-contracts.md",
+      "originalGitSha256": "dc87bd69e689f671b0b8d58f9f0648a3c5ead13c18d6db1ca2ebc3a6f66cbdc5",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "021af12bd39df1990b399057f740c1a74e61a154aa4e8a96ef40bc651431fcb4"
+    },
+    {
+      "oldPath": "docs/product-design.md",
+      "archivePath": "docs/archive/2026-11-27/product-design.md",
+      "originalGitSha256": "31601a96d6063f9659a4d34da1b02af0a2d875725c5fa3297459eb8d9e933b6a",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "ae2fd92a40151fc0e1920f732fe0511a4295e3d4519019aae4c85518bb7b0767"
+    },
+    {
+      "oldPath": "docs/product-functional-modules.md",
+      "archivePath": "docs/archive/2026-11-27/product-functional-modules.md",
+      "originalGitSha256": "6d55f753e45dabe5d062095bc7e2cd7716b305f6af42089c3d4a72e62c620270",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "da691d25afc0fe7d349c9c7d8749bf9fa8ad7b8878b76221e68d9911c6d7b647"
+    },
+    {
+      "oldPath": "docs/reference-research.md",
+      "archivePath": "docs/archive/2026-11-27/reference-research.md",
+      "originalGitSha256": "d24045de4831d56be48ee016b8d92176099689601d46ae8c74b31b3813c69fef",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "b45c6edc43874edaa875cc253fd89b6dbfc54136569a4e349cb7d586b1b9ad09"
+    },
+    {
+      "oldPath": "docs/repository-archive-2026-11-13.md",
+      "archivePath": "docs/archive/2026-11-27/repository-archive-2026-11-13.md",
+      "originalGitSha256": "c77733af0507aff0b5e995b213fd977fa35224a9e73494ca029e2fa7c086d913",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "4df3903a14cc974eca933796bf1059cd67fe0318a8e3d069274f68c63a463d94"
+    },
+    {
+      "oldPath": "docs/riverline-auto-feedback-delivery-2026-11-27.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-auto-feedback-delivery-2026-11-27.md",
+      "originalGitSha256": "3d3574441092bd279321e7033bdc84ce709f326da696307910306436583d4e5a",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "ae876cd015f0bf1cc2421c5a748bf293d335e123bc64445a83c7eaa444d897d1"
+    },
+    {
+      "oldPath": "docs/riverline-auto-feedback-research-2026-11-27.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-auto-feedback-research-2026-11-27.md",
+      "originalGitSha256": "9e35e7e83db91a614042b5c7d99488505818d3e96aad12dec1c56fba6f6420f3",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "449baeb83138ad90bb4d882025ba732d4c041cc8bc1b81161c763a6641980159"
+    },
+    {
+      "oldPath": "docs/riverline-auto-feedback-task-design-2026-11-27.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-auto-feedback-task-design-2026-11-27.md",
+      "originalGitSha256": "0af2835e0b22c0c05ca72380653f36589f7fc2bce26997cc2803c7e9f17c86bf",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "3593b56603381228439523f3bbcf48b130101937b29effd3126ef631f5416026"
+    },
+    {
+      "oldPath": "docs/riverline-auto-review-delivery-2026-11-26.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-auto-review-delivery-2026-11-26.md",
+      "originalGitSha256": "8b662c5c72af9e1c1b49d7e6439007e76be47a6e89d3280000fbb37451a1e4b1",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "cbdd16b32186578f4c39bca20e135a4898662bf9c549760674a56c866c1749ba"
+    },
+    {
+      "oldPath": "docs/riverline-auto-review-task-design-2026-11-26.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-auto-review-task-design-2026-11-26.md",
+      "originalGitSha256": "e58dbb49ab936538059c82b29b5471a6ab6dbabd6bcbd5ab09990ad9422b7350",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "2dc5e7de93840288c1bcc5e30a45e77f09ef5cc659255c588ecaf31befcdd123"
+    },
+    {
+      "oldPath": "docs/riverline-first-round-delivery-2026-11-25.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-first-round-delivery-2026-11-25.md",
+      "originalGitSha256": "bb8c5ec3f787e25386577f02c85b64f1c34489bb23cea3b337d35cc100ae4dca",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "2778d5fa08664bef39b01501c9aef4b4ad0d9ccd19831e815bb00cdbaddaef6c"
+    },
+    {
+      "oldPath": "docs/riverline-m1-delivery-2026-11-26.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-m1-delivery-2026-11-26.md",
+      "originalGitSha256": "f1304f922d0cf243a75a8b1ba78f3f087035ddcb88517c86632a1ec2dd900185",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "56b9bcdc2fadd9cb40e80f62380d049d4100219d46efb39844cc9750cbeac979"
+    },
+    {
+      "oldPath": "docs/riverline-next-round-task-design-2026-11-26.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-next-round-task-design-2026-11-26.md",
+      "originalGitSha256": "febd679ced9037eeed81cbf9bf54e7d8a16ce411292a61cb906e4b0ac644471a",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "7d8e4f8b437ca491c32304c797297404439490acaf816ae029b75872aa4faac1"
+    },
+    {
+      "oldPath": "docs/riverline-preflop-data-acquisition-2026-11-27.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-preflop-data-acquisition-2026-11-27.md",
+      "originalGitSha256": "197ac028a7466fc532630e7d379b721d5af40235e5edd84f626925f61a661175",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "c4e01a464851bf353644f74c17b011a7e6cb251f8672bab56b8b66b33930525c"
+    },
+    {
+      "oldPath": "docs/riverline-repository-organization-2026-11-27.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-repository-organization-2026-11-27.md",
+      "originalGitSha256": "95d9308029dc340c8f6fb368e32a9938f346c68f79f9f4550c4720ace728a0b5",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "bd38d1fc364778867d73ee4574558612160d32ff6907782d6e445e16022d097a"
+    },
+    {
+      "oldPath": "docs/riverline-round2-delivery-2026-11-26.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-round2-delivery-2026-11-26.md",
+      "originalGitSha256": "7ea416c3246dfa7f704be77f46f6218f7754e4c99ae1f0884850b3e380ded520",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "f083b1bca3048c86a6489d868d6b2b673d1a6a0d050dbd37fb8bc05b2a5e8ac9"
+    },
+    {
+      "oldPath": "docs/riverline-round2-repository-study-2026-11-25.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-round2-repository-study-2026-11-25.md",
+      "originalGitSha256": "2c9b5fcdc0a7317f3144dcf6fd4912724707bce26f6a4b66d24200f700e5ff28",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "0729de5a7d6d47cdbbbfba277fc0b7b984931b1b273445490611c837ab283854"
+    },
+    {
+      "oldPath": "docs/riverline-round2-task-design-2026-11-25.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-round2-task-design-2026-11-25.md",
+      "originalGitSha256": "f96b13a0cf27c7fdbd663ddb6ef15a31861fb06f83d808157613385c819ed460",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "5d8263d82f3a55540c3eb09546fbc0b30722ff5cbf7cda6f80c4bfacccf6e2df"
+    },
+    {
+      "oldPath": "docs/riverline-three-project-contracts-2026-11-26.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-three-project-contracts-2026-11-26.md",
+      "originalGitSha256": "e6e8de8ec1b004ad852d438b6022c9d2225573f34d8615a63e44198a43fd194e",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "7233eec62a6540d14119a24d43fedf406fc22f2b7434cbc87ea17a51e2ca0b3f"
+    },
+    {
+      "oldPath": "docs/riverline-three-project-roadmap-2026-11-26.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-three-project-roadmap-2026-11-26.md",
+      "originalGitSha256": "af2562fd4b624c0661baf50a0de0a4020bfb1757efdee712d9f2b96e337e2019",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "94cc01ecb07d03d0c86bf38c493af8d80495afd40ad36ce46ffe256c3d9c6f2b"
+    },
+    {
+      "oldPath": "docs/riverline-ui-copy-optimization-task-2026-11-25.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-ui-copy-optimization-task-2026-11-25.md",
+      "originalGitSha256": "9b071ecd5b9f7258db4cbdd3787ea2eac2e3103b25353062f90138ef2a7c4bf6",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "af1025e8a263a94387e726a1043351ad1a1a9bfd962cbf30ab5c5d071ee0c35b"
+    },
+    {
+      "oldPath": "docs/riverline-unified-experience-design-2026-11-25.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-unified-experience-design-2026-11-25.md",
+      "originalGitSha256": "70e46258fe59e8f5a761c3341f8ce0fed7cefc623cf9338f215c033a36c1b970",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "67b1530115b8096c99be3ab494cc32596f2b892bc1a5621d9aa607d54cbf258b"
+    },
+    {
+      "oldPath": "docs/riverline-unified-implementation-plan-2026-11-25.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-unified-implementation-plan-2026-11-25.md",
+      "originalGitSha256": "531882c42708eab576b35a52482806c5f90b13f449d70abeac46fcecdd7514ca",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "6256abae81c0e5ba354a80a0136cf38cd731452816ef2a1a384c86026eaed8be"
+    },
+    {
+      "oldPath": "docs/riverline-unified-product-architecture-2026-11-25.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-unified-product-architecture-2026-11-25.md",
+      "originalGitSha256": "d9efd2a85080bebd4f4931e3d40ce611e85e6f211d335d81f74404de45b24d10",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "432f80d0f0ef9fef49b1f19f51efbc0c44bac0da25b688f33be505c6a25c25d0"
+    },
+    {
+      "oldPath": "docs/riverline-unified-runtime-deployment-2026-11-25.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-unified-runtime-deployment-2026-11-25.md",
+      "originalGitSha256": "dc4e2502d65f983cd03da0cd9ec3bcf8c039496eab5388c95dce30a0b4ae96ea",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "f91db7b864aaa608641d7d759cdbf571117a4142c78c8a0a12bbcdf08ecf70e1"
+    },
+    {
+      "oldPath": "docs/riverline-user-trial-2026-11-27.md",
+      "archivePath": "docs/archive/2026-11-27/riverline-user-trial-2026-11-27.md",
+      "originalGitSha256": "ee81a1cdc255f408c481de3932dc7db2bcf284bfd4ed74281849cb877d55099e",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "2708425773d80e52dc2dc7017570ae7d048ed016c4bd55870980a2fabfed7b16"
+    },
+    {
+      "oldPath": "docs/screenshots/d01/feedback-1440.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/d01/feedback-1440.png",
+      "originalGitSha256": "565bb0ed79ef3d6ab631262d7cd8a97f96e589f555d4f66c80a3855abec179ba",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "565bb0ed79ef3d6ab631262d7cd8a97f96e589f555d4f66c80a3855abec179ba"
+    },
+    {
+      "oldPath": "docs/screenshots/d01/home-1440.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/d01/home-1440.png",
+      "originalGitSha256": "8e50948852162f7f938488e38b8b0052c5cb63faf71864521e732fbf9223bb70",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "8e50948852162f7f938488e38b8b0052c5cb63faf71864521e732fbf9223bb70"
+    },
+    {
+      "oldPath": "docs/screenshots/d01/strategy-1440.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/d01/strategy-1440.png",
+      "originalGitSha256": "b7b6ae01e55334d19c6fd5f57b9cad31d831d72fd9207631c868daffe44c0ee6",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "b7b6ae01e55334d19c6fd5f57b9cad31d831d72fd9207631c868daffe44c0ee6"
+    },
+    {
+      "oldPath": "docs/screenshots/d02/comparison-1440.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/d02/comparison-1440.png",
+      "originalGitSha256": "7143e1e3e5ed8df8a5a05a9a3322492a9c7a10ac17db495cc662bd32bed8bcfa",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "7143e1e3e5ed8df8a5a05a9a3322492a9c7a10ac17db495cc662bd32bed8bcfa"
+    },
+    {
+      "oldPath": "docs/screenshots/d02/editor-1280.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/d02/editor-1280.png",
+      "originalGitSha256": "9a9b47acc8618239dd73ca3267456a5af504c6a95cec540f5e7139643f3113cb",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "9a9b47acc8618239dd73ca3267456a5af504c6a95cec540f5e7139643f3113cb"
+    },
+    {
+      "oldPath": "docs/screenshots/d02/range-weights-1440.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/d02/range-weights-1440.png",
+      "originalGitSha256": "d28187b510ac9ccba7fb5a9d773cb6dadfbf5797782d7db929041c836c59fb21",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "d28187b510ac9ccba7fb5a9d773cb6dadfbf5797782d7db929041c836c59fb21"
+    },
+    {
+      "oldPath": "docs/screenshots/hero/hero-1440.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/hero/hero-1440.png",
+      "originalGitSha256": "2d4c418b5d37e0b2cc507e40e63632636adb1ee1fd92a39ade985d000b9347ee",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "2d4c418b5d37e0b2cc507e40e63632636adb1ee1fd92a39ade985d000b9347ee"
+    },
+    {
+      "oldPath": "docs/screenshots/hero/range-reference-1440.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/hero/range-reference-1440.png",
+      "originalGitSha256": "d911e77912e54d103ecceea21eb7416acd922ba00c3ba3fdbee7c3b5f2a46edc",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "d911e77912e54d103ecceea21eb7416acd922ba00c3ba3fdbee7c3b5f2a46edc"
+    },
+    {
+      "oldPath": "docs/screenshots/t1/lp-a-range.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/t1/lp-a-range.png",
+      "originalGitSha256": "18c127b6d4117457065eef8ad16f87b9c5ded446b8ccca85cf905d923cacbe99",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "18c127b6d4117457065eef8ad16f87b9c5ded446b8ccca85cf905d923cacbe99"
+    },
+    {
+      "oldPath": "docs/screenshots/t1/lp-b-range.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/t1/lp-b-range.png",
+      "originalGitSha256": "82e9fbef39401eee8f0db8835745b84f092df93f69387a01a1d47a384691d82c",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "82e9fbef39401eee8f0db8835745b84f092df93f69387a01a1d47a384691d82c"
+    },
+    {
+      "oldPath": "docs/screenshots/t1/theory-citations.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/t1/theory-citations.png",
+      "originalGitSha256": "a6d667c36c399d0495b029a71f558a135f73289f971c90e534d72e6714203937",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "a6d667c36c399d0495b029a71f558a135f73289f971c90e534d72e6714203937"
+    },
+    {
+      "oldPath": "docs/screenshots/v1/combos-1440.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/v1/combos-1440.png",
+      "originalGitSha256": "f199a39d5fd563fcdceb8602499fcc30bb85c805bc16cc07059b5acfdddba5ce",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "f199a39d5fd563fcdceb8602499fcc30bb85c805bc16cc07059b5acfdddba5ce"
+    },
+    {
+      "oldPath": "docs/screenshots/v1/experiment-1440.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/v1/experiment-1440.png",
+      "originalGitSha256": "d6dd1bb60204e186de1fb7ef2745f90469c7c80e014d43f2ce31aa0164bfbe16",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "d6dd1bb60204e186de1fb7ef2745f90469c7c80e014d43f2ce31aa0164bfbe16"
+    },
+    {
+      "oldPath": "docs/screenshots/v1/four-exercises-1440.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/v1/four-exercises-1440.png",
+      "originalGitSha256": "a2889f65b4fd66ede260660c86a5e4011af1b095bae1d27bc597e4bfba234242",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "a2889f65b4fd66ede260660c86a5e4011af1b095bae1d27bc597e4bfba234242"
+    },
+    {
+      "oldPath": "docs/screenshots/v1/research-1440.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/v1/research-1440.png",
+      "originalGitSha256": "1432525abbd1cca8f464a15b2332572a40448a53cb59fc9faadf2178873b210e",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "1432525abbd1cca8f464a15b2332572a40448a53cb59fc9faadf2178873b210e"
+    },
+    {
+      "oldPath": "docs/screenshots/v1/review-1440.png",
+      "archivePath": "docs/archive/2026-11-27/screenshots/v1/review-1440.png",
+      "originalGitSha256": "0134040eef4afdfcf2240d776d3795b3b6d2bc1c72f4680faa9a4810aee4bd49",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "0134040eef4afdfcf2240d776d3795b3b6d2bc1c72f4680faa9a4810aee4bd49"
+    },
+    {
+      "oldPath": "docs/solver-real-codebase-design.md",
+      "archivePath": "docs/archive/2026-11-27/solver-real-codebase-design.md",
+      "originalGitSha256": "84de3be47c63946330355343c13bc5c2013aa22c12c7bab95459526e1ca11045",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "ee39966d67bf149d0a7b4b3b28799991d690c5e7bdbbab9537eed53e94fffbfb"
+    },
+    {
+      "oldPath": "docs/solver-real-engine-handoff-2026-11-13.md",
+      "archivePath": "docs/archive/2026-11-27/solver-real-engine-handoff-2026-11-13.md",
+      "originalGitSha256": "1a570970e2393c888bcf7d4557f8bb2a41ad05b70093680e1d8a451dddc085c0",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "159206dbca775f4ca20de62285784a80d5e3dc583a8a66ed072f7ea1f15bcff2"
+    },
+    {
+      "oldPath": "docs/solver-real-engineering-standard.md",
+      "archivePath": "docs/archive/2026-11-27/solver-real-engineering-standard.md",
+      "originalGitSha256": "97705607d1fa4960fa930efd5f7cc8b1832cd976c7876670f0f3627397722c63",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "930b962a0aa6b8bf70b15e4f82f7457c0fb60aa2967cbab809028e889dcbdb48"
+    },
+    {
+      "oldPath": "docs/solver-real-task-design.md",
+      "archivePath": "docs/archive/2026-11-27/solver-real-task-design.md",
+      "originalGitSha256": "0566b1ee8997c7ec0bf01a36a0c79fb4725ea5bbdad6cbcf950dad20c052f43e",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "c00b20b85c90281a8bf2e6fdf3563dadb06b0ac0d7767ad15853931d54457190"
+    },
+    {
+      "oldPath": "docs/solver-reuse-research.md",
+      "archivePath": "docs/archive/2026-11-27/solver-reuse-research.md",
+      "originalGitSha256": "2d7436444e5680bd05f3e0316196cf0637aa1f3c1f900df70111b6a644e7561c",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "a13b0a8e3c469063d2f777bcfbe8e4e84eba7c00f6ea77514a2f4fb507fcbc7b"
+    },
+    {
+      "oldPath": "docs/solver-s1-constraint-mapping.md",
+      "archivePath": "docs/archive/2026-11-27/solver-s1-constraint-mapping.md",
+      "originalGitSha256": "6cf33c959bdcf3ea98a965b7a2a600d494510133748127c224e28c3d22cb12a4",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "37c4b63f897e56a15b5aaac2505097a3dd088314e27b3b2340646f36cb6fc6a1"
+    },
+    {
+      "oldPath": "docs/solver-s1-contracts.md",
+      "archivePath": "docs/archive/2026-11-27/solver-s1-contracts.md",
+      "originalGitSha256": "68968f88c6f4a6cb8966e059099716d217ef113e7b50fcbc431a23174836489a",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "35adbc4452f95f657973abff3b461ceb27086315b6d7620f3dc553b7f21b8216"
+    },
+    {
+      "oldPath": "docs/solver-s1-delivery.md",
+      "archivePath": "docs/archive/2026-11-27/solver-s1-delivery.md",
+      "originalGitSha256": "30e6b55acf9114a95cd487cc33d2e2f27284a040b10e8c09ba48dd6f119f9cb5",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "401986c1cd1557ecc4cfce7686409f0feed46c899d8463b4370f2764200388b8"
+    },
+    {
+      "oldPath": "docs/solver-s1-mcp-runtime.md",
+      "archivePath": "docs/archive/2026-11-27/solver-s1-mcp-runtime.md",
+      "originalGitSha256": "b76c4dbee1934f4683feb97a41bac6d0b1df61758e114721a02270a9cf2884be",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "5ef3e326826b122990ea0f3e59561ac39a1eaa311d02d62e0c5a196f830921ce"
+    },
+    {
+      "oldPath": "docs/solver-s1-product-content.md",
+      "archivePath": "docs/archive/2026-11-27/solver-s1-product-content.md",
+      "originalGitSha256": "c2f7edd9baae789c4c09e3ccb7d066627146b391d485a9f56591f6b7f7a5372a",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "345e720578e95538a9d0c5df406cfd8762b4495401acb8f6a781b7c96e429f27"
+    },
+    {
+      "oldPath": "docs/solver-s1-task-design.md",
+      "archivePath": "docs/archive/2026-11-27/solver-s1-task-design.md",
+      "originalGitSha256": "52dcea8dd539c70301e3d27fe21dc30f1c8a9f141410d971bdc08fd85e2f73fe",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "e07a79f910a9f899b34e0de15852dbcd8c8e198bbbcdacf895efd711199189c2"
+    },
+    {
+      "oldPath": "docs/solver-teaching-research.md",
+      "archivePath": "docs/archive/2026-11-27/solver-teaching-research.md",
+      "originalGitSha256": "573ab9a7b7735878d14a8c87bd73bb4f2de6f32dfdae6951a701be6ffb338e97",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "d5a278f3dbb584852f394c2ec3aa707cd43fe2d9425323482baf00c1cd04653a"
+    },
+    {
+      "oldPath": "docs/solver/validation/r1-river-2026-11-18.md",
+      "archivePath": "docs/archive/2026-11-27/solver/validation/r1-river-2026-11-18.md",
+      "originalGitSha256": "ab7d384c3f5776b1401344211a97a8150a3d656124f596b2dd97ee5593fe6eea",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "14215ce019da1f0d019b0be365eadbc87351c2099e080277a050665d5b8b7ed4"
+    },
+    {
+      "oldPath": "docs/solver/validation/r2-river-delivery-2026-11-18.md",
+      "archivePath": "docs/archive/2026-11-27/solver/validation/r2-river-delivery-2026-11-18.md",
+      "originalGitSha256": "8b53ae57ed17b12b71b095b1482271aeb2941a190cbced3c1b6e6708a30030b5",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "63fa872ea73da28c80f1cf500923105d8dd99d472fab2aa278574cb8f4b5e1f9"
+    },
+    {
+      "oldPath": "docs/solver/validation/r2-river-tree-2026-11-18.md",
+      "archivePath": "docs/archive/2026-11-27/solver/validation/r2-river-tree-2026-11-18.md",
+      "originalGitSha256": "3606e6cbf47e2c4cb153649603d122ba78f7a436f153d81c423d5f6cbc3f6496",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "b07b04e28de0638f9ac55ff463165968d456cb965dbc3ec4c02055634cdb41ec"
+    },
+    {
+      "oldPath": "docs/teaching-product-redesign.md",
+      "archivePath": "docs/archive/2026-11-27/teaching-product-redesign.md",
+      "originalGitSha256": "e4ec9ba9c80910fddcc6d8fb26aab3c8d14e8d35a7a5affdcc7d2e72f5823388",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "73f06ba192af8348ef6742af6d8b17bc1e878705c449f97e9aca3227ca1c3fbd"
+    },
+    {
+      "oldPath": "docs/teaching-t1-delivery.md",
+      "archivePath": "docs/archive/2026-11-27/teaching-t1-delivery.md",
+      "originalGitSha256": "b13d8592c36a756615164971dda92c695b58502b35a2718b157869ff0542b15a",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "618a666dce5d5146084ed7dab229345626fa1c0efd4c0e357b0b5b8ecfa04311"
+    },
+    {
+      "oldPath": "docs/teaching-v2-content-spec.md",
+      "archivePath": "docs/archive/2026-11-27/teaching-v2-content-spec.md",
+      "originalGitSha256": "538aa71ab7dd0f24528307f20a64c32e826aa8b2f7e849822cf09170a77ab034",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "ce99d9edf1f480de8f6aa6076c9e9e98ebe6fda33c1783429e3cb424f22824a6"
+    },
+    {
+      "oldPath": "docs/teaching-v2-contracts.md",
+      "archivePath": "docs/archive/2026-11-27/teaching-v2-contracts.md",
+      "originalGitSha256": "0aec6ded1d5ff7537dc14bdf5756d7addd6e0b7a70eb192fd5ff036345ffbb73",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "bc15e89cb6a0f802cd2ffd317a3458961a1ef8001517280e65edd3fc781c6368"
+    },
+    {
+      "oldPath": "docs/teaching-v2-knowledge-design.md",
+      "archivePath": "docs/archive/2026-11-27/teaching-v2-knowledge-design.md",
+      "originalGitSha256": "3f3fdde692f3a92bef5adfebbc8d06f6fc32372a4f1cf1eaeb7805508d91ea11",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "07500c56e73a49e90b3e6ee62dbf8cf9d04af73a0d04392ec60d171365add28b"
+    },
+    {
+      "oldPath": "docs/teaching-v2-product-design.md",
+      "archivePath": "docs/archive/2026-11-27/teaching-v2-product-design.md",
+      "originalGitSha256": "e4c26110cb58e9ae37d7f0d73f25a6b1d4c837121bdeebc53c3213159df78e3e",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "b42932f162b0e059be3556ecc6eb240925b8423576e9b75ba40551242c2a7958"
+    },
+    {
+      "oldPath": "docs/teaching-v2-task-design.md",
+      "archivePath": "docs/archive/2026-11-27/teaching-v2-task-design.md",
+      "originalGitSha256": "51b5caf077248c2cfbf0f15f323117d8840f640b0380848c7dc08f020660b775",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "0d830498a659d4bd60fb8a62b2ec992d8b8929654b0fbd51dea400f95241b6cc"
+    },
+    {
+      "oldPath": "docs/technology-selection.md",
+      "archivePath": "docs/archive/2026-11-27/technology-selection.md",
+      "originalGitSha256": "debf436942d53ad6cb073f9b0e864704e0c4aa50a0032daa6ecbe8aa483f9ae7",
+      "sourceCommit": "f41643881a082790e3c764af5422ba0060e89c47",
+      "archiveSha256": "4caba8e1387b809ccba1b87662fad52e4c17878d38e2d927a9bebd9cbb6928a3"
+    }
+  ],
+  "unresolvedHistoricalLinks": []
+}

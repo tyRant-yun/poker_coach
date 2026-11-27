@@ -3,7 +3,7 @@
   "components": {
     "bot": {
       "repository": "https://github.com/tyRant-yun/riverline-bot",
-      "commit": "276cfe900bcccae53cf6783b6bfcd456a9517a4f",
+      "commit": "e918f9af3ffc23c3d72e112d078297e202eec13d",
       "ownership": "canonical-source-with-pinned-product-snapshot",
       "files": [
         {
@@ -25,7 +25,7 @@
     },
     "solver": {
       "repository": "https://github.com/tyRant-yun/riverline-solver",
-      "commit": "6569a01cbe57cf109c4bd240a415fa31d5931a7b",
+      "commit": "1e7a439233483c03adbfdbcc2dc49081e7b68ad3",
       "ownership": "canonical-source-with-pinned-product-snapshot",
       "files": [
         {
@@ -211,7 +211,7 @@
         {
           "sourcePath": "engines/postflop/THIRD_PARTY.md",
           "productPath": "engines/postflop/THIRD_PARTY.md",
-          "sha256": "c89a8841bd87a55f17c034ac021479422b5cffc7a66d9bfb0740ba2847bf61bd"
+          "sha256": "283351055963bc8f2d70f658ce0270e70a0380876c9a3273d9825f6bf667e5dd"
         },
         {
           "sourcePath": "engines/postflop/crates/riverline-solver/Cargo.toml",

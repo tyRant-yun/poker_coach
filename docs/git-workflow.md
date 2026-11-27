@@ -1,92 +1,23 @@
-# Git 基线与恢复
+# Git协作与组件升级
 
-工作区：`E:\poker_coach`。这是独立 Demo 仓库；2026-11-13 按用户指令创建 GitHub 私有远程 `https://github.com/tyRant-yun/poker_coach`，远程名为 `origin`。
+三个私有仓库的 `main` 是当前集成入口，既有分支和不可变标签保留。产品可继续在 `codex/` 分支工作，本机旧main不会因远程默认分支切换自动覆盖当前工作。
 
-## 基线约定
+## 日常变更
 
-- `baseline/repo-init`：仓库初始化与工作约定。
-- `baseline/design-v0.1`：参考研究、产品设计、模块和 mock 约定、开发任务及评审脚本。
-- `baseline/demo-v1-plan-v0.1`：已确认技术方向与待用户审阅的第一版详细任务方案；不代表批准开发。
-- 后续 `baseline/demo-v1-m1`、`baseline/demo-v1-m2`、`baseline/demo-v1-m3`、`baseline/demo-v1.0`：依次对应 D01、D02/D03、D04–D07、D08 的实际完成与验证，未完成时不提前创建。
-- `baseline/demo-v1-hero-v0.1`：Hero 与全范围反馈改进；`baseline/demo-v1-d02`：D02 范围编辑与版本能力。后者是任务检查点，不能替代需 D03 完成的 M2。
-- `baseline/demo-v1-plan-v0.2`：单次连续推进 D03–D08 的执行安排，记录牌面显示与研究体验反馈；只表示文档计划已更新，不表示功能完成，也不新设审批门。
-- `baseline/teaching-t1-design-v0.1/v0.2` 保存教学设计；`baseline/teaching-t1-m1` 与 `baseline/teaching-t1.0` 在 2026-11-12 实际验收后保存教学闭环与整轮交付，旧标签不移动。新工作区使用 `riverline-demo-t1`，旧 `riverline-demo` 仅只读迁移，回滚代码不自动倒写或合并浏览器数据。
-- 标签创建后不移动；修订使用新标签，例如 `baseline/design-v0.2`。
-- `main` 保存已记录的基线；`demo/development` 用于后续开发。设计基线不等于用户已验收产品。
+先检查分支、状态、远程和相关源文件，保护未提交修改。完成有意义的用户闭环后运行对应检查，审阅暂存区和 `git diff --check`，只提交源码、文档与必要小型证据。不提交密钥、私人牌谱、依赖、日志、构建产物或原生大树。
 
-## 查看状态与历史
+不强推、不移动基线标签、不用破坏性reset/checkout清空用户工作。远程更新正常快进，出现并发变更先核对再集成。Git不备份本机SQLite、journal、IndexedDB或私人数据。
 
-```powershell
-git status --short --branch
-git log --oneline --decorate -12
-git tag --list 'baseline/*'
-git show baseline/design-v0.1:README.md
-git diff baseline/design-v0.1..HEAD --stat
-```
+## 固定组件升级
 
-## 保存一个检查点
+1. 在源仓分支实施并验证，提交新版本，保留策略性质、质量、边界和来源。
+2. 选择精确提交，将允许文件映射到产品，更新 `components.lock.json` 的提交和摘要，不追踪最新main。
+3. 运行 `npm run components:check`；需要时加 `--bot=../riverline-bot --solver=../riverline-solver` 比对源提交/字节。
+4. 按变化运行集成门。文档检查链接/锁；原生/策略变更再做真实进程、数值、恢复/MCP及相应旅程。
+5. 远程变更按用户实际授权执行；部署、参赛上传、公开发布与源码推送分别判断。
 
-先查看差异，再只暂存属于本任务的文件。提交前检查暂存区不包含密钥或生成文件。
+旧v2.2.2五文件核心保持发行字节；改策略需新版本和允许指纹。Rust工具链/依赖和协议版本固定，更新须有新验证依据。
 
-```powershell
-git status --short
-git diff
-git add -- <本次修改的文件>
-git diff --cached --stat
-git commit -m "feat(demo): describe the completed journey"
-```
+## 历史与恢复
 
-## 无损回看旧基线
-
-优先使用独立 worktree，不改变当前分支及未提交工作。目标目录必须尚不存在；每次使用新的目录名。
-
-```powershell
-git worktree add --detach E:\poker_coach-baseline-review baseline/design-v0.1
-```
-
-如果不需要第二份工作区，可先保存当前修改，再从标签建立新的恢复分支。以下分支名必须尚不存在：
-
-```powershell
-git status --short
-# 确认工作区干净；否则先提交自己的修改，再继续。
-git switch -c recovery/design-v0.1 baseline/design-v0.1
-```
-
-## 撤销已提交的某次改动
-
-在工作区干净、确认目标提交及依赖后，用新的反向提交保留历史。合并提交需要单独分析，不直接套用。
-
-```powershell
-git revert <需要撤销的普通提交SHA>
-```
-
-若发生冲突，解决后执行 `git revert --continue`；放弃本次回滚可执行 `git revert --abort`。
-
-默认不使用 `reset --hard`、`clean -fd` 或强制移动基线标签。Git 只保护已经提交的内容，也不替代独立备份。历史上的“无远程/未推送”描述保留当时语境；本次归档和基线清单见 [归档记录](repository-archive-2026-11-13.md)。GitHub 远程与独立 bundle 共同保存提交历史；运行中的本地数据不在源码归档范围内。
-
-## 第一版完整 Demo 的实际记录
-
-本次从 `baseline/demo-v1-plan-v0.2` 连续推进，C1 提交 `51a18ce`，C2 提交 `0a5deed`。C3 和最终恢复/隔离修复在最终提交记录；全部 57 项状态测试、20 条浏览器旅程与构建通过后，`baseline/demo-v1-m2`、`baseline/demo-v1-m3`、`baseline/demo-v1.0` 共同指向最终提交。旧标签不移动，早期 C1/C2 并非整版验收基线。
-
-可只读核对最终基线：
-
-```powershell
-git show --stat baseline/demo-v1.0
-git rev-parse 'baseline/demo-v1.0^{commit}'
-```
-
-需要回看整版时，在确认目标目录不存在后使用 `git worktree add --detach E:\poker_coach-v1-review baseline/demo-v1.0`；不覆盖当前工作区。此处仅提供恢复方法，未声称已新建该工作区或远程备份。
-
-## T1 教学设计检查点
-
-`baseline/teaching-t1-design-v0.1` 保存下一轮教学升级的产品、内容、领域和任务设计，仅表示文档设计完成。新应用功能、内容 fixture 和验收尚未完成；`baseline/teaching-t1-m1`、`baseline/teaching-t1.0` 留待实际开发后按条件创建。旧第一版标签不移动。
-
-T1 独立本地库与 schema2 仍只是设计。当前应用仍使用旧数据库，不能提前声称数据已迁移；未来回看旧代码时按 T1 领域合同说明新旧库的历史边界。
-
-`baseline/teaching-t1-design-v0.2` 另存用户新增的理论知识库与 Agent 引用设计，包含 TE09/TJ11–TJ13；v0.1 标签不移动。知识正文、检索和引用功能尚未实现，两个标签都只表示设计状态。
-
-## S1 的实际本地交付
-
-2026-11-13，SO01–SO09 的本地 Mock 实现完成，105 项状态测试、全部 46 工具实际 MCP 调用/3 项协议测试、44 条浏览器旅程（35 原版＋9 S1）、类型检查与构建通过。实现检查点为 `a95ee58`，新标签 `baseline/solver-s1.0` 指向整轮验证后的最终提交；旧标签不移动。范围/限制和生成证据见 `solver-s1-delivery.md`；R1–R3 没有执行，不属于该基线的真实求解能力。
-
-整轮提交 `e92f812` 保留在 `baseline/solver-s1.0`。默认工作区约 190MB 日志恢复超过原启动九秒等待，后续启动等待修复经现存目录实际恢复/查询验证后另存 `baseline/solver-s1.0.1`，没有移动原标签。
+旧批次、标签和此前分支约定见[历史Git记录](archive/2026-11-27/entrypoints/git-workflow.before-consolidation.md)。“demo/development为后续入口”等语句只描述当时安排。回看时优先新分支/worktree或 `git show`，不修改运行数据。

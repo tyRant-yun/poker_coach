@@ -1,0 +1,40 @@
+{
+  "schema": "riverline-documentation-validation/1",
+  "date": "2026-11-27",
+  "scope": "Current documentation links, archive provenance/bytes and command availability. Functional suites not rerun.",
+  "repositories": [
+    {
+      "repository": "poker_coach",
+      "currentDocumentsAndIndexes": 19,
+      "localLinksChecked": 155,
+      "archiveRecordsVerified": 80,
+      "npmCommandsChecked": 16,
+      "errors": []
+    },
+    {
+      "repository": "riverline-bot",
+      "currentDocumentsAndIndexes": 9,
+      "localLinksChecked": 34,
+      "archiveRecordsVerified": 6,
+      "npmCommandsChecked": 0,
+      "errors": []
+    },
+    {
+      "repository": "riverline-solver",
+      "currentDocumentsAndIndexes": 9,
+      "localLinksChecked": 32,
+      "archiveRecordsVerified": 4,
+      "npmCommandsChecked": 7,
+      "errors": []
+    }
+  ],
+  "componentSourceCommits": {
+    "bot": "e918f9af3ffc23c3d72e112d078297e202eec13d",
+    "solver": "1e7a439233483c03adbfdbcc2dc49081e7b68ad3"
+  },
+  "componentFilesVerified": 63,
+  "changedComponentContent": [
+    "engines/postflop/THIRD_PARTY.md"
+  ],
+  "strategyAndEngineRuntimeChanged": false
+}
